@@ -14,6 +14,7 @@ private:
     std::vector <std::shared_ptr<Light>> lights;
     std::vector <std::shared_ptr<Material>> materials;
     std::vector <std::shared_ptr<Primitive>> primitives;
+    static std::vector <Mat> parseMtl(std::string fileName);
 
 public:
     Scene(std::vector <std::shared_ptr <Light>> &&_l, std::vector <std::shared_ptr<Material>> &&_m, std::vector <std::shared_ptr <Primitive>> &&_p) :
@@ -22,5 +23,5 @@ public:
     void print();
 
     static std::unique_ptr <Scene> parseObj(std::string fileName);
-
+    
 };
