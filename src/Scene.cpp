@@ -14,9 +14,9 @@ using namespace std;
 using namespace glm;
 
 void Scene::print() {
-    cout << "Lights: " << lights.size() << endl;
-    cout << "Materials: " << materials.size() << endl;
-    cout << "Primitives: " << primitives.size() << endl;
+    cout << "Lights: " << lights_.size() << endl;
+    cout << "Materials: " << materials_.size() << endl;
+    cout << "Primitives: " << primitives_.size() << endl;
 }
 
 void parseError(const string& line) {

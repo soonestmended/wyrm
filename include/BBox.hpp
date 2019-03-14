@@ -22,4 +22,4 @@ public:
 	bool intersect(const Ray &r, float &a, float &b) const;
 	bool intersectYN(const Ray &r, const float t0, const float t1) const;
 
-}
+};

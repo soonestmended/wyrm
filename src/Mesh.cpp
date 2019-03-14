@@ -5,8 +5,10 @@
 using namespace std;
 
 // Converts the faces in the Mesh to a vector of Primitives (Triangles, in this case)
-vector <Primitive> Mesh::toPrimitives() {
-    for (auto tri : tris) {
+const vector <Primitive> Mesh::toPrimitives() const {
+    vector <Primitive> ans;
+    for (auto tri : tris_) {
         
     }
+    return ans;
 }

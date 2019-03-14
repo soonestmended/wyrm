@@ -1,5 +1,8 @@
+#include <iostream>
+
 #include <glm/geometric.hpp>
 #include <glm/vec3.hpp>
+
 
 class Ray {
 public:

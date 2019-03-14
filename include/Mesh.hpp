@@ -28,6 +28,6 @@ public:
     : vertices_ (std::move(vertices)), texCoords_ (std::move(texCoords)), normals_ (std::move(normals)), materials_ (std::move(materials)), tris_ (std::move(tris)) 
     {}
 
-    std::vector <Primitive> toPrimitives();
+    const std::vector <Primitive> toPrimitives() const;
 
 };
