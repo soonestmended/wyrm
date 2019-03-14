@@ -8,7 +8,7 @@ BDIR =../bin
 
 LIBS=
 
-_DEPS = Light.hpp Material.hpp Primitive.hpp Scene.hpp
+_DEPS = Light.hpp Material.hpp Mesh.hpp Primitive.hpp Scene.hpp
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = Scene.o test.o 

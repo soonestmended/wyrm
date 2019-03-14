@@ -55,18 +55,8 @@ const vec4 readVec4(const vector <string> &tokens, const float defaultValue = 1.
     return vec4(xyz, w);
 }
 
-struct Tri {
-    int v[3];   // vertex indices
-    int vt[3];  // texCoord indices
-    int vn[3];  // vertex normal indices
-    int m;      // material index
-    int s;      // smoothing group
-};
-
-
-
-vector <Mat> Scene::parseMtl(string fileName) {
-    vector <Mat> ans;
+vector <MTLMat> Scene::parseMtl(string fileName) {
+    vector <MTLMat> ans;
 
     ifstream file (fileName);
     string line;
@@ -74,7 +64,7 @@ vector <Mat> Scene::parseMtl(string fileName) {
         cout << "Unable to open file " << fileName << endl;
         return ans;
     }
-    Mat m;
+    MTLMat m;
     bool firstPass = true;
     while (getline(file, line)) {
         
@@ -88,7 +78,7 @@ vector <Mat> Scene::parseMtl(string fileName) {
         else if (tokens[0].compare("newmtl") == 0) {
             if (!firstPass) {
                 ans.push_back(m);
-                m = Mat{}; // start a new material for the following statements
+                m = MTLMat{}; // start a new MTLmaterial for the following statements
                 m.name = tokens[1];
             }
             firstPass = false;
@@ -141,7 +131,7 @@ vector <Mat> Scene::parseMtl(string fileName) {
     }
 
     if (!firstPass) {
-        ans.push_back(m); // add the last material when we get to the end of the file
+        ans.push_back(m); // add the last MTLmaterial when we get to the end of the file
     }
 
     return ans;
@@ -158,7 +148,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
 
     map <string, int> materialsMap;
 
-    int currentMaterialIndex = -1;
+    int currentMTLMaterialIndex = -1;
     int currentSmoothingGroupIndex = -1;
     ifstream file (fileName);
     string line;
@@ -267,7 +257,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
                     }
                     i++;
                 }
-                tri.m = currentMaterialIndex;
+                tri.m = currentMTLMaterialIndex;
                 tri.s = currentSmoothingGroupIndex;
                 return tri;
             };
@@ -297,28 +287,28 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
         else if (tokens[0].compare("usemtl") == 0) {
             // smoothing group
             if (numTokens != 2) {
-                cout << "Wrong number of tokens in material specification" << endl;
+                cout << "Wrong number of tokens in MTLmaterial specification" << endl;
                 parseError(line);
                 continue;
             }
             auto it = materialsMap.find(tokens[1]);
             if (it != materialsMap.end()) {
-                currentMaterialIndex = it->second;
+                currentMTLMaterialIndex = it->second;
             }
             else {
-                cout << "Material " << tokens[1] << " not yet defined." << endl;
+                cout << "MTLMaterial " << tokens[1] << " not yet defined." << endl;
                 parseError(line);
                 continue;
             }
         }
 
         else if (tokens[0].compare("mtllib") == 0) {
-            // load material file
+            // load MTLmaterial file
             for (auto it = tokens.begin() + 1; it != tokens.end(); it++) {
-                // read material and add it to our vector of materials
-                vector <Mat> tv = parseMtl(*it); 
-                cout << "Parsed " << tv.size() << " Mat(s)" << endl;
-                // TODO: need to convert from Mats to Materials
+                // read MTLmaterial and add it to our vector of materials
+                vector <MTLMat> tv = parseMtl(*it); 
+                cout << "Parsed " << tv.size() << " MTLMat(s)" << endl;
+                // TODO: need to convert from MTLMats to Materials
                 // materials.insert(materials.end(), tv.begin(), tv.end());
             }
         }

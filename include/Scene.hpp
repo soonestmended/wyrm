@@ -9,16 +9,18 @@
 #include "Material.hpp"
 #include "Primitive.hpp"
 
+
+
 class Scene {
 private:
-    std::vector <std::shared_ptr<Light>> lights;
-    std::vector <std::shared_ptr<Material>> materials;
-    std::vector <std::shared_ptr<Primitive>> primitives;
-    static std::vector <Mat> parseMtl(std::string fileName);
+    std::vector <std::shared_ptr<Light>> lights_;
+    std::vector <std::shared_ptr<Material>> materials_;
+    std::vector <std::shared_ptr<Primitive>> primitives_;
+    static std::vector <MTLMat> parseMtl(std::string fileName);
 
 public:
-    Scene(std::vector <std::shared_ptr <Light>> &&_l, std::vector <std::shared_ptr<Material>> &&_m, std::vector <std::shared_ptr <Primitive>> &&_p) :
-    lights (std::move(_l)), materials (std::move(_m)), primitives (std::move(_p)) {}
+    Scene(std::vector <std::shared_ptr <Light>> &&lights, std::vector <std::shared_ptr<Material>> &&materials, std::vector <std::shared_ptr <Primitive>> &&primitives) :
+    lights_ (std::move(lights)), materials_ (std::move(materials)), primitives_ (std::move(primitives)) {}
 
     void print();
 
