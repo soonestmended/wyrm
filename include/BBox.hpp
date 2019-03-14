@@ -1,6 +1,8 @@
+#include <limits>
+
 #include <glm/vec3.hpp>
 
-#include <limits>
+#include "Ray.hpp"
 
 class BBox {
 public:
