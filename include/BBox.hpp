@@ -1,3 +1,5 @@
+#pragma once
+
 #include <limits>
 
 #include <glm/vec3.hpp>
