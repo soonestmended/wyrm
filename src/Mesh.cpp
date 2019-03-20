@@ -8,6 +8,7 @@ using namespace std;
 const vector <Primitive> Mesh::toPrimitives() const {
     vector <Primitive> ans;
     for (auto tri : tris_) {
+        // convert Tri to Triangle
         
     }
     return ans;

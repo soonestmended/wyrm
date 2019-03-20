@@ -8,10 +8,6 @@
 #include "Material.hpp"
 #include "Primitive.hpp"
 
-struct Face {
-
-};
-
 class Mesh {
 private:
     std::vector <glm::vec3> vertices_; 
