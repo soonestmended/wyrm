@@ -332,7 +332,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
 
     // postprocess tris -- normal smoothing
 
-    map <int, vector <Tri &>> trisToProcess;
+    map <int, vector <Tri *>> trisToProcess;
     for (Tri t : tris) {
         if (t.s <= 0) {
             // make a new vertex normal based on just this face and assign its index to vn[0->3]
@@ -344,9 +344,9 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
         else {
             auto it = trisToProcess.find(t.s);
             if (it == trisToProcess.end()) {
-                it->second = vector <Tri &>();
+                it->second = vector <Tri *>();
             }
-            it->second.push_back(t);
+            it->second.push_back(&t);
         }
     }
 
@@ -354,14 +354,14 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
     // for each smoothing group, map vertices to a list of face normals. at the end, average them.
 
     for (auto it : trisToProcess) {
-        // it is a <int, vector <Tri &>> pair
+        // it is a <int, vector <Tri *>> pair
         auto ttris = it.second;
         // map vertex indices to list of normals
-        map<int, glm::vec3> groupNormals();
+        map<int, glm::vec3> groupNormals;
         for (auto t : ttris) {
-            vec3 e1 = vertices[t.v[1]] - vertices[t.v[0]];
-            vec3 e2 = vertices[t.v[2]] - vertices[t.v[1]];
-            groupNormals[t.s] += glm::cross(e1, e2); // un-normalized face normal
+            vec3 e1 = vertices[t->v[1]] - vertices[t->v[0]];
+            vec3 e2 = vertices[t->v[2]] - vertices[t->v[1]];
+            glm::vec3 &n = groupNormals[t->s] += glm::cross(e1, e2); // un-normalized face normal
         }
         // now average all the normals in the group
         // go over this when sober

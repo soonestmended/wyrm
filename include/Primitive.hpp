@@ -43,6 +43,7 @@ public:
     }
 };
 
+// This is a triangle with different normal at each vertex -- for normal smoothing in meshes
 class TriangleWarp : public Triangle {
 protected:
     glm::vec3 N1_, N2_;
@@ -50,4 +51,4 @@ protected:
 public:
     TriangleWarp (const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2, const glm::vec3 &N0, const glm::vec3 &N1, const glm::vec3 &N2, const Material &m)
     : Triangle(v0, v1, v2, N0, m), N1_ (N1), N2_ (N2) {} 
-}
+};
