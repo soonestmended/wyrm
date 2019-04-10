@@ -8,7 +8,7 @@ BDIR =../bin
 
 LIBS=boost_program_options
 
-_DEPS = BBox.hpp Camera.hpp Color.hpp Film.hpp IntersectRec.hpp Light.hpp Material.hpp Mesh.hpp Primitive.hpp Ray.hpp Scene.hpp Tracer.hpp
+_DEPS = BBox.hpp Camera.hpp Color.hpp IntersectRec.hpp Light.hpp Material.hpp Mesh.hpp Primitive.hpp Ray.hpp Renderer.hpp Scene.hpp Tracer.hpp
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = Film.o Mesh.o Primitive.o Ray.o Scene.o Tracer.o test.o 
