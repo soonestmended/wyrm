@@ -78,10 +78,13 @@ vector <MTLMat> Scene::parseMtl(string fileName) {
         else if (tokens[0].compare("newmtl") == 0) {
             if (!firstPass) {
                 ans.push_back(m);
-                m = MTLMat{}; // start a new MTLmaterial for the following statements
-                m.name = tokens[1];
             }
-            firstPass = false;
+            else {
+                firstPass = false;
+            }
+            m = MTLMat{}; // start a new MTLmaterial for the following statements
+            m.name = tokens[1];
+
         }
         else if (tokens[0].compare("Ka") == 0) {
             m.Ka = readVec3(tokens, 0.0, numTokens);
@@ -296,7 +299,9 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
                 parseError(line);
                 continue;
             }
+            cout << "Searching for mtl: " << tokens[1] << "..." << endl;
             auto it = materialsMap.find(tokens[1]);
+            
             if (it != materialsMap.end()) {
                 currentMTLMaterialIndex = it->second;
             }
@@ -308,14 +313,21 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
         }
 
         else if (tokens[0].compare("mtllib") == 0) {
+            cout << "Parsing materials... " << endl;
             // load MTLmaterial file
             for (auto it = tokens.begin() + 1; it != tokens.end(); it++) {
                 // read MTLmaterial and add it to our vector of materials
                 vector <MTLMat> tv = parseMtl(*it); 
                 cout << "Parsed " << tv.size() << " MTLMat(s)" << endl;
                 // TODO: need to convert from MTLMats to Materials
-                // materials.insert(materials.end(), tv.begin(), tv.end());
+                vector <SimpleMaterial> tv2 (tv.begin(), tv.end()); // convert MTLMats to SimpleMaterials
+                materials.insert(materials.end(), tv2.begin(), tv2.end()); // add SimpleMaterials to material vector
             }
+
+            for (auto m : materials) {
+                materialsMap[m.name_] = m.id_;
+            }
+
         }
 
         else {
@@ -323,12 +335,12 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
         }
     }
 
-
     cout << "Finished parsing file: " << fileName << endl;
     cout << "Parsed " << vertices.size() << " vertices" << endl;
     cout << "Parsed " << texCoords.size() << " texture coordinates" << endl;
     cout << "Parsed " << normals.size() << " normals" << endl;
     cout << "Parsed " << tris.size() << " tris" << endl;
+    cout << "Parsed " << materials.size() << " materials" << endl;
 
     // postprocess tris -- normal smoothing
 

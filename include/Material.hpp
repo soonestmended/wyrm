@@ -25,7 +25,20 @@ struct MTLMat {
 
 class Material {
 public:
-    int id;
-    Material() : id(0) {}
-    Material(int _id) : id(_id) {}
+    int id_;
+    std::string name_;
+    Material() : id_(currentID++) {}
+    Material(int id) : id_(id) {}
+    Material(const std::string& name) : name_ (name), id_ (currentID++) {}
+    Material(const std::string& name, int id) : name_ (name), id_ (id) {}
+    static int currentID;
+};
+
+class SimpleMaterial : public Material {
+public:
+    SimpleMaterial(const glm::vec3 &color) : Material(), color_ (color) {}
+    SimpleMaterial(const MTLMat& mtlMat) : Material(mtlMat.name), color_ (mtlMat.Kd) {}
+
+
+    glm::vec3 color_;
 };

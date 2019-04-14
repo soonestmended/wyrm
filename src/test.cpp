@@ -17,6 +17,7 @@ int main (int argc, char ** argv) {
     desc.add_options() 
       ("help", "Print help message") 
       ("input_file,i", po::value<string>(), "input file -- or specify at end")
+      ("output_file,o", po::value<string>(), "output file")
       ("quick_render,q", "quick render")
       ("samples_per_pixel,s", po::value<int>(), "samples per pixel")
       ("width,w", po::value<int>(), "width of output image")
@@ -43,9 +44,9 @@ int main (int argc, char ** argv) {
     }
     
     unique_ptr <Scene> s;
-    s = Scene::parseObj(argv[1]);
+    s = Scene::parseObj(vm["input_file"].as<string>());
     if (s == nullptr) {
-        cout << "Parse failed. " << endl;
+        cout << "Parse of " << vm["input_file"].as<string>() << " failed. " << endl;
         exit(0);
     }
 }
