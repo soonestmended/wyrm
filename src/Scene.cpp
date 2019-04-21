@@ -418,5 +418,6 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
 
     } 
 
+    // the above needs to be tested / debugged
     return s;
 }
