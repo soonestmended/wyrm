@@ -11,6 +11,7 @@ struct Tri {
     int vn[3];  // vertex normal indices
     int m;      // MTLmaterial index
     int s;      // smoothing group
+    bool explicitNormals = false;
 };
 
 class Primitive {

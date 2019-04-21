@@ -49,4 +49,5 @@ int main (int argc, char ** argv) {
         cout << "Parse of " << vm["input_file"].as<string>() << " failed. " << endl;
         exit(0);
     }
+    cout << "Parse successful." << endl;
 }
