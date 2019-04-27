@@ -22,7 +22,7 @@ public:
     Scene(std::vector <std::shared_ptr <Light>> &&lights, std::vector <std::shared_ptr<Material>> &&materials, std::vector <std::shared_ptr <Primitive>> &&primitives) :
     lights_ (std::move(lights)), materials_ (std::move(materials)), primitives_ (std::move(primitives)) {}
 
-    void print();
+    void printInfo();
 
     static std::unique_ptr <Scene> parseObj(std::string fileName);
     

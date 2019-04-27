@@ -8,12 +8,13 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include "Mesh.hpp"
 #include "Scene.hpp"
 
 using namespace std;
 using namespace glm;
 
-void Scene::print() {
+void Scene::printInfo() {
     cout << "Lights: " << lights_.size() << endl;
     cout << "Materials: " << materials_.size() << endl;
     cout << "Primitives: " << primitives_.size() << endl;
@@ -147,7 +148,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
     vector <vec3> texCoords;
     vector <Tri> tris;
 
-    vector <Material> materials;
+    vector <shared_ptr<Material>> materials;
 
     map <string, int> materialsMap;
 
@@ -320,13 +321,15 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
                 // read MTLmaterial and add it to our vector of materials
                 vector <MTLMat> tv = parseMtl(*it); 
                 cout << "Parsed " << tv.size() << " MTLMat(s)" << endl;
-                // TODO: need to convert from MTLMats to Materials
+                // need to convert from MTLMats to Materials
                 vector <SimpleMaterial> tv2 (tv.begin(), tv.end()); // convert MTLMats to SimpleMaterials
-                materials.insert(materials.end(), tv2.begin(), tv2.end()); // add SimpleMaterials to material vector
+                for (auto m : tv2) {
+                    materials.push_back(make_shared<Material>(m));
+                }
             }
 
             for (auto m : materials) {
-                materialsMap[m.name_] = m.id_;
+                materialsMap[m->name_] = m->id_;
             }
 
         }
@@ -417,7 +420,13 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
         }
 
     } 
-
     // the above needs to be tested / debugged
+
+    // make a Mesh out of the data we've read 
+    vector <shared_ptr<Material>> mm = materials;
+    Mesh m(move(vertices), move(texCoords), move(normals), move(mm), move(tris));
+
+    vector <shared_ptr<Light>> lights;
+    s = unique_ptr <Scene> (new Scene(move(lights), move(materials), move(m.toPrimitives())));
     return s;
 }

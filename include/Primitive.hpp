@@ -40,8 +40,10 @@ public:
         bbox_.enclose(v0);
         bbox_.enclose(v1);
         bbox_.enclose(v2);
-
     }
+
+    bool intersect() const;
+    bool intersectYN() const;
 };
 
 // This is a triangle with different normal at each vertex -- for normal smoothing in meshes

@@ -50,4 +50,5 @@ int main (int argc, char ** argv) {
         exit(0);
     }
     cout << "Parse successful." << endl;
+    s->printInfo();
 }

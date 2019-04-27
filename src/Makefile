@@ -11,7 +11,7 @@ LIBS=boost_program_options
 _DEPS = BBox.hpp Camera.hpp Color.hpp IntersectRec.hpp Light.hpp Material.hpp Mesh.hpp Primitive.hpp Ray.hpp Renderer.hpp Scene.hpp Tracer.hpp
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = Material.o Mesh.o Primitive.o Ray.o Renderer.o Scene.o Tracer.o test.o 
+_OBJ = BBox.o Material.o Mesh.o Primitive.o Ray.o Renderer.o Scene.o Tracer.o test.o 
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
