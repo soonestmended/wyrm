@@ -349,24 +349,28 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
     // postprocess tris -- normal smoothing
 
     map <int, vector <Tri *>> smoothingGroupsToProcess;
-    for (Tri t : tris) {
-        if (t.explicitNormals) {
-            continue;
-        }
-        // otherwise need to generate a normal for this triangle and put it at the end of the normals list
-        if (t.s <= 0) {
+    for (auto&& t : tris) {
+        if (!t.explicitNormals) {
             // make a new vertex normal based on just this face and assign its index to vn[0->3]
             vec3 e1 = vertices[t.v[1]] - vertices[t.v[0]];
             vec3 e2 = vertices[t.v[2]] - vertices[t.v[1]];
             normals.push_back(glm::normalize(glm::cross(e1, e2)));
             t.vn[0] = t.vn[1] = t.vn[2] = normals.size() - 1;
         }
-        else {
+
+        // if tri is in a smoothing group, add the triangle to the appropriate smoothing group
+        if (t.s > 0) {
             auto it = smoothingGroupsToProcess.find(t.s);
             if (it == smoothingGroupsToProcess.end()) {
-                it->second = vector <Tri *>();
+                // t.s not yet in list of smoothing groups to process, so let's add it and add this triangle to the group
+                smoothingGroupsToProcess[t.s] = vector <Tri *>();
+                smoothingGroupsToProcess[t.s].push_back(&t);
             }
-            it->second.push_back(&t);
+
+            else {
+                // t.s already in the list of groups, so just add this triangle to its group
+                it->second.push_back(&t);
+            }
         }
     }
 
@@ -374,26 +378,29 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
     // for each smoothing group, map vertices to a list of face normals. at the end, average them.
 
     for (auto sg : smoothingGroupsToProcess) {
-        // it is a <int, vector <Tri *>> pair, mapping smoothing group number to list of tris in group
+        // sg is a <int, vector <Tri *>> pair, mapping smoothing group number to list of tris in group
         auto sgTris = sg.second;
-        // map vertex indices to list of normals
+        // map vertex indices to normals
         map<int, glm::vec3> groupNormals;
         // loop over tris in group
         for (auto t : sgTris) {
             
-            vec3 e1 = vertices[t->v[1]] - vertices[t->v[0]];
-            vec3 e2 = vertices[t->v[2]] - vertices[t->v[1]];
+            //vec3 e1 = vertices[t->v[1]] - vertices[t->v[0]];
+            //vec3 e2 = vertices[t->v[2]] - vertices[t->v[1]];
             //glm::vec3 &n = groupNormals[t->s] += glm::cross(e1, e2); // un-normalized face normal
-            glm::vec3 n = glm::cross(e1, e2); // un-normalized face normal
+            //glm::vec3 n = glm::cross(e1, e2); // un-normalized face normal
+            
             // if we haven't encountered this group vertex yet, set its accumulated normal to zero
             for (int i = 0; i < 3; ++i) {
                 if (groupNormals.find(t->v[i]) == groupNormals.end()) {
                     groupNormals[t->v[i]] = glm::vec3(0.0);
                 }
             }
-            groupNormals[t->vn[0]] += n;
-            groupNormals[t->vn[1]] += n;
-            groupNormals[t->vn[2]] += n;
+
+            // TODO: scale by area of triangle
+            groupNormals[t->v[0]] += normals[t->vn[0]];
+            groupNormals[t->v[1]] += normals[t->vn[1]];
+            groupNormals[t->v[2]] += normals[t->vn[2]];
             
         }
         // now normalize all the normals in the group, add 
@@ -402,7 +409,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
             glm::normalize(v.second);
         }
 
-        // now we have a map of vertex index to normal. these have to be inserted at the end of the
+        // now we have a map of vertex index to new normal. these have to be inserted at the end of the
         // normals vector. A new map associates vertex indices with normal indices.
         
         map<int, int> v2vn;
