@@ -4,6 +4,10 @@
 #include "Scene.hpp"
 #include "Tracer.hpp"
 
+#include "CImg.h"
+
+using namespace cimg_library;
+
 class Renderer {
 public:    
     Renderer(const Camera& c, const Scene& s, const Tracer& t) : camera_ (c), scene_ (s), tracer_ (t) {}
@@ -17,10 +21,11 @@ protected:
 
 class QuickRenderer : public Renderer {
 public:
-    QuickRenderer(const Camera& c, const Scene& s, const Tracer& t, int width = 400, int height = 400) : 
-    Renderer(c, s, t), width_ (width), height_ (height) {}
+    QuickRenderer(const Camera& c, const Scene& s, const Tracer& t, CImg <unsigned char> &target) : 
+        Renderer(c, s, t),
+        target_ (target) {}
     void render();
 
 private:
-    int width_, height_;
+    CImg <unsigned char> &target_;
 };

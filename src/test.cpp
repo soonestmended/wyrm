@@ -5,11 +5,18 @@
 
 #include <boost/program_options.hpp>
 
+#include "Camera.hpp"
 #include "Material.hpp"
+#include "Renderer.hpp"
 #include "Scene.hpp"
+#include "Tracer.hpp"
+
+#include "CImg.h"
 
 using namespace std;
+using namespace cimg_library;
 namespace po = boost::program_options;
+
 
 int main (int argc, char ** argv) {
     // named options
@@ -51,4 +58,18 @@ int main (int argc, char ** argv) {
     }
     cout << "Parse successful." << endl;
     s->printInfo();
+
+    // for now just implement quick render
+    unique_ptr <Camera> c;
+
+    unique_ptr<Tracer> t;
+
+    CImg <unsigned char> img(400, 400, 1, 3);
+
+    QuickRenderer qr(*c, *s, *t, img);
+    qr.render();
+    if (vm.count("output_file")) {
+        img.save(vm["output_file"].as<char *>());
+    }
+
 }
