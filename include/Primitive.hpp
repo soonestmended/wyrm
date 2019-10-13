@@ -36,7 +36,7 @@ protected:
 
 public:
     Triangle(const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2, const glm::vec3 &N, const Material &m) 
-    : Primitive(m), v_ ({v0, v1, v2}), N_ (N) {
+    : Primitive(m), v_ {v0, v1, v2}, N_ (N) {
         bbox_.enclose(v0);
         bbox_.enclose(v1);
         bbox_.enclose(v2);

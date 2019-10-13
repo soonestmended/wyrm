@@ -11,10 +11,7 @@
 #include "Scene.hpp"
 #include "Tracer.hpp"
 
-#include "CImg.h"
-
 using namespace std;
-using namespace cimg_library;
 namespace po = boost::program_options;
 
 
@@ -64,12 +61,12 @@ int main (int argc, char ** argv) {
 
     unique_ptr<Tracer> t;
 
-    CImg <unsigned char> img(400, 400, 1, 3);
+    int foo;
 
-    QuickRenderer qr(*c, *s, *t, img);
+    QuickRenderer qr(*c, *s, *t, foo);
     qr.render();
     if (vm.count("output_file")) {
-        img.save(vm["output_file"].as<char *>());
+        cout << "foo saves here" << endl;
     }
 
 }
