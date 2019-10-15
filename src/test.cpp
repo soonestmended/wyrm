@@ -6,6 +6,7 @@
 #include <boost/program_options.hpp>
 
 #include "Camera.hpp"
+#include "Image.hpp"
 #include "Material.hpp"
 #include "Renderer.hpp"
 #include "Scene.hpp"
@@ -65,8 +66,9 @@ int main (int argc, char ** argv) {
 
     QuickRenderer qr(*c, *s, *t, foo);
     qr.render();
+    Image bar(256, 256);
     if (vm.count("output_file")) {
-        cout << "foo saves here" << endl;
+        bar.writePNG(vm["output_file"].as<string>().c_str());
     }
 
 }
