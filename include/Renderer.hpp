@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Camera.hpp"
+#include "Image.hpp"
 #include "Scene.hpp"
 #include "Tracer.hpp"
 
@@ -17,11 +18,11 @@ protected:
 
 class QuickRenderer : public Renderer {
 public:
-    QuickRenderer(const Camera& c, const Scene& s, const Tracer& t, int &target) : 
+    QuickRenderer(const Camera& c, const Scene& s, const Tracer& t, Image &target) : 
         Renderer(c, s, t),
         target_ (target) {}
     void render();
 
 private:
-    int &target_;
+    Image &target_;
 };

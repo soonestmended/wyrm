@@ -62,13 +62,12 @@ int main (int argc, char ** argv) {
 
     unique_ptr<Tracer> t;
 
-    int foo;
+    Image foo(256, 256);
 
     QuickRenderer qr(*c, *s, *t, foo);
     qr.render();
-    Image bar(256, 256);
     if (vm.count("output_file")) {
-        bar.writePNG(vm["output_file"].as<string>().c_str());
+        foo.writePNG(vm["output_file"].as<string>().c_str());
     }
 
 }

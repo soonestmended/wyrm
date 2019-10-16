@@ -2,17 +2,26 @@
 
 #include <vector>
 
+#include "Color.hpp"
+
 using namespace std;
 
 class Image {
 public:
     Image() =delete;
     Image(int w, int h) : width_ (w), height_ (h) {
-        data_ = vector <float> (w*h);
+        data_ = vector <Color> (w*h);
     }
     bool writePNG(const std::string& filename);
 
+    int width() {return width_;}
+    int height() {return height_;}
+    
+    Color& operator()(int x, int y) { return data_[y*width_+x]; }
+    const Color& operator()(int x, int y) const { return data_[y*width_+x]; }
+
+
 private:
     int width_, height_;
-    vector <float> data_;
+    vector <Color> data_;
 };

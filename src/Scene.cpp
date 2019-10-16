@@ -143,7 +143,7 @@ vector <MTLMat> Scene::parseMtl(string fileName) {
 
 unique_ptr <Scene> Scene::parseObj(string fileName) {
     unique_ptr <Scene> s;
-    vector <vec4> vertices;
+    vector <vec3> vertices;
     vector <vec3> normals;
     vector <vec3> texCoords;
     vector <Tri> tris;
@@ -176,7 +176,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
                 parseError(line);
                 continue;
             }
-            vertices.push_back(readVec4(tokens, 1.0, numTokens));
+            vertices.push_back(readVec3(tokens, 1.0, numTokens));
         }
         else if (tokens[0].compare("vt") == 0) {
             // add a texture coordinate

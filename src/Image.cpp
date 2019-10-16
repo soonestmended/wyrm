@@ -6,7 +6,11 @@ bool Image::writePNG(const std::string& filename) {
     png::image <png::rgb_pixel> png_image(width_, height_);
     for (int y = 0; y < height_; ++y) {
         for (int x = 0; x < width_; ++x) {
-            png_image[y][x] = png::rgb_pixel(x, y, x + y);
+            Color& c = (*this)(x, y);
+            unsigned int r = c.r * 255;
+            unsigned int g = c.g * 255;
+            unsigned int b = c.b * 255;
+            png_image[y][x] = png::rgb_pixel(r, g, b);
         }
     }
     png_image.write(filename);
