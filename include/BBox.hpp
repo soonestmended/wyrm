@@ -8,14 +8,14 @@
 
 class BBox {
 public:
-    glm::vec3 min_;
-    glm::vec3 max_;
+    glm::vec3 min;
+    glm::vec3 max;
 
-    BBox() : min_ (std::numeric_limits<float>::max()), max_ (std::numeric_limits<float>::min()) {}
-    BBox(const glm::vec3 &min, const glm::vec3 &max) : min_ (min), max_ (max) {}
+    BBox() : min (std::numeric_limits<float>::max()), max (std::numeric_limits<float>::min()) {}
+    BBox(const glm::vec3 &min_, const glm::vec3 &max_) : min (min_), max (max_) {}
 
     const glm::vec3 getCentroid() const {
-        return glm::vec3({.5*(max_[0] + min_[0]), .5*(max_[1] + min_[1]), .5*(max_[2] + min_[2])});
+        return glm::vec3({.5*(max[0] + min[0]), .5*(max[1] + min[1]), .5*(max[2] + min[2])});
     }
 
 	void enclose(const glm::vec3& v);

@@ -8,7 +8,7 @@
 
 class Camera {
 public:
-	Camera() {}
+	Camera() =delete;
 
 	Camera(const glm::vec3& _eye, const glm::vec3& _look, const glm::vec3& _up, const glm::vec3& _right, float _s) :
 		eye (_eye), look (_look), up (_up), right (_right), s (_s) {}

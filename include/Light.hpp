@@ -4,5 +4,5 @@ class Light {
 public:
     float power;
     Light() : power (0.) {}
-    Light(float _p) : power(_p) {}
+    Light(float p_) : power(p_) {}
 };

@@ -3,7 +3,8 @@
 #include <glm/vec3.hpp>
 
 #include "Material.hpp"
-#include "Primitive.hpp"
+
+class Primitive;
 
 class IntersectRec {
 public:
@@ -11,6 +12,6 @@ public:
 	glm::vec3 normal;
 	float t;
 
-	const Primitive& primitive_;
-	const Material& material_;
+	const Primitive& primitive;
+	const Material& material;
 };

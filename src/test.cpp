@@ -58,13 +58,13 @@ int main (int argc, char ** argv) {
     s->printInfo();
 
     // for now just implement quick render
-    unique_ptr <Camera> c;
+    Camera c(glm::vec3(0, 0, -5), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), 1.0);
 
-    unique_ptr<Tracer> t;
+    BruteForceTracer t(*s);
 
     Image foo(256, 256);
 
-    QuickRenderer qr(*c, *s, *t, foo);
+    QuickRenderer qr(c, *s, t, foo);
     qr.render();
     if (vm.count("output_file")) {
         foo.writePNG(vm["output_file"].as<string>().c_str());

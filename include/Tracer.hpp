@@ -6,14 +6,15 @@
 
 class Tracer {
 public:
-    Tracer(const Scene& s) : scene_ (s) {}
-    virtual const Color lightAlongRay(const Ray& r) = 0;
+    Tracer(const Scene& s) : scene (s) {}
+    virtual const Color lightAlongRay(const Ray& r) const = 0;
 
 protected:
-    const Scene& scene_;
+    const Scene& scene;
 };
 
 class BruteForceTracer : public Tracer {
+public:
     BruteForceTracer(const Scene& s) : Tracer (s) {}
-    const Color lightAlongRay(const Ray& r);
+    const Color lightAlongRay(const Ray& r) const;
 };

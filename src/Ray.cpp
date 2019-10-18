@@ -3,6 +3,6 @@
 #include "Ray.hpp"
 
 std::ostream& operator<<(std::ostream& os, const Ray& ray) {
-	os << glm::to_string(ray.o_) << " --> " << glm::to_string(ray.d_);
+	os << glm::to_string(ray.o) << " --> " << glm::to_string(ray.d);
 	return os;
 }

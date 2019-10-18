@@ -5,7 +5,7 @@
 class Color : public glm::vec3 {
 public:
     Color() : glm::vec3 (0.0) {}
-    Color(float ar, float ag, float ab) : glm::vec3(ar, ag, ab) {}
+    Color(float r_, float g_, float b_) : glm::vec3(r_, g_, b_) {}
 
     static Color Black() {return Color(0.0, 0.0, 0.0);}
 	static Color Blue() {return Color(0.0, 0.0, 1.0);}

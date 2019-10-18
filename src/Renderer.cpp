@@ -5,14 +5,19 @@
 using namespace std;
 
 void QuickRenderer::render() {
-    int w = target_.width();
-    int h = target_.height();
+    int w = target.width();
+    int h = target.height();
+    
+    // one ray for each pixel in the result image
+    // one sample along each ray
+
     for (int j = 0; j < h; ++j) {
         for (int i = 0; i < w; ++i) {
-            //Color c ((float)i/(float)w, (float)j/(float)h, (float)(h-j)/(float)h);
-            Color c (0, (float)j/(float)h, 0);
-            target_(i, j) = c;
+            glm::vec2 p((float)j/(float)h-.5, (float)i/(float)w-.5);
+            Ray r = camera.getRay(p);
+            target(i, j) = tracer.lightAlongRay(r);
         }
     }
+    
     cout << "Called render" << endl;
 }

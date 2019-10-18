@@ -15,9 +15,9 @@ using namespace std;
 using namespace glm;
 
 void Scene::printInfo() {
-    cout << "Lights: " << lights_.size() << endl;
-    cout << "Materials: " << materials_.size() << endl;
-    cout << "Primitives: " << primitives_.size() << endl;
+    cout << "Lights: " << lights.size() << endl;
+    cout << "Materials: " << materials.size() << endl;
+    cout << "Primitives: " << primitives.size() << endl;
 }
 
 void parseError(const string& line) {
@@ -143,7 +143,7 @@ vector <MTLMat> Scene::parseMtl(string fileName) {
 
 unique_ptr <Scene> Scene::parseObj(string fileName) {
     unique_ptr <Scene> s;
-    vector <vec3> vertices;
+    vector <vec4> vertices;
     vector <vec3> normals;
     vector <vec3> texCoords;
     vector <Tri> tris;
@@ -176,7 +176,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
                 parseError(line);
                 continue;
             }
-            vertices.push_back(readVec3(tokens, 1.0, numTokens));
+            vertices.push_back(readVec4(tokens, 1.0, numTokens));
         }
         else if (tokens[0].compare("vt") == 0) {
             // add a texture coordinate
@@ -329,7 +329,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
             }
 
             for (auto m : materials) {
-                materialsMap[m->name_] = m->id_;
+                materialsMap[m->name] = m->id;
             }
 
         }
