@@ -12,8 +12,9 @@ void QuickRenderer::render() {
     // one sample along each ray
 
     for (int j = 0; j < h; ++j) {
+        cout << "row: " << j << endl;
         for (int i = 0; i < w; ++i) {
-            glm::vec2 p((float)j/(float)h-.5, (float)i/(float)w-.5);
+            glm::vec2 p((float)i/(float)w-.5, (float)j/(float)h-.5);
             Ray r = camera.getRay(p);
             target(i, j) = tracer.lightAlongRay(r);
         }

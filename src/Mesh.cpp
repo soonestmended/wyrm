@@ -7,6 +7,11 @@
 #include "Primitive.hpp"
 using namespace std;
 
+void Mesh::scale(float s) {
+    for (auto& v : this->vertices)
+        v *= s;
+}
+
 // Converts the faces in the Mesh to a vector of Primitives (Triangles, in this case)
 vector <shared_ptr<Primitive>> Mesh::toPrimitives() const {
     vector <shared_ptr<Primitive>> ans;

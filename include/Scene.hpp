@@ -27,4 +27,5 @@ public:
     const std::vector <std::shared_ptr<Primitive>> &getPrimitives() const {return primitives;}
 
     static std::unique_ptr <Scene> parseObj(std::string fileName);
+    static std::unique_ptr <Scene> parseObj(std::string fileName, float scale);
 };

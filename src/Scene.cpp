@@ -8,6 +8,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include "Color.hpp"
 #include "Mesh.hpp"
 #include "Scene.hpp"
 
@@ -142,6 +143,10 @@ vector <MTLMat> Scene::parseMtl(string fileName) {
 }
 
 unique_ptr <Scene> Scene::parseObj(string fileName) {
+    return parseObj(fileName, 1.0);
+}
+
+unique_ptr <Scene> Scene::parseObj(string fileName, float scale) {
     unique_ptr <Scene> s;
     vector <vec4> vertices;
     vector <vec3> normals;
@@ -152,7 +157,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
 
     map <string, int> materialsMap;
 
-    int currentMTLMaterialIndex = -1;
+    int currentMTLMaterialIndex = 0;
     int currentSmoothingGroupIndex = -1;
     ifstream file (fileName);
     string line;
@@ -346,6 +351,10 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
     cout << "Parsed " << tris.size() << " tris" << endl;
     cout << "Parsed " << materials.size() << " materials" << endl;
 
+    if (materials.size() == 0) {
+        materials.push_back(make_shared<Material> (SimpleMaterial(Color::Green())));
+    }
+
     // postprocess tris -- normal smoothing
 
     map <int, vector <Tri *>> smoothingGroupsToProcess;
@@ -432,7 +441,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName) {
     // make a Mesh out of the data we've read 
     vector <shared_ptr<Material>> mm = materials;
     Mesh m(move(vertices), move(texCoords), move(normals), move(mm), move(tris));
-
+    m.scale(scale);
     vector <shared_ptr<Light>> lights;
     s = unique_ptr <Scene> (new Scene(move(lights), move(materials), move(m.toPrimitives())));
     return s;

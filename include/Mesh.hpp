@@ -27,4 +27,5 @@ public:
 
     std::vector <std::shared_ptr<Primitive>> toPrimitives() const;
 
+    void scale(float s);
 };
