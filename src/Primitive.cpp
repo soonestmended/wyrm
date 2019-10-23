@@ -93,6 +93,7 @@ const bool Triangle::intersectYN(const Ray &ray, float tmin, float tmax) const  
     t = glm::dot(e1, Q) * inv_det;
  
     if(t >= tmin && t <= tmax) { //ray intersection
+        std::cout << "Y";
         return true;
     }
  

@@ -7,6 +7,9 @@
 #include <boost/algorithm/string.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
+
 
 #include "Color.hpp"
 #include "Mesh.hpp"
@@ -15,7 +18,32 @@
 using namespace std;
 using namespace glm;
 
-void Scene::printInfo() {
+void Scene::addMesh(const std::shared_ptr<Mesh>& m) {
+    this->addPrimitives(m->toPrimitives());
+    this->addMaterials(m->getMaterials());
+}
+
+void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const BBox& dest) {
+    // compute transform matrix from current mesh bbox to desired bbox (no rotation)
+    const BBox& src = mptr->getBBox();
+    float srcSize = glm::length(src.max - src.min);
+    float destSize = glm::length(dest.max - dest.min);
+    cout << "srcSize: " << srcSize << "\tdestSize: " << destSize << endl;
+    glm::mat4 trans = glm::translate(glm::mat4(1.0), dest.getCentroid() - src.getCentroid());
+    //glm::mat4 trans(1.0);
+    cout << glm::to_string(trans) << endl;
+    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(destSize / srcSize));
+    glm::mat4 xform = scale * trans;
+    //glm::mat4 xform = trans;
+    cout << glm::to_string(xform) << endl;
+
+    shared_ptr<MeshInstance> miptr = make_shared <MeshInstance> (mptr, xform);
+    this->addPrimitives(miptr->toPrimitives());  
+    this->addMaterials(miptr->getMaterials());
+}
+
+
+void Scene::printInfo() const {
     cout << "Lights: " << lights.size() << endl;
     cout << "Materials: " << materials.size() << endl;
     cout << "Primitives: " << primitives.size() << endl;
@@ -142,12 +170,7 @@ vector <MTLMat> Scene::parseMtl(string fileName) {
     return ans;
 }
 
-unique_ptr <Scene> Scene::parseObj(string fileName) {
-    return parseObj(fileName, 1.0);
-}
-
-unique_ptr <Scene> Scene::parseObj(string fileName, float scale) {
-    unique_ptr <Scene> s;
+shared_ptr <Mesh> Scene::parseObj(string fileName) {
     vector <vec4> vertices;
     vector <vec3> normals;
     vector <vec3> texCoords;
@@ -358,7 +381,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName, float scale) {
     // postprocess tris -- normal smoothing
 
     map <int, vector <Tri *>> smoothingGroupsToProcess;
-    for (auto&& t : tris) {
+    for (auto& t : tris) {
         if (!t.explicitNormals) {
             // make a new vertex normal based on just this face and assign its index to vn[0->3]
             vec3 e1 = vertices[t.v[1]] - vertices[t.v[0]];
@@ -440,9 +463,7 @@ unique_ptr <Scene> Scene::parseObj(string fileName, float scale) {
 
     // make a Mesh out of the data we've read 
     vector <shared_ptr<Material>> mm = materials;
-    Mesh m(move(vertices), move(texCoords), move(normals), move(mm), move(tris));
-    m.scale(scale);
-    vector <shared_ptr<Light>> lights;
-    s = unique_ptr <Scene> (new Scene(move(lights), move(materials), move(m.toPrimitives())));
-    return s;
+
+    return make_shared <Mesh>(move(vertices), move(texCoords), move(normals), move(mm), move(tris));
+    
 }

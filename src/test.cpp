@@ -48,8 +48,11 @@ int main (int argc, char ** argv) {
         return 0;
     }
     
-    unique_ptr <Scene> s;
-    s = Scene::parseObj(vm["input_file"].as<string>(), 200.0);
+    unique_ptr <Scene> s = Scene::emptyScene();
+
+    BBox wrapper(glm::vec3(-2.0, -2.0, -2.0), glm::vec3(2.0, 2.0, 2.0));
+    s->addMeshInstance(Scene::parseObj(vm["input_file"].as<string>()), wrapper);
+    //s->addMesh(Scene::parseObj(vm["input_file"].as<string>()));
     if (s == nullptr) {
         cout << "Parse of " << vm["input_file"].as<string>() << " failed. " << endl;
         exit(0);
@@ -58,11 +61,11 @@ int main (int argc, char ** argv) {
     s->printInfo();
 
     // for now just implement quick render
-    Camera c(glm::vec3(0, 20, -27), glm::vec3(0, 0, 1), glm::vec3(0, -1, 0), glm::vec3(1, 0, 0), .5);
+    Camera c(glm::vec3(0, 0, -10), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), 1);
 
     BruteForceTracer t(*s);
 
-    Image foo(512, 512);
+    Image foo(64, 64);
 
     QuickRenderer qr(c, *s, t, foo);
     qr.render();

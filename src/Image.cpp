@@ -10,7 +10,7 @@ bool Image::writePNG(const std::string& filename) {
             unsigned int r = c.r * 255;
             unsigned int g = c.g * 255;
             unsigned int b = c.b * 255;
-            png_image[y][x] = png::rgb_pixel(r, g, b);
+            png_image[height_-1-y][x] = png::rgb_pixel(r, g, b);
         }
     }
     png_image.write(filename);

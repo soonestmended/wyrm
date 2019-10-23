@@ -11,7 +11,7 @@ public:
     glm::vec3 min;
     glm::vec3 max;
 
-    BBox() : min (std::numeric_limits<float>::max()), max (std::numeric_limits<float>::min()) {}
+    BBox() : min (std::numeric_limits<float>::max()), max (-std::numeric_limits<float>::max()) {}
     BBox(const glm::vec3 &min_, const glm::vec3 &max_) : min (min_), max (max_) {}
 
     const glm::vec3 getCentroid() const {
