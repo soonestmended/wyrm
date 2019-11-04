@@ -22,7 +22,7 @@ protected:
 
 public:
     explicit Primitive(const Material &m) : material (m) {}
-    virtual const bool intersect(const Ray& ray, IntersectRec& ir, const float tmin, const float tmax) const = 0;
+    virtual const bool intersect(const Ray& ray, const float tmin, const float tmax, IntersectRec& ir) const = 0;
 	virtual const bool intersectYN(const Ray& ray, const float tmin, const float tmax) const = 0;
     const Material& getMaterial() const;
     const BBox& getBBox() const;
@@ -46,7 +46,7 @@ public:
         e1 = v2 - v0;
     }
 
-    const bool intersect(const Ray& ray, IntersectRec& ir, const float tmin, const float tmax) const;
+    const bool intersect(const Ray& ray, const float tmin, const float tmax, IntersectRec& ir) const;
 	const bool intersectYN(const Ray& ray, const float tmin, const float tmax) const;
 };
 

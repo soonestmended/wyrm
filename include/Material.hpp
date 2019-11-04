@@ -3,6 +3,8 @@
 #include <glm/vec3.hpp>
 #include <string>
 
+#include "Color.hpp"
+
 struct MTLMat {
     std::string name;    
     glm::vec3 Ka;        // ambient
@@ -38,7 +40,5 @@ class SimpleMaterial : public Material {
 public:
     SimpleMaterial(const glm::vec3 &color_) : Material(), color (color_) {}
     SimpleMaterial(const MTLMat& mtlMat) : Material(mtlMat.name), color (mtlMat.Kd) {}
-
-
-    glm::vec3 color;
+    Color color;
 };

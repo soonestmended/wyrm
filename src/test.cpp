@@ -5,6 +5,8 @@
 
 #include <boost/program_options.hpp>
 
+#include "Accelerator.hpp"
+#include "BVH.hpp"
 #include "Camera.hpp"
 #include "Image.hpp"
 #include "Material.hpp"
@@ -63,11 +65,19 @@ int main (int argc, char ** argv) {
     // for now just implement quick render
     Camera c(glm::vec3(0, 0, -10), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), 1);
 
-    BruteForceTracer t(*s);
+    BVH bvh(*s);
+    if (!bvh.build()) {
+        cout << "Error building BVH." << endl;
+        exit(1);
+    }
 
-    Image foo(64, 64);
+    QuickShader qsh(*s);
 
-    QuickRenderer qr(c, *s, t, foo);
+    AcceleratedTracer at(*s, qsh, bvh);
+
+    Image foo(512, 512);
+
+    QuickRenderer qr(c, *s, at, foo);
     qr.render();
     if (vm.count("output_file")) {
         foo.writePNG(vm["output_file"].as<string>().c_str());

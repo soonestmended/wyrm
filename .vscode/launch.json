@@ -5,43 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch - Windows",
-            "type": "cppdbg",
+            "name": "(lldb) Launch",
+            "type": "lldb",
             "request": "launch",
-            "program": "enter program name, for example ${workspaceFolder}/a.out",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": true,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
+            "program": "${workspaceFolder}/bin/wyrm",
+            "args": ["cube.obj", "-o foo.png"],
+            //"stopAtEntry": true,
+            "cwd": "${workspaceFolder}/bin",
+            //"environment": [],
+            //"externalConsole": false,
+            //"MIMode": "lldb",
+            //"logging": { "trace": true, "traceResponse": true }
         },
-        {
-            "name": "(gdb) Launch - Chromebook",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "/home/davidfussell/wyrm/bin/wyrm",
-            "args": ["cube.obj"],
-            "stopAtEntry": false,
-            "cwd": "/home/davidfussell/wyrm/bin/",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "miDebuggerPath": "/usr/bin/gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
-        }
     ]
 }

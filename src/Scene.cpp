@@ -25,17 +25,22 @@ void Scene::addMesh(const std::shared_ptr<Mesh>& m) {
 
 void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const BBox& dest) {
     // compute transform matrix from current mesh bbox to desired bbox (no rotation)
+    // cout << "srcSize: " << srcSize << "\tdestSize: " << destSize << endl;
+    float scale = glm::length(dest.max - dest.min);
+    addMeshInstance(mptr, dest.getCentroid(), scale);
+}
+
+
+void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const glm::vec3 center, const float s) {
     const BBox& src = mptr->getBBox();
-    float srcSize = glm::length(src.max - src.min);
-    float destSize = glm::length(dest.max - dest.min);
-    cout << "srcSize: " << srcSize << "\tdestSize: " << destSize << endl;
-    glm::mat4 trans = glm::translate(glm::mat4(1.0), dest.getCentroid() - src.getCentroid());
+    float srcSize = glm::length(src.max-src.min);
+    glm::mat4 trans = glm::translate(glm::mat4(1.0), center - src.getCentroid());
     //glm::mat4 trans(1.0);
-    cout << glm::to_string(trans) << endl;
-    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(destSize / srcSize));
+    // cout << glm::to_string(trans) << endl;
+    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(s / srcSize));
     glm::mat4 xform = scale * trans;
     //glm::mat4 xform = trans;
-    cout << glm::to_string(xform) << endl;
+    // cout << glm::to_string(xform) << endl;
 
     shared_ptr<MeshInstance> miptr = make_shared <MeshInstance> (mptr, xform);
     this->addPrimitives(miptr->toPrimitives());  

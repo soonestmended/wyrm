@@ -8,10 +8,10 @@ class Primitive;
 
 class IntersectRec {
 public:
+	IntersectRec() {}
 	glm::vec3 isectPoint;
 	glm::vec3 normal;
 	float t;
-
-	const Primitive& primitive;
-	const Material& material;
+	std::shared_ptr <Primitive> primitive;
+	std::shared_ptr <Material> material;
 };

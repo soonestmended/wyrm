@@ -11,7 +11,7 @@ const BBox& Primitive::getBBox() const {
 
 // TODO: Implement intersection.
 
-const bool Triangle::intersect(const Ray &ray, IntersectRec &ir, float tmin, float tmax) const {
+const bool Triangle::intersect(const Ray &ray, float tmin, float tmax, IntersectRec& ir) const {
     glm::vec3 P, Q, T;
     float det, inv_det, u, v;
     float t;
@@ -93,7 +93,6 @@ const bool Triangle::intersectYN(const Ray &ray, float tmin, float tmax) const  
     t = glm::dot(e1, Q) * inv_det;
  
     if(t >= tmin && t <= tmax) { //ray intersection
-        std::cout << "Y";
         return true;
     }
  

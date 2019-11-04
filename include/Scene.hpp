@@ -16,22 +16,29 @@ private:
     std::vector <std::shared_ptr<Material>> materials;
     std::vector <std::shared_ptr<Primitive>> primitives;
     static std::vector <MTLMat> parseMtl(std::string fileName);
+    BBox bbox;
 
 public:
     Scene() =delete;
     Scene(std::vector <std::shared_ptr <Light>> &&lights_, std::vector <std::shared_ptr<Material>> &&materials_, std::vector <std::shared_ptr <Primitive>> &&primitives_) :
-    lights (std::move(lights_)), materials (std::move(materials_)), primitives (std::move(primitives_)) {}
+    lights (std::move(lights_)), materials (std::move(materials_)), primitives (std::move(primitives_)) {
+        for (auto& prim : primitives)
+            bbox.enclose(prim->getBBox());
+    }
 
     void printInfo() const;
 
     void addMesh(const std::shared_ptr<Mesh>& m);
     void addMeshInstance(const std::shared_ptr<Mesh>& mptr, const BBox& wrapper);
+    void addMeshInstance(const std::shared_ptr<Mesh>& mptr, const glm::vec3 center, const float scale);
 
     void addPrimitives(const std::vector <std::shared_ptr<Primitive>>& primitives) {
         this->primitives.insert(
             this->primitives.end(),
             std::make_move_iterator(primitives.begin()),
             std::make_move_iterator(primitives.end()));
+        for (auto& prim : this->primitives)
+            bbox.enclose(prim->getBBox());
     }
     void addMaterials(const std::vector <std::shared_ptr<Material>>& materials) {
         this->materials.insert(
@@ -42,7 +49,7 @@ public:
     }
 
     const std::vector <std::shared_ptr<Primitive>> &getPrimitives() const {return primitives;}
-
+    const BBox& getBBox() const {return bbox;}
     static std::shared_ptr <Mesh> parseObj(std::string fileName);
 
     static std::unique_ptr <Scene> emptyScene() {
