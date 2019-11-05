@@ -71,7 +71,7 @@ int main (int argc, char ** argv) {
         exit(1);
     }
 
-    QuickShader qsh(*s);
+    QuickShader qsh(*s, bvh);
 
     AcceleratedTracer at(*s, qsh, bvh);
 
