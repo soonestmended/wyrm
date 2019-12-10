@@ -10,7 +10,7 @@ public:
     virtual const Color shade(IntersectRec& ir) const = 0;
     virtual void build() = 0;
 
-private:
+protected:
     const Scene& scene;
     const Accelerator& accel;
 };
@@ -20,4 +20,11 @@ public:
     QuickShader(const Scene& s, const Accelerator& a) : Shader(s, a) {}
     const Color shade(IntersectRec& ir) const;
     void build() {}
+};
+
+class DirectLightingShader : public Shader {
+public:
+    DirectLightingShader(const Scene& s, const Accelerator& a) : Shader(s, a) {}
+    const Color shade(IntersectRec& ir) const;
+    void build();
 };

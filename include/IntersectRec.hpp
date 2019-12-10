@@ -11,6 +11,7 @@ public:
 	IntersectRec() {}
 	glm::vec3 isectPoint;
 	glm::vec3 normal;
+	glm::vec3 uvw; // parameters at intersection point
 	float t;
 	std::shared_ptr <Primitive> primitive;
 	std::shared_ptr <Material> material;

@@ -34,6 +34,8 @@ public:
     Material(const std::string& name_) : name (name_), id (currentID++) {}
     Material(const std::string& name_, int id_) : name (name_), id (id_) {}
     static int currentID;
+
+    
 };
 
 class SimpleMaterial : public Material {
@@ -41,4 +43,59 @@ public:
     SimpleMaterial(const glm::vec3 &color_) : Material(), color (color_) {}
     SimpleMaterial(const MTLMat& mtlMat) : Material(mtlMat.name), color (mtlMat.Kd) {}
     Color color;
+};
+
+class ADMaterial : public Material {
+public:
+    ADMaterial() =delete;
+    ADMaterial( const Color& _opacity, 
+                const float _coat,
+                const Color& _coat_color,
+                const float _coat_roughness,
+                const float _coat_IOR,
+                const glm::vec3& _coat_normal,
+                const float _emission,
+                const Color& _emission_color,
+                const float _base,
+                const Color& _base_color,
+                const float _specular,
+                const Color& _specular_color,
+                const float _specular_roughness,
+                const float _specular_IOR,
+                const float _diffuse_roughness) :
+                opacity(_opacity),
+                coat (_coat),
+                coat_color (_coat_color),
+                coat_roughness (_coat_roughness),
+                coat_IOR (_coat_IOR),
+                coat_normal (_coat_normal),
+                emission (_emission),
+                emission_color (_emission_color),
+                base (_base),
+                base_color (_base_color),
+                specular (_specular),
+                specular_color (_specular_color),
+                specular_roughness (_specular_roughness),
+                specular_IOR (_specular_IOR),
+                diffuse_roughness (_diffuse_roughness) {}
+
+
+    const Color opacity;
+    const float coat;
+    const Color coat_color;
+    const float coat_roughness;
+    const float coat_IOR;
+    const glm::vec3 coat_normal;
+    const float emission;
+    const Color emission_color;
+    const float base;
+    const Color base_color;
+    const float specular;
+    const Color specular_color;
+    const float specular_roughness;
+    const float specular_IOR;
+    const float diffuse_roughness;
+
+private:
+
 };

@@ -230,7 +230,7 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 	*/
 	glm::vec3 bboxSize = node.bbox.max - node.bbox.min;
 	if (depth > 25 || node.numPrimitives < 4 || glm::length(bboxSize) < .0001) {
-		cout << "Leaf node with " << node.numPrimitives << " prims. \n";
+		//cout << "Leaf node with " << node.numPrimitives << " prims. \n";
 		fflush(stdout);
 		advance_cursor();
 		return;

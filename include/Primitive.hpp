@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-
+#include <glm/vec2.hpp>
 #include "BBox.hpp"
 #include "IntersectRec.hpp"
 #include "Material.hpp"
@@ -56,6 +56,9 @@ public:
     void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const;
     void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const;
 
+protected:
+    const float getSurfaceArea() const;
+
 };
 
 // This is a triangle with different normal at each vertex -- for normal smoothing in meshes
@@ -66,6 +69,8 @@ protected:
 public:
     TriangleWarp (const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2, const glm::vec3 &N0, const glm::vec3 &N1, const glm::vec3 &N2, const Material &m)
     : Triangle(v0, v1, v2, N0, m), N1 (N1), N2 (N2) {} 
+
+    const bool intersect(const Ray& ray, const float tmin, const float tmax, IntersectRec& ir) const;
 
     void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const;
     void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const;

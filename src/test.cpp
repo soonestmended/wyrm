@@ -62,6 +62,11 @@ int main (int argc, char ** argv) {
     cout << "Parse successful." << endl;
     s->printInfo();
 
+    shared_ptr <Light> l = make_shared <PointLight> (glm::vec3(0.0, 0.0, -10.0), Color::White(), 100.0);
+    vector <shared_ptr<Light>> bar;
+    bar.push_back(l);
+    s->addLights(bar);
+
     // for now just implement quick render
     Camera c(glm::vec3(0, 0, -10), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), 1);
 
@@ -71,9 +76,9 @@ int main (int argc, char ** argv) {
         exit(1);
     }
 
-    QuickShader qsh(*s, bvh);
+    DirectLightingShader dlsh(*s, bvh);
 
-    AcceleratedTracer at(*s, qsh, bvh);
+    AcceleratedTracer at(*s, dlsh, bvh);
 
     Image foo(512, 512);
 

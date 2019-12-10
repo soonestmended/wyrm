@@ -40,6 +40,7 @@ public:
         for (auto& prim : this->primitives)
             bbox.enclose(prim->getBBox());
     }
+
     void addMaterials(const std::vector <std::shared_ptr<Material>>& materials) {
         this->materials.insert(
             this->materials.end(),
@@ -48,7 +49,17 @@ public:
 
     }
 
+    void addLights(const std::vector <std::shared_ptr<Light>>& lights) {
+        this->lights.insert(
+            this->lights.end(),
+            std::make_move_iterator(lights.begin()),
+            std::make_move_iterator(lights.end()));
+
+    }
+
     const std::vector <std::shared_ptr<Primitive>> &getPrimitives() const {return primitives;}
+    const std::vector <std::shared_ptr<Light>> &getLights() const {return lights;}
+
     const BBox& getBBox() const {return bbox;}
     static std::shared_ptr <Mesh> parseObj(std::string fileName);
 

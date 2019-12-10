@@ -8,10 +8,10 @@ BDIR =../bin
 
 LIBS=-lboost_program_options -lpng
 
-_DEPS = Accelerator.hpp BBox.hpp BVH.hpp Camera.hpp Color.hpp Image.hpp IntersectRec.hpp Light.hpp Material.hpp Mesh.hpp Primitive.hpp Ray.hpp Renderer.hpp Scene.hpp Shader.hpp Tracer.hpp
+_DEPS = Accelerator.hpp BBox.hpp BVH.hpp Camera.hpp Color.hpp Image.hpp IntersectRec.hpp Light.hpp Material.hpp Mesh.hpp Primitive.hpp Ray.hpp Renderer.hpp Scene.hpp Shader.hpp Tracer.hpp Utils.hpp VisibilityTester.hpp
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = BBox.o BVH.o Image.o Material.o Mesh.o Primitive.o Ray.o Renderer.o Scene.o Shader.o Tracer.o test.o 
+_OBJ = BBox.o BVH.o Image.o Light.o Material.o Mesh.o Primitive.o Ray.o Renderer.o Scene.o Shader.o Tracer.o test.o Utils.o VisibilityTester.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.cpp $(DEPS)

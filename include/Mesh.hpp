@@ -54,11 +54,13 @@ private:
     std::shared_ptr<Mesh> meshPtr;
     std::vector <std::shared_ptr <Material>> materials;
     glm::mat4 xform;
-    glm::mat4 inv_xform_T;
+    glm::mat3 inv_xform_T_3x3;
 
 public:
     MeshInstance(std::shared_ptr<Mesh> ptr, glm::mat4 xform_, std::shared_ptr<Material> material_ = nullptr) : meshPtr(ptr), xform(xform_) {
-        inv_xform_T = glm::inverseTranspose(xform_);
+        glm::mat3 tmp(xform_);
+
+        inv_xform_T_3x3 = glm::inverseTranspose(tmp);
         if (material_ != nullptr) {
             this->materials.push_back(material_);
         }

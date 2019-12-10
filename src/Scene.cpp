@@ -10,7 +10,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-
 #include "Color.hpp"
 #include "Mesh.hpp"
 #include "Scene.hpp"
@@ -443,7 +442,8 @@ shared_ptr <Mesh> Scene::parseObj(string fileName) {
         // now normalize all the normals in the group, add 
         // go over this when sober
         for (auto v : groupNormals) {
-            glm::normalize(v.second);
+            v.second = glm::normalize(v.second);
+            
         }
 
         // now we have a map of vertex index to new normal. these have to be inserted at the end of the
