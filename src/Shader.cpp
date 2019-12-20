@@ -19,6 +19,9 @@ const Color QuickShader::shade(IntersectRec& ir) const {
 const Color DirectLightingShader::shade(IntersectRec& ir) const {
     Color ans = Color::Black();
     Color R;
+
+    ir.init();
+
     if (typeid(*(ir.material)) == typeid(SimpleMaterial)) {
         SimpleMaterial* sm = (SimpleMaterial*) ir.material.get();
         R = sm->color;
