@@ -29,7 +29,7 @@ public:
     
     virtual void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const = 0;
     virtual void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const = 0;
-
+    virtual const float getSurfaceArea() const = 0;
 
 };
 
@@ -55,8 +55,6 @@ public:
 
     void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const;
     void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const;
-
-protected:
     const float getSurfaceArea() const;
 
 };

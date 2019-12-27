@@ -1,26 +1,55 @@
 #pragma once
 
+#include <glm/geometric.hpp>
 #include <glm/vec3.hpp>
 #include <math.h>
 
 class ONB {
-    ONB() =delete;
 
 public:
-    glm::vec3 U, V, N;
+    glm::vec3 U, V, W;
 
-    // from Pixar (shrug)
-    ONB(const glm::vec3 &_N) : N(_N){
-        float sign = copysignf(1.0f, N.z);
-        const float a = -1.0f / (sign + N.z);
-        const float b = N.x * N.y * a;
-        U = glm::vec3(1.0f + sign * N.x * N.x * a, sign * b, -sign * N.x);
-        V = glm::vec3(b, sign + N.y * N.y * a, -N.y);
+    ONB(const glm::vec3& _N) {
+        init(_N);
     }
 
-    glm::vec3 world2local(const glm::vec3& v) const;
+    // from Pixar (shrug)
+    void init(const glm::vec3 &_N) {
+        W = _N;
+        float sign = copysignf(1.0f, W.z);
+        const float a = -1.0f / (sign + W.z);
+        const float b = W.x * W.y * a;
+        U = glm::vec3(1.0f + sign * W.x * W.x * a, sign * b, -sign * W.x);
+        V = glm::vec3(b, sign + W.y * W.y * a, -W.y);
+    }
+
+    glm::vec3 world2local(const glm::vec3& v) const {
+        return glm::vec3(glm::dot(v, U), glm::dot(v, V), glm::dot(v, W));
+    }
     
     glm::vec3 local2world(const glm::vec3& v) const;
 
+    static glm::vec3 uniformSampleHemisphere(float u, float v);
+	static float uniformSampleHemispherePDF();
+
+	static glm::vec3 cosineSampleHemisphere(float u, float v);
+	static float cosineSampleHemispherePDF(float costheta, float phi);
+
+	static void uniformSampleDisk(float u1, float u2, float *x, float *y);
+	static void concentricSampleDisk(float u1, float u2, float *dx, float *dy);
+
+	static bool sameHemisphere(const glm::vec3& wi, const glm::vec3& wo);
+	glm::vec3 makeVec(const float u, const float v, const float w) const;
+	glm::vec3 makeUnitVec(const float u, const float v, const float w) const;
+	
+    
+	static float cosTheta(const glm::vec3& w);
+	static float absCosTheta( glm::vec3& w) {
+        return fabsf(w[2]);
+    }
+	static float sinTheta2(const glm::vec3& w);
+	static float sinTheta(const glm::vec3& w);
+	static float cosPhi(const glm::vec3& w);
+	static float sinPhi(const glm::vec3& w);
 
 };

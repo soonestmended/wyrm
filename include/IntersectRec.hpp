@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/vec3.hpp>
-
+#include "ONB.hpp"
 #include "Material.hpp"
 
 class Primitive;
@@ -14,12 +14,6 @@ public:
 	glm::vec3 uvw; // parameters at intersection point
 	float t;
 	
-	glm::mat3 worldToLocal;
-	glm::mat3 localToWorld;
-	
 	std::shared_ptr <Primitive> primitive;
 	std::shared_ptr <Material> material;
-
-
-
 };

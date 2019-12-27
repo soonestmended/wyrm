@@ -29,8 +29,8 @@ public:
     void printInfo() const;
 
     void addMesh(const std::shared_ptr<Mesh>& m);
-    void addMeshInstance(const std::shared_ptr<Mesh>& mptr, const BBox& wrapper);
-    void addMeshInstance(const std::shared_ptr<Mesh>& mptr, const glm::vec3 center, const float scale);
+    void addMeshInstance(const std::shared_ptr<Mesh>& mptr, const BBox& dest, const glm::vec3 &axis = glm::vec3(0.0), const float angle = 0.0);
+    void addMeshInstance(const std::shared_ptr<Mesh>& mptr, const glm::vec3 center, const float scale, const glm::vec3 &axis, const float angle);
 
     void addPrimitives(const std::vector <std::shared_ptr<Primitive>>& primitives) {
         this->primitives.insert(
@@ -61,7 +61,7 @@ public:
     const std::vector <std::shared_ptr<Light>> &getLights() const {return lights;}
 
     const BBox& getBBox() const {return bbox;}
-    static std::shared_ptr <Mesh> parseObj(std::string fileName);
+    //static std::shared_ptr <Mesh> parseObj(std::string fileName);
 
     static std::unique_ptr <Scene> emptyScene() {
         // this is stupid

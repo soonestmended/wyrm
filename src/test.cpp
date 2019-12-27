@@ -10,13 +10,13 @@
 #include "Camera.hpp"
 #include "Image.hpp"
 #include "Material.hpp"
+#include "Parser.hpp"
 #include "Renderer.hpp"
 #include "Scene.hpp"
 #include "Tracer.hpp"
 
 using namespace std;
 namespace po = boost::program_options;
-
 
 int main (int argc, char ** argv) {
     // named options
@@ -53,7 +53,7 @@ int main (int argc, char ** argv) {
     unique_ptr <Scene> s = Scene::emptyScene();
 
     BBox wrapper(glm::vec3(-2.0, -2.0, -2.0), glm::vec3(2.0, 2.0, 2.0));
-    s->addMeshInstance(Scene::parseObj(vm["input_file"].as<string>()), wrapper);
+    s->addMeshInstance(Parser::parseObj(vm["input_file"].as<string>()), wrapper, glm::vec3(0, 1, 0), 180);
     //s->addMesh(Scene::parseObj(vm["input_file"].as<string>()));
     if (s == nullptr) {
         cout << "Parse of " << vm["input_file"].as<string>() << " failed. " << endl;

@@ -9,70 +9,21 @@
 #include <glm/vec4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
-#include <glm/gtx/transform.hpp>
 
 #include "Color.hpp"
-#include "common.hpp"
 #include "Mesh.hpp"
+#include "Parser.hpp"
 #include "Scene.hpp"
 
 using namespace std;
 using namespace glm;
 
-void Scene::addMesh(const std::shared_ptr<Mesh>& m) {
-    this->addPrimitives(m->toPrimitives());
-    this->addMaterials(m->getMaterials());
-}
-/*
-void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const BBox& dest) {
-    // compute transform matrix from current mesh bbox to desired bbox (no rotation)
-    // cout << "srcSize: " << srcSize << "\tdestSize: " << destSize << endl;
-    float scale = glm::length(dest.max - dest.min);
-    addMeshInstance(mptr, dest.getCentroid(), scale);
-}
-*/
-void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const BBox& dest, const glm::vec3 &axis, const float angle) {
-    float scale = glm::length(dest.max - dest.min);
-    addMeshInstance(mptr, dest.getCentroid(), scale, axis, angle);
-}
-
-void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const glm::vec3 center, const float s, const glm::vec3 &axis, const float angle) {
-    const BBox& src = mptr->getBBox();
-    float srcSize = glm::length(src.max-src.min);
-    glm::mat4 rot = glm::rotate(angle, axis);
-    glm::mat4 trans = glm::translate(glm::mat4(1.0), center - src.getCentroid());
-    //glm::mat4 trans(1.0);
-    // cout << glm::to_string(trans) << endl;
-    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(s / srcSize));
-    glm::mat4 xform;
-    if (axis.length() > EPSILON && abs(angle) > EPSILON) {
-        xform = scale * trans * rot;
-    }
-    else {
-        xform = scale * trans;
-    }
-    //glm::mat4 xform = trans;
-    // cout << glm::to_string(xform) << endl;
-
-    shared_ptr<MeshInstance> miptr = make_shared <MeshInstance> (mptr, xform);
-    this->addPrimitives(miptr->toPrimitives());  
-    this->addMaterials(miptr->getMaterials());
-}
-
-
-void Scene::printInfo() const {
-    cout << "Lights: " << lights.size() << endl;
-    cout << "Materials: " << materials.size() << endl;
-    cout << "Primitives: " << primitives.size() << endl;
-}
-
-
-/*
 void parseError(const string& line) {
     cout << "Parse error: " << line << endl;
 }
 
-const vec3 readVec3(const vector <string> &tokens, float defaultValue = 1.0, int numTokens = -1) {
+/* Construct vec3 from tokens. If there aren't enough tokens, defaultValue is substituted. */
+const vec3 Parser::readVec3(const vector <string> &tokens, float defaultValue = 1.0, int numTokens = -1) {
     if (numTokens == -1) {
         numTokens = tokens.size();
     }
@@ -90,7 +41,8 @@ const vec3 readVec3(const vector <string> &tokens, float defaultValue = 1.0, int
     return vec3(x, y, z);
 }
 
-const vec4 readVec4(const vector <string> &tokens, const float defaultValue = 1.0, int numTokens = -1) {
+/* Construct vec4 from tokens. If there aren't enough tokens, defaultValue is substituted. */
+const vec4 Parser::readVec4(const vector <string> &tokens, const float defaultValue = 1.0, int numTokens = -1) {
     if (numTokens == -1) {
         numTokens = tokens.size();
     }
@@ -102,7 +54,7 @@ const vec4 readVec4(const vector <string> &tokens, const float defaultValue = 1.
     return vec4(xyz, w);
 }
 
-vector <MTLMat> Scene::parseMtl(string fileName) {
+vector <MTLMat> Parser::parseMtl(string fileName) {
     vector <MTLMat> ans;
 
     ifstream file (fileName);
@@ -187,7 +139,7 @@ vector <MTLMat> Scene::parseMtl(string fileName) {
     return ans;
 }
 
-shared_ptr <Mesh> Scene::parseObj(string fileName) {
+shared_ptr <Mesh> Parser::parseObj(string fileName) {
     vector <vec4> vertices;
     vector <vec3> normals;
     vector <vec3> texCoords;
@@ -485,4 +437,3 @@ shared_ptr <Mesh> Scene::parseObj(string fileName) {
     return make_shared <Mesh>(move(vertices), move(texCoords), move(normals), move(mm), move(tris));
     
 }
-*/

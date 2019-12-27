@@ -2,8 +2,10 @@
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <memory>
 
 #include "Color.hpp"
+#include "Primitive.hpp"
 #include "VisibilityTester.hpp"
 
 class IntersectRec;
@@ -40,4 +42,17 @@ private:
 
 class DirectionalLight;
 class SpotLight;
-class GeometricLight;
+class GeometricLight {
+public: 
+    GeometricLight(const std::shared_ptr <Primitive> _prim) : prim (_prim) {}
+
+    const Color getColor() const {return color;}
+    const float getPower() const {return power;}
+
+    Color sample(const glm::vec2& uv, const IntersectRec& ir, glm::vec3& wi, float& pdf, VisibilityTester& vt) const;
+
+private:
+    Color color;
+    float power;
+    const std::shared_ptr <Primitive> prim;
+};

@@ -20,7 +20,7 @@ const Color DirectLightingShader::shade(IntersectRec& ir) const {
     Color ans = Color::Black();
     Color R;
 
-    ir.init();
+    ONB onb{ir.normal};
 
     if (typeid(*(ir.material)) == typeid(SimpleMaterial)) {
         SimpleMaterial* sm = (SimpleMaterial*) ir.material.get();
@@ -36,9 +36,11 @@ const Color DirectLightingShader::shade(IntersectRec& ir) const {
         glm::vec3 wi_world;
         VisibilityTester vt;
         Color l_contrib = l->sample(glm::vec2(rand(), rand()), ir, wi_world, pdf, vt);
-        float cosTheta = glm::clamp(glm::dot(ir.normal, wi_world), 0.f, 1.f);
-
-        ans += R * l_contrib * cosTheta;
+        glm::vec3 wi_local = onb.world2local(wi_world);
+        
+        // float cosTheta = glm::clamp(glm::dot(ir.normal, wi_world), 0.f, 1.f);
+        float absCosTheta = ONB::absCosTheta(wi_local);
+        ans += R * l_contrib * absCosTheta;
 
         //ans += R * glm::dot(ir.normal, wi_world);
         //ans += ir.normal;

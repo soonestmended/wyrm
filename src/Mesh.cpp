@@ -37,21 +37,27 @@ std::vector <std::shared_ptr<Primitive>> MeshInstance::toPrimitives() const {
     }
     return ans;
 }
+/*
+void Mesh::rotate(const glm::vec3 &axis, const float angle) {
 
-void Mesh::scale(float s) {
-    for (auto& v : this->vertices)
-        v *= s;
 }
 
-void Mesh::translate(glm::vec3 dx) {
+void Mesh::scale(const float s) {
+    for (auto& v : this->vertices)
+        v *= s;
+    
+}
+
+void Mesh::translate(const glm::vec3 &dx) {
     glm::vec4 dx4(dx, 1.0);
     for (auto& v : this->vertices)
         v += dx4;
 }
 
-void Mesh::recenter(glm::vec3 c) {
+void Mesh::recenter(const glm::vec3 &c) {
     translate(c - this->bbox.getCentroid());
 }
+*/
 
 // Converts the faces in the Mesh to a vector of Primitives (Triangles, in this case)
 vector <shared_ptr<Primitive>> Mesh::toPrimitives() const {

@@ -41,9 +41,10 @@ public:
 
     std::vector <std::shared_ptr<Primitive>> toPrimitives() const;
 
-    void recenter(glm::vec3 c);
-    void scale(float s);
-    void translate(glm::vec3 dx);
+    //void recenter(const glm::vec3 &c);
+    //void rotate(const glm::vec3 &axis, const float angle);
+    //void scale(const float s);
+    //void translate(const glm::vec3 &dx);
 
     friend class MeshInstance;
 };
