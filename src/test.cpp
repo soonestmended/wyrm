@@ -49,7 +49,9 @@ int main (int argc, char ** argv) {
         cout << "Error: No input file provided." << endl;
         return 0;
     }
-    
+
+    unique_ptr <Scene> x3ds = Parser::parseX3D("test.x3d");
+    /*
     unique_ptr <Scene> s = Scene::emptyScene();
 
     BBox wrapper(glm::vec3(-2.0, -2.0, -2.0), glm::vec3(2.0, 2.0, 2.0));
@@ -87,5 +89,5 @@ int main (int argc, char ** argv) {
     if (vm.count("output_file")) {
         foo.writePNG(vm["output_file"].as<string>().c_str());
     }
-
+*/
 }

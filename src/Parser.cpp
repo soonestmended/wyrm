@@ -2,13 +2,18 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <stack>
 #include <string>
+#include <unordered_map>
 
 #include <boost/algorithm/string.hpp>
+
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
+
+#include "pugixml.hpp"
 
 #include "Color.hpp"
 #include "Mesh.hpp"
@@ -436,4 +441,145 @@ shared_ptr <Mesh> Parser::parseObj(string fileName) {
 
     return make_shared <Mesh>(move(vertices), move(texCoords), move(normals), move(mm), move(tris));
     
+}
+
+struct simple_walker: pugi::xml_tree_walker
+{
+    virtual bool for_each(pugi::xml_node& node)
+    {
+        for (int i = 0; i < depth(); ++i) std::cout << "  "; // indentation
+
+        std::cout << "name='" << node.name() << "', value='" << node.value() << "'\n";
+
+        return true; // continue traversal
+    }
+};
+
+unordered_map <string, const pugi::xml_node &> namedNodes;
+shared_ptr <Material> defaultMaterial = make_shared <SimpleMaterial> (Color::Blue());
+
+shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+}
+
+void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+    // find child Appearance node
+    const pugi::xml_node c = node.child("Appearance");
+    shared_ptr <Material> m;
+    if (c) {
+        m = processAppearance(c, lights, materials, primitives);
+    }
+    else {
+        m = defaultMaterial;
+    }
+
+    // Now that Appearance is taken care of, figure out which kind of shape this is.
+    c = node.child("Box");
+    if (c) {
+        cout << "Found a Box..." << endl;
+        return;
+    }
+
+    c = node.child("Cone");
+    if (c) {
+        cout << "Found a Cone..." << endl;
+        return;
+    }
+
+    c = node.child("Cylinder");
+    if (c) {
+        cout << "Found a Cylinder..." << endl;
+        return;
+    }
+
+    c = node.child("Sphere");
+    if (c) {
+        cout << "Found a Sphere..." << endl;
+        return;
+    }
+
+
+}
+
+void processMaterial(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+}
+
+void process(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+    // different actions for each node type
+    const char *nodeName = node.name();
+
+    // In my implementation, the only leaf nodes are of type Shape
+
+    pugi::xml_attribute attr = node.attribute("DEF");
+    if (attr) {
+        cout << "\tDEF= " << attr.value() << endl;
+        namedNodes.insert({attr.value(), node});
+    }
+    attr = node.attribute("USE");
+    if (attr) {
+        cout << "\tUSE= " << attr.value() << endl;
+        auto nn = namedNodes.find(attr.value());
+        if (nn == namedNodes.end()) {
+            cout << "Parse error: USE node " << attr.value() << " not found." << endl;
+            return;
+        }
+        process(nn->second, lights, materials, primitives);
+    }
+
+    else if (!strcmp(nodeName, "Shape")) {
+        cout << "Processing Shape... \n";
+        processShape(node, lights, materials, primitives);
+        return;
+    }
+
+    else if (!strcmp(nodeName, "Transform")) {
+        cout << "Processing Transform... \n";
+
+    }
+
+    else if (!strcmp(nodeName, "Group")) {
+        cout << "Processing Group... \n";
+    }
+
+    else if (!strcmp(nodeName, "Scene")) {
+        cout << "Processing Scene... \n";
+    }
+        
+    else {
+        // Unknown node type, don't go down any further
+        cout << "Node type " << nodeName << " unknown." << endl;
+        return;
+    }
+
+    for (auto c : node.children()) 
+        process(c, lights, materials, primitives);
+}
+
+unique_ptr <Scene> Parser::parseX3D(std::string fileName) {
+    vector <shared_ptr<Light>> lights;
+    vector <shared_ptr<Material>> materials;
+    vector <shared_ptr<Primitive>> primitives;
+    stack <mat4> transformStack;
+    unique_ptr <Scene> ans;
+
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_file(fileName.c_str());
+    if (result) {
+        cout << "XML [" << fileName << "] parsed without errors." << endl;
+    } else {
+        std::cout << "XML [" << fileName << "] parsed with errors.\n"; 
+        std::cout << "Error description: " << result.description() << "\n";
+        std::cout << "Error offset: " << result.offset << "\n\n";
+    }
+
+    simple_walker walker;
+    doc.traverse(walker);
+    auto sceneNode = doc.child("X3D").child("Scene");
+    if (!sceneNode) {
+        cout << "Scene not found." << endl;
+        return Scene::emptyScene();
+    }
+
+    process(sceneNode, lights, materials, primitives);
+
+    return std::make_unique <Scene> (std::move(lights), std::move(materials), std::move(primitives));
 }

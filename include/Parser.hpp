@@ -28,5 +28,7 @@ private:
 
 public:
     static std::shared_ptr <Mesh> parseObj(std::string fileName);
+    static std::unique_ptr <Scene> parseX3D(std::string fileName);
+
 };
 
