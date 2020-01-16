@@ -458,12 +458,17 @@ struct simple_walker: pugi::xml_tree_walker
 unordered_map <string, const pugi::xml_node &> namedNodes;
 shared_ptr <Material> defaultMaterial = make_shared <SimpleMaterial> (Color::Blue());
 
+glm::vec3 stringToVec3(string s) {
+
+}
+
 shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+    return defaultMaterial;
 }
 
 void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
     // find child Appearance node
-    const pugi::xml_node c = node.child("Appearance");
+    pugi::xml_node c = node.child("Appearance");
     shared_ptr <Material> m;
     if (c) {
         m = processAppearance(c, lights, materials, primitives);
@@ -476,6 +481,9 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
     c = node.child("Box");
     if (c) {
         cout << "Found a Box..." << endl;
+        glm::vec3 boxSize = stringToVec3(c.attribute("size").as_string("1 1 1")); // argument to as_string is default, returned if attribute doesn't exist
+        shared_ptr <Box> box = make_shared <Box> (boxSize, m);
+        box.
         return;
     }
 
