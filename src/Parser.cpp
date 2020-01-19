@@ -482,8 +482,7 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
     if (c) {
         cout << "Found a Box..." << endl;
         glm::vec3 boxSize = stringToVec3(c.attribute("size").as_string("1 1 1")); // argument to as_string is default, returned if attribute doesn't exist
-        shared_ptr <Box> box = make_shared <Box> (boxSize, m);
-        box.
+        primitives.push_back(make_shared <Box> (boxSize, m));
         return;
     }
 

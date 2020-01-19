@@ -82,7 +82,7 @@ protected:
     glm::vec3 N1, N2;
 
 public:
-    TriangleWarp (const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2, const glm::vec3 &N0, const glm::vec3 &N1, const glm::vec3 &N2, const std::shared <Material> m)
+    TriangleWarp (const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2, const glm::vec3 &N0, const glm::vec3 &N1, const glm::vec3 &N2, const std::shared_ptr <Material> m)
     : Triangle(v0, v1, v2, N0, m), N1 (N1), N2 (N2) {} 
 
     const bool intersect(const Ray& ray, const float tmin, const float tmax, IntersectRec& ir) const;
