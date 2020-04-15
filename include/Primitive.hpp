@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 #include <glm/vec2.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
@@ -9,6 +10,8 @@
 #include "BBox.hpp"
 #include "IntersectRec.hpp"
 #include "Material.hpp"
+#include "Utils.hpp"
+#include "XForm.hpp"
 
 struct Tri {
     int v[3];   // vertex indices
@@ -34,7 +37,7 @@ public:
     virtual void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const = 0;
     virtual void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const = 0;
     virtual const float getSurfaceArea() const = 0;
-
+    virtual const std::string toString() const = 0;
 };
 
 class Box : public Primitive {
@@ -42,13 +45,70 @@ public:
     Box(const glm::vec3 &size, const std::shared_ptr <Material> m) : Primitive(m) {
         bbox = BBox(-size/2.f, size/2.f);
     }
+    Box(const glm::vec3 &llc, const glm::vec3 &urc, const std::shared_ptr <Material> m) : Primitive(m) {
+        bbox = BBox(llc, urc);
+    }
     const bool intersect(const Ray& ray, const float tmin, const float tmax, IntersectRec& ir) const;
 	const bool intersectYN(const Ray& ray, const float tmin, const float tmax) const;
 
     void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const;
     void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const;
     const float getSurfaceArea() const;
+    const std::string toString() const {return "Box";}
 };
+
+class Cone : public Primitive {
+public:
+    Cone(const float _bottomRadius, const float _height, const std::shared_ptr <Material> m) : 
+    Primitive (m), bottomRadius (_bottomRadius), height (_height) {
+        bbox = BBox(glm::vec3(-bottomRadius, -height/2.0f, -bottomRadius), glm::vec3(bottomRadius, height/2.0f, bottomRadius));
+    }
+    const bool intersect(const Ray& ray, const float tmin, const float tmax, IntersectRec& ir) const;
+	const bool intersectYN(const Ray& ray, const float tmin, const float tmax) const;
+
+    void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const;
+    void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const;
+    const float getSurfaceArea() const;
+    const std::string toString() const {return "Cone";}
+
+    float bottomRadius, height;
+};
+
+class Cylinder : public Primitive {
+public:
+    Cylinder(const float _radius, const float _height, const std::shared_ptr <Material> m) : 
+    Primitive (m), radius (_radius), height (_height) {
+        bbox = BBox(glm::vec3(-radius, -height/2.0f, -radius), glm::vec3(radius, height/2.0f, radius));
+        std::cout << "Cyl bbox in constructor: ";
+        std::cout << bbox.toString() << std::endl;
+    }
+    const bool intersect(const Ray& ray, const float tmin, const float tmax, IntersectRec& ir) const;
+	const bool intersectYN(const Ray& ray, const float tmin, const float tmax) const;
+
+    void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const;
+    void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const;
+    const float getSurfaceArea() const;    
+    const std::string toString() const {return "Cylinder";}
+    float radius, height;
+};
+
+class Sphere : public Primitive {
+public:
+    Sphere(const float _radius, const std::shared_ptr <Material> m) : 
+    Primitive (m), radius (_radius) {
+        bbox = BBox(glm::vec3(-radius), glm::vec3(radius));
+    }
+    const bool intersect(const Ray& ray, const float tmin, const float tmax, IntersectRec& ir) const;
+	const bool intersectYN(const Ray& ray, const float tmin, const float tmax) const;
+
+    void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const;
+    void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const;
+    const float getSurfaceArea() const;    
+    const std::string toString() const {return "Sphere";}
+
+    float radius;
+};
+
 
 class Triangle : public Primitive {
 protected:
@@ -73,6 +133,7 @@ public:
     void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const;
     void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const;
     const float getSurfaceArea() const;
+    const std::string toString() const {return "Triangle";}
 
 };
 
@@ -89,20 +150,20 @@ public:
 
     void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const;
     void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const;
+    const std::string toString() const {return "TriangleWarp";}
 
 };
 
 class TransformedPrimitive : public Primitive {
 public:
-    TransformedPrimitive(const glm::mat4 &xf, const shared_ptr <Primitive> p, const shared_ptr <Material> m) :
-    Primitive (m), xform (xf), prim (p) {
-        inv_xform = glm::inverse(xf);
+    TransformedPrimitive(const glm::mat4 &xf, const std::shared_ptr <Primitive> p) :
+    Primitive (p->getMaterial()), localToWorld (xf), prim (p) {
+        bbox = localToWorld.transformBBox(p->getBBox());
     }
 
-    shared_ptr <Primitive> prim;
-    glm::mat4 xform;
-    glm::mat4 inv_xform;
-
+    std::shared_ptr <Primitive> prim;
+    XForm localToWorld;
+    
     const bool intersect(const Ray& ray, const float tmin, const float tmax, IntersectRec& ir) const;
         // transform ray to local coordinates
         // compute intersection
@@ -123,4 +184,8 @@ public:
 
     const float getSurfaceArea() const;
         // need to scale this by ... xf determinant?
+
+        const std::string toString() const {return "Transformed: " + prim->toString();}
+
+
 };

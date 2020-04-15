@@ -22,7 +22,11 @@
         </Appearance>
       </Shape>
     </Transform>
+
     <Transform translation='-2.5 0 0'>
+   	<Transform rotation='0 0 1 1'>
+   		<Transform rotation='1 0 0 .4'>
+
       <Shape>
         <Cone DEF='DefaultCone' bottom='true' bottomRadius='1' height='2' side='true'/>
         <Appearance>
@@ -30,22 +34,27 @@
         </Appearance>
       </Shape>
     </Transform>
+</Transform>
+</Transform>
     <Transform>
+    	   		<Transform rotation='1 0 0 .4'>
+
       <Shape>
         <Cylinder DEF='DefaultCylinder' bottom='true' height='2' radius='1' side='true' top='true'/>
         <Appearance>
           <Material diffuseColor='0.2 0.2 1'/>
         </Appearance>
       </Shape>
+  </Transform>
     </Transform>
-    <Transform translation='2.5 0 0'>
-      <Shape>
-        <Sphere DEF='DefaultSphere' radius='1'/>
-        <Appearance>
-          <Material diffuseColor='1 1 0.2'/>
-        </Appearance>
-      </Shape>
-    </Transform>
+    	<Transform translation='2.5 0 0'>
+    	  <Shape>
+        	<Sphere DEF='DefaultSphere' radius='1'/>
+        		<Appearance>
+          			<Material diffuseColor='1 1 0.2'/>
+        		</Appearance>
+      		</Shape>
+	  	</Transform>
     <Transform translation='4 0 0'>
       <Shape>
         <Text DEF='DefaultText' string='"hello" "X3D!"'>

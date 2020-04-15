@@ -47,6 +47,7 @@ const Color DirectLightingShader::shade(IntersectRec& ir) const {
         //cout << glm::to_string(ir.normal) << endl;
     }
     return ans;
+    //return Color::White();
 }
 
 void DirectLightingShader::build() {

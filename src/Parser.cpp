@@ -457,13 +457,95 @@ struct simple_walker: pugi::xml_tree_walker
 
 unordered_map <string, const pugi::xml_node &> namedNodes;
 shared_ptr <Material> defaultMaterial = make_shared <SimpleMaterial> (Color::Blue());
+stack <mat4> transformStack;
 
 glm::vec3 stringToVec3(string s) {
+    vector <string> tokens;
+    boost::trim_if(s, boost::is_any_of(" \r"));
+    boost::split(tokens, s, [](char c) {return c == ' ';}, boost::token_compress_on);
+    if (tokens.size() != 3) {
+        cout << "ERROR: Attempt to read vec3 from string failed: " << s << endl;
+        return glm::vec3(0.0);
+    }
+    return glm::vec3(stof(tokens[0]), stof(tokens[1]), stof(tokens[2]));
+}
 
+glm::vec4 stringToVec4(string s) {
+    vector <string> tokens;
+    boost::trim_if(s, boost::is_any_of(" \r"));
+    boost::split(tokens, s, [](char c) {return c == ' ';}, boost::token_compress_on);
+    if (tokens.size() != 4) {
+        cout << "ERROR: Attempt to read vec4 from string failed: " << s << endl;
+        return glm::vec4(0.0);
+    }
+    return glm::vec4(stof(tokens[0]), stof(tokens[1]), stof(tokens[2]), stof(tokens[3]));
 }
 
 shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+
     return defaultMaterial;
+}
+
+void processTransform(const pugi::xml_node &node) {
+    // transform can have several different attributes -- these must be applied in the right order.
+    // Equivalent tree if nested is:
+    // translation
+    // center
+    // rotation
+    // scaleOrientation (rotation)
+    // scale
+    // reverse scaleOrientation
+    // reverseCenter
+    bool doCenter = false, doScaleOrientation = false;
+    glm::vec3 trans{0.0}, center{0.0}, scale{1.0};
+    glm::vec4 rotation{0.0}, scaleOrientation{0.0}; 
+    glm::mat4 currentTransform = transformStack.top();
+
+    pugi::xml_attribute attr = node.attribute("translation");
+    if (attr) {
+        cout << "\ttranslation: " << attr.value() << endl;
+        trans = stringToVec3(attr.as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        currentTransform = glm::translate(currentTransform, trans);
+    }
+
+    attr = node.attribute("center");
+    if (attr) {
+        cout << "\tcenter: " << attr.value() << endl;
+        center = stringToVec3(attr.as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        doCenter = true;
+        currentTransform = glm::translate(currentTransform, center);
+    }
+
+    attr = node.attribute("rotation");
+    if (attr) {
+        cout << "\trotation: " << attr.value() << endl;
+        rotation = stringToVec4(attr.as_string("0 0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        currentTransform = glm::rotate(currentTransform, rotation.w, glm::vec3(rotation));
+    }
+
+    attr = node.attribute("scaleOrientation");
+    if (attr) {
+        cout << "\tscaleOrientation: " << attr.value() << endl;
+        scaleOrientation = stringToVec4(attr.as_string("0 0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        doScaleOrientation = true;
+        currentTransform = glm::rotate(currentTransform, scaleOrientation.w, glm::vec3(scaleOrientation));
+    }
+
+    attr = node.attribute("scale");
+    if (attr) {
+        cout << "\tscale: " << attr.value() << endl;
+        scale = stringToVec3(attr.as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        currentTransform = glm::scale(currentTransform, scale);
+    }
+
+    // currentTransform = currentTransform * T * C * R * SR * S * -SR * -C
+    if (doScaleOrientation) {
+        currentTransform = glm::rotate(currentTransform, -scaleOrientation.w, glm::vec3(scaleOrientation));
+    }
+    if (doCenter) {
+        currentTransform = glm::translate(currentTransform, -center);
+    }
+    transformStack.push(currentTransform);
 }
 
 void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
@@ -482,29 +564,43 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
     if (c) {
         cout << "Found a Box..." << endl;
         glm::vec3 boxSize = stringToVec3(c.attribute("size").as_string("1 1 1")); // argument to as_string is default, returned if attribute doesn't exist
-        primitives.push_back(make_shared <Box> (boxSize, m));
+        cout << "\tboxSize: (" << boxSize.x << ", " << boxSize.y << ", " << boxSize.z << ")" << endl;
+        shared_ptr <Box> box = make_shared <Box> (boxSize, m);
+        primitives.push_back(make_shared <TransformedPrimitive> (transformStack.top(), box));
         return;
     }
 
     c = node.child("Cone");
     if (c) {
         cout << "Found a Cone..." << endl;
+        float bottomRadius = stof(c.attribute("bottomRadius").as_string("1"));
+        float height = stof(c.attribute("height").as_string("2"));
+        cout << "\tbottomRadius: " << bottomRadius << ", height: " << height << endl;
+        shared_ptr <Cone> cone = make_shared <Cone> (bottomRadius, height, m);
+        primitives.push_back(make_shared <TransformedPrimitive> (transformStack.top(), cone));
         return;
     }
 
     c = node.child("Cylinder");
     if (c) {
         cout << "Found a Cylinder..." << endl;
+        float radius = stof(c.attribute("radius").as_string("1"));
+        float height = stof(c.attribute("height").as_string("2"));
+        cout << "\tradius: " << radius << ", height: " << height << endl;
+        shared_ptr <Cylinder> cyl = make_shared <Cylinder> (radius, height, m);
+        primitives.push_back(make_shared <TransformedPrimitive> (transformStack.top(), cyl));
         return;
     }
 
     c = node.child("Sphere");
     if (c) {
         cout << "Found a Sphere..." << endl;
+        float radius = stof(c.attribute("radius").as_string("1"));
+        cout << "\tradius: " << radius << endl;
+        shared_ptr <Sphere> sphere = make_shared <Sphere> (radius, m);
+        primitives.push_back(make_shared <TransformedPrimitive> (transformStack.top(), sphere));
         return;
     }
-
-
 }
 
 void processMaterial(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
@@ -530,6 +626,7 @@ void process(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vec
             return;
         }
         process(nn->second, lights, materials, primitives);
+        return;
     }
 
     else if (!strcmp(nodeName, "Shape")) {
@@ -540,7 +637,11 @@ void process(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vec
 
     else if (!strcmp(nodeName, "Transform")) {
         cout << "Processing Transform... \n";
-
+        processTransform(node);
+        for (auto c : node.children()) 
+            process(c, lights, materials, primitives);
+        transformStack.pop();
+        return;
     }
 
     else if (!strcmp(nodeName, "Group")) {
@@ -565,9 +666,8 @@ unique_ptr <Scene> Parser::parseX3D(std::string fileName) {
     vector <shared_ptr<Light>> lights;
     vector <shared_ptr<Material>> materials;
     vector <shared_ptr<Primitive>> primitives;
-    stack <mat4> transformStack;
     unique_ptr <Scene> ans;
-
+    transformStack.push(glm::mat4(1.0)); // start with identity matrix on the stack
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(fileName.c_str());
     if (result) {

@@ -55,6 +55,7 @@ const bool BVH::build() {
 		primitiveIndices[i] = i;
 		bboxes.push_back(primitives[i]->getBBox());
 		centroids.push_back(primitives[i]->getBBox().getCentroid());
+		cout << primitives[i]->getBBox().toString() << endl;
 	}
 	
 	for (int i = 0; i < numPrimitives; i++) {
@@ -102,6 +103,7 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 		//cb.enclose(centroids[node->faces[i]]);
 		cb.enclose(centroids[primitiveIndices[node.ptr+i]]);
 	}
+	cout << "Bounding box: " << cb.toString() << endl;
 
 	glm::vec3 t = cb.max - cb.min;
 	/*	
@@ -216,7 +218,7 @@ void advance_cursor() {
 void BVH::buildBelow(BVHNode &node, int depth) {
 	
 	//if (node->numFaces == 0)	
-		//cout << "atDepth: " << depth << "\tnumFaces: " << node->numFaces << endl;
+	cout << "atDepth: " << depth << "\tnumPrimitives: " << node.numPrimitives << endl;
 	
 	if (!node.isLeaf()) {
 		printf("Error - splitting internal node\n");
@@ -237,14 +239,15 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 	}
 				
 	SP sp = findSplitPlane(node);
-	//cout << node->bbox.v0[sp.axis] << " - " << node->bbox.v1[sp.axis] << endl;
-	//cout << sp.pos << endl;
+
 	
 	if (sp.axis == -1) {
 		// split failed.
+		cout << "ERROR: split failed." << endl;
 		return;
 	}
-	
+		cout << node.bbox.min[sp.axis] << " - " << node.bbox.max[sp.axis] << endl;
+	cout << sp.pos << endl;
 	node.flags = 0; // set not a leaf
 	int le = node.ptr; int re = le + node.numPrimitives-1;
 	int lp = le; int rp = re;
@@ -336,9 +339,11 @@ const bool BVH::closestIntersection(const Ray& ray, const float tmin, const floa
 					q = vload8(ind.y, vertices);
 					r = vload8(ind.z, vertices);
 					*/
+					//hit = true;
+					//cout << primitives[primitiveIndices[nodes[curPos].ptr+i]]->toString();
 					if (primitives[primitiveIndices[nodes[curPos].ptr+i]]->intersect(ray, tmin, tmax, tempIr)) {
 //					if (rayIntersectsTriangle2(ray, p.s012, q.s012, r.s012, &tempIr)) {
-						
+						//hit = true;
 						if (tempIr.t < ans.t) {
 							hit = true;
 							ans = tempIr;

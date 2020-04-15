@@ -17,7 +17,7 @@
 #include "Scene.hpp"
 
 class Parser {
-private:
+public:
     /* Construct vec3 from tokens. If there aren't enough tokens, defaultValue is substituted. */
     static const glm::vec3 readVec3(const std::vector <std::string> &tokens, float defaultValue, int numTokens);
 
@@ -26,7 +26,6 @@ private:
 
     static std::vector <MTLMat> parseMtl(std::string fileName);
 
-public:
     static std::shared_ptr <Mesh> parseObj(std::string fileName);
     static std::unique_ptr <Scene> parseX3D(std::string fileName);
 

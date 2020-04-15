@@ -1,6 +1,8 @@
 #pragma once
 
 #include <limits>
+#include <string>
+#include <sstream>
 
 #include <glm/vec3.hpp>
 
@@ -16,6 +18,12 @@ public:
 
     const glm::vec3 getCentroid() const {
         return glm::vec3({.5*(max[0] + min[0]), .5*(max[1] + min[1]), .5*(max[2] + min[2])});
+    }
+
+    const std::string toString() const {
+        std::stringstream ss;
+        ss << "(" << min.x << ", " << min.y << ", " << min.z << ") --> (" << max.x << ", " << max.y << ", " << max.z << ")";
+        return ss.str();
     }
 
 	void enclose(const glm::vec3& v);

@@ -14,6 +14,6 @@ public:
 	glm::vec3 uvw; // parameters at intersection point
 	float t;
 	
-	std::shared_ptr <Primitive> primitive;
+	Primitive* primitive;
 	std::shared_ptr <Material> material;
 };

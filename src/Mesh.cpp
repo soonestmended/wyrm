@@ -22,17 +22,17 @@ std::vector <std::shared_ptr<Primitive>> MeshInstance::toPrimitives() const {
 
         glm::vec3 n0 = glm::normalize(inv_xform_T_3x3 * meshPtr->normals[tri.vn[0]]);
         //glm::vec3 n0 = glm::vec4(meshPtr->normals[tri.vn[0]], 0.0);
-        Material& m = *(meshPtr->materials[tri.m]);
+        shared_ptr <Material> mPtr = meshPtr->materials[tri.m];
         if (this->materials.size() == 1) 
-            m = *(this->materials[0]);
+            mPtr = this->materials[0];
 
         if (tri.vn[0] == tri.vn[1] && tri.vn[0] == tri.vn[2]) {
-            ans.push_back(make_shared<Triangle> (v0, v1, v2, n0, m));
+            ans.push_back(make_shared<Triangle> (v0, v1, v2, n0, mPtr));
         }
         else {
             glm::vec3 n1 = glm::normalize(inv_xform_T_3x3 * meshPtr->normals[tri.vn[1]]);
             glm::vec3 n2 = glm::normalize(inv_xform_T_3x3 * meshPtr->normals[tri.vn[2]]);
-            ans.push_back(make_shared<TriangleWarp> (v0, v1, v2, n0, n1, n2, m));
+            ans.push_back(make_shared<TriangleWarp> (v0, v1, v2, n0, n1, n2, mPtr));
         }
     }
     return ans;
@@ -69,15 +69,15 @@ vector <shared_ptr<Primitive>> Mesh::toPrimitives() const {
         const glm::vec3& v2 = this->vertices[tri.v[2]];
 
         const glm::vec3& n0 = this->normals[tri.vn[0]];
-        const Material& m = *(this->materials[tri.m]);
+        const shared_ptr <Material> mPtr = this->materials[tri.m];
 
         if (tri.vn[0] == tri.vn[1] && tri.vn[0] == tri.vn[2]) {
-            ans.push_back(make_shared<Triangle> (v0, v1, v2, n0, m));
+            ans.push_back(make_shared<Triangle> (v0, v1, v2, n0, mPtr));
         }
         else {
             const glm::vec3& n1 = this->normals[tri.vn[1]];
             const glm::vec3& n2 = this->normals[tri.vn[2]];
-            ans.push_back(make_shared<TriangleWarp> (v0, v1, v2, n0, n1, n2, m));
+            ans.push_back(make_shared<TriangleWarp> (v0, v1, v2, n0, n1, n2, mPtr));
         }
     }
     return ans;

@@ -50,7 +50,7 @@ int main (int argc, char ** argv) {
         return 0;
     }
 
-    unique_ptr <Scene> x3ds = Parser::parseX3D("test.x3d");
+    unique_ptr <Scene> s = Parser::parseX3D("test.x3d");
     /*
     unique_ptr <Scene> s = Scene::emptyScene();
 
@@ -61,6 +61,8 @@ int main (int argc, char ** argv) {
         cout << "Parse of " << vm["input_file"].as<string>() << " failed. " << endl;
         exit(0);
     }
+
+    */
     cout << "Parse successful." << endl;
     s->printInfo();
 
@@ -79,9 +81,9 @@ int main (int argc, char ** argv) {
     }
 
     DirectLightingShader dlsh(*s, bvh);
-
+    QuickShader qs{*s};
     AcceleratedTracer at(*s, dlsh, bvh);
-
+    BruteForceTracer bft{*s, qs};
     Image foo(512, 512);
 
     QuickRenderer qr(c, *s, at, foo);
@@ -89,5 +91,4 @@ int main (int argc, char ** argv) {
     if (vm.count("output_file")) {
         foo.writePNG(vm["output_file"].as<string>().c_str());
     }
-*/
 }
