@@ -9,6 +9,8 @@ class ONB {
 public:
     glm::vec3 U, V, W;
 
+    ONB() {}
+
     ONB(const glm::vec3& _N) {
         init(_N);
     }
@@ -32,11 +34,11 @@ public:
     static glm::vec3 uniformSampleHemisphere(float u, float v);
 	static float uniformSampleHemispherePDF();
 
-	static glm::vec3 cosineSampleHemisphere(float u, float v);
-	static float cosineSampleHemispherePDF(float costheta, float phi);
+	static const glm::vec3 cosineSampleHemisphere(const glm::vec2& uv);
+	static inline float cosineSampleHemispherePDF(float costheta, float phi);
 
 	static void uniformSampleDisk(float u1, float u2, float *x, float *y);
-	static void concentricSampleDisk(float u1, float u2, float *dx, float *dy);
+	static inline const glm::vec2 concentricSampleDisk(const glm::vec2& uv);
 
 	static bool sameHemisphere(const glm::vec3& wi, const glm::vec3& wo);
 	glm::vec3 makeVec(const float u, const float v, const float w) const;
@@ -44,7 +46,7 @@ public:
 	
     
 	static float cosTheta(const glm::vec3& w);
-	static float absCosTheta( glm::vec3& w) {
+	static float absCosTheta(const glm::vec3& w) {
         return fabsf(w[2]);
     }
 	static float sinTheta2(const glm::vec3& w);

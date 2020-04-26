@@ -1,6 +1,9 @@
 #include "ONB.hpp"
 
+#include <algorithm>
 #include <glm/geometric.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 
 inline glm::vec3 ONB::local2world(const glm::vec3& v) const {
 	return glm::vec3(U[0]*v[0] + V[0]*v[1] + W[0]*v[2],
@@ -36,4 +39,26 @@ inline float ONB::sinPhi(const glm::vec3& w) {
 
 inline bool ONB::sameHemisphere(const glm::vec3& wi, const glm::vec3& wo) {
 	return wi[2] * wo[2] > 0.f;
+}
+
+inline const glm::vec2 ONB::concentricSampleDisk(const glm::vec2& uv) {
+	glm::vec2 offset = 2.f * uv - glm::vec2(1.0);
+	if (offset.x == 0.f && offset.y == 0.f) {
+		return offset;
+	}
+	float theta, r;
+	if (abs(offset.x) > abs(offset.y)) {
+		r = offset.x;
+		theta = M_PI_4 * (offset.y / offset.x);
+	} else {
+		r = offset.y;
+		theta = M_PI_2 - M_PI_4 * (offset.x / offset.y);
+	}
+	return r * glm::vec2(cos(theta), sin(theta));
+}
+
+inline const glm::vec3 ONB::cosineSampleHemisphere(const glm::vec2& uv) {
+	glm::vec2 d = concentricSampleDisk(uv);
+	float z = sqrt(std::max(0.f, 1.0f - d.x*d.x -d.y*d.y));
+	return glm::vec3(d.x, d.y, z);
 }

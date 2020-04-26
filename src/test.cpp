@@ -80,13 +80,10 @@ int main (int argc, char ** argv) {
         exit(1);
     }
 
-    DirectLightingShader dlsh(*s, bvh);
-    QuickShader qs{*s};
-    AcceleratedTracer at(*s, dlsh, bvh);
-    BruteForceTracer bft{*s, qs};
+    PathTracer pt(s.get(), &bvh);
     Image foo(512, 512);
 
-    QuickRenderer qr(c, *s, at, foo);
+    QuickRenderer qr(c, *s, pt, foo);
     qr.render();
     if (vm.count("output_file")) {
         foo.writePNG(vm["output_file"].as<string>().c_str());

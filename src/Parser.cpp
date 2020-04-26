@@ -324,9 +324,9 @@ shared_ptr <Mesh> Parser::parseObj(string fileName) {
                 vector <MTLMat> tv = parseMtl(*it); 
                 cout << "Parsed " << tv.size() << " MTLMat(s)" << endl;
                 // need to convert from MTLMats to Materials
-                vector <SimpleMaterial> tv2 (tv.begin(), tv.end()); // convert MTLMats to SimpleMaterials
+                vector <ADMaterial> tv2 (tv.begin(), tv.end()); // convert MTLMats to ADMaterials
                 for (auto m : tv2) {
-                    materials.push_back(make_shared<Material>(m));
+                    materials.push_back(make_shared<ADMaterial>(m));
                 }
             }
 
@@ -349,7 +349,7 @@ shared_ptr <Mesh> Parser::parseObj(string fileName) {
     cout << "Parsed " << materials.size() << " materials" << endl;
 
     if (materials.size() == 0) {
-        materials.push_back(make_shared<Material> (SimpleMaterial(Color::Green())));
+        materials.push_back(ADMaterial::makeDiffuse("default", Color::Green(), 0));
     }
 
     // postprocess tris -- normal smoothing
@@ -455,8 +455,8 @@ struct simple_walker: pugi::xml_tree_walker
     }
 };
 
-unordered_map <string, const pugi::xml_node &> namedNodes;
-shared_ptr <Material> defaultMaterial = make_shared <SimpleMaterial> (Color::Blue());
+unordered_map <string, const pugi::xml_node> namedNodes;
+shared_ptr <Material> defaultMaterial = ADMaterial::makeDiffuse("defaultMaterial", Color::Blue(), 0);
 stack <mat4> transformStack;
 
 glm::vec3 stringToVec3(string s) {
@@ -479,6 +479,33 @@ glm::vec4 stringToVec4(string s) {
         return glm::vec4(0.0);
     }
     return glm::vec4(stof(tokens[0]), stof(tokens[1]), stof(tokens[2]), stof(tokens[3]));
+}
+
+bool checkDEF(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+    pugi::xml_attribute attr = node.attribute("DEF");
+    if (attr) {
+        cout << "\tDEF= " << attr.value() << endl;
+        namedNodes.insert({attr.value(), node});
+        cout << "\tInserted node: " << node.hash_value() << endl;
+        return true;
+    }
+    return false;
+}
+
+// check whether this node refers to another one. Return input node if it doesn't, otherwise referent
+const pugi::xml_node& checkUSE(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+    pugi::xml_attribute attr = node.attribute("USE");
+    if (attr) {
+        cout << "\tUSE= " << attr.value() << endl;
+        auto nn = namedNodes.find(attr.value());
+        if (nn == namedNodes.end()) {
+            cout << "Parse error: USE node " << attr.value() << " not found." << endl;
+            return node;
+        }
+        cout << "\tFound node: " << nn->second.hash_value() << endl;
+        return nn->second;
+    }
+    return node;
 }
 
 shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
@@ -553,16 +580,23 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
     pugi::xml_node c = node.child("Appearance");
     shared_ptr <Material> m;
     if (c) {
+        checkDEF(c, lights, materials, primitives);
+        c = checkUSE(c, lights, materials, primitives);
         m = processAppearance(c, lights, materials, primitives);
     }
     else {
+        cout << "No Appearance found. Applying default." << endl;
         m = defaultMaterial;
     }
 
     // Now that Appearance is taken care of, figure out which kind of shape this is.
     c = node.child("Box");
+    pugi::xml_node nextNode;
     if (c) {
         cout << "Found a Box..." << endl;
+
+        checkDEF(c, lights, materials, primitives);
+        c = checkUSE(c, lights, materials, primitives);
         glm::vec3 boxSize = stringToVec3(c.attribute("size").as_string("1 1 1")); // argument to as_string is default, returned if attribute doesn't exist
         cout << "\tboxSize: (" << boxSize.x << ", " << boxSize.y << ", " << boxSize.z << ")" << endl;
         shared_ptr <Box> box = make_shared <Box> (boxSize, m);
@@ -573,8 +607,15 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
     c = node.child("Cone");
     if (c) {
         cout << "Found a Cone..." << endl;
+        checkDEF(c, lights, materials, primitives);
+        c = checkUSE(c, lights, materials, primitives);
+        cout << "Post USE in Cone" << endl;
+        if (c.empty()) cout << "c is empty." << endl;
         float bottomRadius = stof(c.attribute("bottomRadius").as_string("1"));
+        cout << "Post bottomRadius" << endl;
         float height = stof(c.attribute("height").as_string("2"));
+        cout << "Post height" << endl;
+
         cout << "\tbottomRadius: " << bottomRadius << ", height: " << height << endl;
         shared_ptr <Cone> cone = make_shared <Cone> (bottomRadius, height, m);
         primitives.push_back(make_shared <TransformedPrimitive> (transformStack.top(), cone));
@@ -584,6 +625,9 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
     c = node.child("Cylinder");
     if (c) {
         cout << "Found a Cylinder..." << endl;
+        checkDEF(c, lights, materials, primitives);
+        c = checkUSE(c, lights, materials, primitives);
+        
         float radius = stof(c.attribute("radius").as_string("1"));
         float height = stof(c.attribute("height").as_string("2"));
         cout << "\tradius: " << radius << ", height: " << height << endl;
@@ -595,41 +639,41 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
     c = node.child("Sphere");
     if (c) {
         cout << "Found a Sphere..." << endl;
+        checkDEF(c, lights, materials, primitives);
+        c = checkUSE(c, lights, materials, primitives);
+        
         float radius = stof(c.attribute("radius").as_string("1"));
         cout << "\tradius: " << radius << endl;
         shared_ptr <Sphere> sphere = make_shared <Sphere> (radius, m);
         primitives.push_back(make_shared <TransformedPrimitive> (transformStack.top(), sphere));
         return;
     }
+
+    cout << "ERROR: Shape has no geometry child." << endl;
 }
 
 void processMaterial(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
 }
 
+
+
 void process(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
     // different actions for each node type
     const char *nodeName = node.name();
-
+    cout << "Node name: " << node.name() << endl;
     // In my implementation, the only leaf nodes are of type Shape
 
-    pugi::xml_attribute attr = node.attribute("DEF");
-    if (attr) {
-        cout << "\tDEF= " << attr.value() << endl;
-        namedNodes.insert({attr.value(), node});
-    }
-    attr = node.attribute("USE");
-    if (attr) {
-        cout << "\tUSE= " << attr.value() << endl;
-        auto nn = namedNodes.find(attr.value());
-        if (nn == namedNodes.end()) {
-            cout << "Parse error: USE node " << attr.value() << " not found." << endl;
-            return;
-        }
-        process(nn->second, lights, materials, primitives);
+    pugi::xml_attribute attr;
+
+    checkDEF(node, lights, materials, primitives);
+    pugi::xml_node nextNode = checkUSE(node, lights, materials, primitives);
+    cout << "node: " << node.hash_value() << "\tnextNode: " << nextNode.hash_value() << endl;
+    if (nextNode != node) {
+        process(nextNode, lights, materials, primitives);
         return;
     }
 
-    else if (!strcmp(nodeName, "Shape")) {
+    if (!strcmp(nodeName, "Shape")) {
         cout << "Processing Shape... \n";
         processShape(node, lights, materials, primitives);
         return;

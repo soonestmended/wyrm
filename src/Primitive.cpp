@@ -107,33 +107,24 @@ const bool Triangle::intersectYN(const Ray &ray, float tmin, float tmax) const  
     return false;
 }
 
-const bool TriangleWarp::intersect(const Ray& ray, const float tmin, const float tmax, IntersectRec& ir) const {
-    if (Triangle::intersect(ray, tmin, tmax, ir)) {
-        ir.normal = ir.uvw[0] * N + ir.uvw[1] * N1 + ir.uvw[2] * N2;
-        //ir.normal = N2;
-        return true;
-    }
-    return false;
-}
-
-
-void Triangle::getRandomPoint(const glm::vec2& uv, glm::vec3& p) const {
+void Triangle::getRandomPoint(const glm::vec2& uv, glm::vec3& p, float* pdf) const {
     glm::vec2 bg;
 	utils::uniformSampleTriangle(uv, bg);
 	p = bg[0] * v[0] + bg[1] * v[1] + (1.f - bg[0] - bg[1]) * v[2];
+    *pdf = 1.0f / getSurfaceArea();
 }
     
-void Triangle::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const {
-    this->getRandomPoint(uv, p);
+void Triangle::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d, float* pdf) const {
+    this->getRandomPoint(uv, p, pdf);
     d = this->N;
 }
 
-void TriangleWarp::getRandomPoint(const glm::vec2& uv, glm::vec3& p) const {
-    return Triangle::getRandomPoint(uv, p);
+void TriangleWarp::getRandomPoint(const glm::vec2& uv, glm::vec3& p, float* pdf) const {
+    return Triangle::getRandomPoint(uv, p, pdf);
 }
     
-void TriangleWarp::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const {
-    return Triangle::getRandomPointAndDirection(uv, p, d);
+void TriangleWarp::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d, float* pdf) const {
+    return Triangle::getRandomPointAndDirection(uv, p, d, pdf);
 }
 
 const float Triangle::getSurfaceArea() const {
@@ -211,10 +202,10 @@ const bool Box::intersect(const Ray& r, float t0, float t1, IntersectRec& ir) co
     }
 }
 
-void Box::getRandomPoint(const glm::vec2& uv, glm::vec3& p) const {
+void Box::getRandomPoint(const glm::vec2& uv, glm::vec3& p, float* pdf) const {
 }
 
-void Box::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const {
+void Box::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d, float* pdf) const {
 }
 
 const float Box::getSurfaceArea() const {
@@ -310,11 +301,11 @@ const bool Cone::intersectYN(const Ray& ray, const float tmin, const float tmax)
     return false;
 }
 
-void Cone::getRandomPoint(const glm::vec2& uv, glm::vec3& p) const {
+void Cone::getRandomPoint(const glm::vec2& uv, glm::vec3& p, float* pdf) const {
 
 }
 
-void Cone::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const {
+void Cone::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d, float* pdf) const {
 
 }
 
@@ -445,10 +436,10 @@ const bool Cylinder::intersectYN(const Ray& ray, const float tmin, const float t
     return (valid[2] || valid[3]);
 }
 
-void Cylinder::getRandomPoint(const glm::vec2& uv, glm::vec3& p) const {
+void Cylinder::getRandomPoint(const glm::vec2& uv, glm::vec3& p, float* pdf) const {
     // TODO
 }
-void Cylinder::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const {
+void Cylinder::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d, float* pdf) const {
     // TODO
 }
 const float Cylinder::getSurfaceArea() const {
@@ -490,11 +481,11 @@ const bool Sphere::intersectYN(const Ray& ray, const float tmin, const float tma
     return (det >= 0.0f);
 }
 
-void Sphere::getRandomPoint(const glm::vec2& uv, glm::vec3& p) const {
+void Sphere::getRandomPoint(const glm::vec2& uv, glm::vec3& p, float* pdf) const {
 
 }
 
-void Sphere::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const {
+void Sphere::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d, float* pdf) const {
 
 }
 
@@ -523,17 +514,17 @@ const bool TransformedPrimitive::intersectYN(const Ray& ray, const float tmin, c
     return prim->intersectYN(localRay, tmin, tmax); 
 }
 
-void TransformedPrimitive::getRandomPoint(const glm::vec2& uv, glm::vec3& p) const {
+void TransformedPrimitive::getRandomPoint(const glm::vec2& uv, glm::vec3& p, float* pdf) const {
     // get random point from primitive
     // transform to world coordinates
-    prim->getRandomPoint(uv, p);
+    prim->getRandomPoint(uv, p, pdf);
     p = localToWorld.transformPoint(p);
 }
 
-void TransformedPrimitive::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const {
+void TransformedPrimitive::getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d, float* pdf) const {
     // get random point and direction from primitive
     // transform both to world coordinates
-    prim->getRandomPointAndDirection(uv, p, d);
+    prim->getRandomPointAndDirection(uv, p, d, pdf);
     p = localToWorld.transformPoint(p);
     d = localToWorld.transformVector(d);
 }

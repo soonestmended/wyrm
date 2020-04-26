@@ -14,11 +14,14 @@ class Light {
 public:
     virtual const Color getColor() const = 0;
     virtual const float getPower() const = 0;
-
+    const bool isDeltaLight() const {return false;}
     //virtual void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const = 0;
     //virtual void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const = 0;
 
-    virtual Color sample(const glm::vec2& uv, const IntersectRec& ir, glm::vec3& wi, float& pdf, VisibilityTester& vt) const = 0;
+    virtual const Color sample(const glm::vec2& uv, const IntersectRec& ir, glm::vec3& wi, float* pdf, VisibilityTester& vt) const = 0;
+    virtual const float pdf(const IntersectRec& ir, const glm::vec3& wi_local) const {return 0.0f;}
+    const Primitive *getPrim() const {return nullptr;}
+    const Color LInf(const Ray& r) const {return Color::Black();} // this is for directional lights to contribute to rays leaving scene
 };
 
 class PointLight : public Light {
@@ -27,12 +30,13 @@ public:
 
     const Color getColor() const {return color;}
     const float getPower() const {return power;}
+    const bool isDeltaLight() const {return true;}
 
     //void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const {p = P;}
     //void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const {
     //    p = P;
     //};
-    Color sample(const glm::vec2& uv, const IntersectRec& ir, glm::vec3& wi, float& pdf, VisibilityTester& vt) const;
+    const Color sample(const glm::vec2& uv, const IntersectRec& ir, glm::vec3& wi, float& pdf, VisibilityTester& vt) const;
 
 private:
     glm::vec3 P;
@@ -46,13 +50,14 @@ class GeometricLight {
 public: 
     GeometricLight(const std::shared_ptr <Primitive> _prim) : prim (_prim) {}
 
-    const Color getColor() const {return color;}
-    const float getPower() const {return power;}
+    const Color getColor() const {return prim->getMaterial()->getEmission();}
+    const float getPower() const {return prim->getSurfaceArea();}
 
-    Color sample(const glm::vec2& uv, const IntersectRec& ir, glm::vec3& wi, float& pdf, VisibilityTester& vt) const;
+    const Color sample(const glm::vec2& uv, const IntersectRec& ir, glm::vec3& wi, float* pdf, VisibilityTester& vt) const;
+    const float pdf(const IntersectRec& ir, const glm::vec3& wi_local) const {return prim->getRandomPointPdf(ir, wi_local);}
+
+    const Primitive *getPrim() const {return prim.get();}
 
 private:
-    Color color;
-    float power;
     const std::shared_ptr <Primitive> prim;
 };

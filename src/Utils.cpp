@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 
 #include "Utils.hpp"
@@ -13,5 +14,8 @@ namespace utils {
 	    bg[0] = 1.f - sqrtu;
 	    bg[1] = uv[1] * sqrtu;
     }
+
+
+
 
 }

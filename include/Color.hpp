@@ -9,6 +9,8 @@ public:
     Color(float r_, float g_, float b_) : glm::vec3(r_, g_, b_) {}
 	Color(const glm::vec3& foo) : glm::vec3(foo) {}
 
+	bool isBlack() {return x >0.0f || y>0.0f || z>0.0f;}
+
     static Color Black() {return Color(0.0, 0.0, 0.0);}
 	static Color Blue() {return Color(0.0, 0.0, 1.0);}
 	static Color Green() {return Color(0.0, 1.0, 0.0);}

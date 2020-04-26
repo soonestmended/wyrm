@@ -36,6 +36,19 @@
     </Transform>
 </Transform>
 </Transform>
+
+<Transform USE='XPLUSTWO'>
+	<Shape>
+		<Cone USE='DefaultCone'>
+		</Cone>
+	</Shape>
+</Transform>
+
+<Transform translation='2 0 0'>
+	<Shape USE='DefaultShape'>
+	</Shape>
+</Transform>
+
     <Transform>
     	   		<Transform rotation='1 0 0 .4'>
 

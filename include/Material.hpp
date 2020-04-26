@@ -3,7 +3,9 @@
 #include <glm/vec3.hpp>
 #include <string>
 
+#include "BxDF.hpp"
 #include "Color.hpp"
+#include "IntersectRec.hpp"
 
 struct MTLMat {
     std::string name;    
@@ -33,22 +35,20 @@ public:
     Material(int id_) : id(id_) {}
     Material(const std::string& name_) : name (name_), id (currentID++) {}
     Material(const std::string& name_, int id_) : name (name_), id (id_) {}
-    static int currentID;
 
-    
-};
-
-class SimpleMaterial : public Material {
-public:
-    SimpleMaterial(const glm::vec3 &color_) : Material(), color (color_) {}
-    SimpleMaterial(const MTLMat& mtlMat) : Material(mtlMat.name), color (mtlMat.Kd) {}
-    Color color;
+    virtual const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const = 0;
+    virtual const float pdf(const glm::vec3& wi_local, const IntersectRec& ir) const = 0;
+    virtual const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const = 0;
+ 
+    virtual const Color getEmission() const {return Color::Black();}
+    static int currentID;  
 };
 
 class ADMaterial : public Material {
 public:
     ADMaterial() =delete;
-    ADMaterial( const Color& _opacity, 
+    ADMaterial( const std::string& name,
+                const Color& _opacity, 
                 const float _coat,
                 const Color& _coat_color,
                 const float _coat_roughness,
@@ -56,13 +56,17 @@ public:
                 const glm::vec3& _coat_normal,
                 const float _emission,
                 const Color& _emission_color,
+                const float _metalness,
                 const float _base,
                 const Color& _base_color,
                 const float _specular,
                 const Color& _specular_color,
                 const float _specular_roughness,
                 const float _specular_IOR,
-                const float _diffuse_roughness) :
+                const float _diffuse_roughness,
+                const float _transmission,
+                const Color& _transmission_color) :
+                Material(name),
                 opacity(_opacity),
                 coat (_coat),
                 coat_color (_coat_color),
@@ -71,30 +75,95 @@ public:
                 coat_normal (_coat_normal),
                 emission (_emission),
                 emission_color (_emission_color),
+                metalness (_metalness),
                 base (_base),
                 base_color (_base_color),
                 specular (_specular),
                 specular_color (_specular_color),
                 specular_roughness (_specular_roughness),
                 specular_IOR (_specular_IOR),
-                diffuse_roughness (_diffuse_roughness) {}
+                diffuse_roughness (_diffuse_roughness),
+                transmission (_transmission),
+                transmission_color (_transmission_color) {
+                    init();
+                }
 
+    ADMaterial(const MTLMat& mat) : Material (mat.name), 
+    opacity (Color(mat.d)), base_color (mat.Kd), specular_color (mat.Ks), emission_color (mat.Ke), 
+    diffuse_roughness (mat.Pr), specular_roughness (mat.Pr) {
+        init();
+    }  
 
-    const Color opacity;
-    const float coat;
-    const Color coat_color;
-    const float coat_roughness;
-    const float coat_IOR;
-    const glm::vec3 coat_normal;
-    const float emission;
-    const Color emission_color;
-    const float base;
-    const Color base_color;
-    const float specular;
-    const Color specular_color;
-    const float specular_roughness;
-    const float specular_IOR;
-    const float diffuse_roughness;
+    ~ADMaterial() {
+        if (coat_brdf) delete coat_brdf;
+        if (metal_brdf) delete metal_brdf;
+        if (specular_brdf) delete specular_brdf;
+        if (specular_btdf) delete specular_btdf;
+        if (diffuse_brdf) delete diffuse_brdf;
+    }
+
+    void init() {
+        if (coat > 0.) {
+            coat_brdf = new GGX_BRDF(); // need to fill this in
+            coat_brdf_reflectance = coat_brdf->rho(81);
+        }
+        if (metalness > 0.) {
+            metal_brdf = new GGX_BRDF();
+        }
+        if (specular > 0.) {
+            specular_brdf = new GGX_BRDF();
+            specular_brdf_reflectance = specular_brdf->rho(81);
+        }
+        if (transmission >0.) {
+            specular_btdf = new GGX_BRDF();
+        }
+        if (diffuse_roughness > 0.) {
+            diffuse_brdf = new OrenNayar_BRDF();
+        }
+        else {
+            diffuse_brdf = new Lambertian_BRDF(base_color);
+        }
+    }
+    const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const;
+    const float pdf(const glm::vec3& wi_local, const IntersectRec& ir) const;
+    const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const;
+ 
+    const Color getEmission() const {return this->emission_color * this->emission;}
+
+    static std::shared_ptr <ADMaterial> makeDiffuse(const std::string& name, const Color& Kd, const float roughness) {
+        Color w = Color::White();
+        return std::make_shared <ADMaterial> (name, w, 0, w, 0, 0, glm::vec3(0), 0, 
+            w, 0, 1.0, Kd, 0, w, 0, 0, roughness, 0, w);
+    }
+
+    // member variables
+    const Color opacity = Color::White();
+    const float coat = 0.0f;
+    const Color coat_color = Color::White();
+    const float coat_roughness = 0.1f;
+    const float coat_IOR = 1.5f;
+    const glm::vec3 coat_normal = glm::vec3(0.0);
+    const float emission = 0.0f;
+    const Color emission_color = Color::White();
+    const float metalness = 0.0f;
+    const float base = 0.8f;
+    const Color base_color = Color::White();
+    const float specular = 1.0f;
+    const Color specular_color = Color::White();
+    const float specular_roughness = 0.2f;
+    const float specular_IOR = 1.5f; 
+    const float diffuse_roughness = 0.0f;
+    const float transmission = 0.0f;
+    const Color transmission_color = Color::White();
+
+    Color coat_brdf_reflectance;
+    Color specular_brdf_reflectance;
+
+    BxDF* coat_brdf = nullptr;
+    BxDF* metal_brdf = nullptr;
+    BxDF* specular_brdf = nullptr;
+    BxDF* specular_btdf = nullptr;
+    BxDF* diffuse_brdf = nullptr;
 
 private:
 

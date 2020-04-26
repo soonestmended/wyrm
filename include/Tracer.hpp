@@ -4,32 +4,21 @@
 #include "Color.hpp"
 #include "Ray.hpp"
 #include "Scene.hpp"
-#include "Shader.hpp"
 
 class Tracer {
 public:
-    Tracer(const Scene& s, const Shader& sh) : scene (s), shader (sh) {}
+    Tracer(const Scene* s, const Accelerator* a) : scene (s), accel (a) {}
     virtual const Color lightAlongRay(const Ray& r) const = 0;
+    const Color estimateDirectLighting(const glm::vec3& wo_world, IntersectRec& ir) const;
+    const Color EDLOneLight(const glm::vec3& wo_world, IntersectRec& ir, const Light& l) const;
 
 protected:
-    const Scene& scene;
-    const Shader& shader;
+    const Scene* scene;
+    const Accelerator* accel;
 };
 
-class BruteForceTracer : public Tracer {
+class PathTracer : public Tracer {
 public:
-    BruteForceTracer(const Scene& s, const Shader& sh) : Tracer (s, sh) {}
+    PathTracer(const Scene* s, const Accelerator* a) : Tracer (s, a) {}
     const Color lightAlongRay(const Ray& r) const;
-};
-
-class AcceleratedTracer : public Tracer {
-public:
-    AcceleratedTracer(const Scene& s, const Shader& sh, const Accelerator& a) : Tracer (s, sh), accel (a) {
-
-    }
-
-    const Color lightAlongRay(const Ray& r) const;
-
-private:
-    const Accelerator& accel;
 };
