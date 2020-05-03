@@ -22,8 +22,12 @@ public:
     Scene() =delete;
     Scene(std::vector <std::shared_ptr <Light>> &&lights_, std::vector <std::shared_ptr<Material>> &&materials_, std::vector <std::shared_ptr <Primitive>> &&primitives_) :
     lights (std::move(lights_)), materials (std::move(materials_)), primitives (std::move(primitives_)) {
-        for (auto& prim : primitives)
+        for (auto& prim : primitives) {
             bbox.enclose(prim->getBBox());
+            if (!prim->getMaterial()->getEmission().isBlack()) {
+                lights.push_back(std::make_shared <GeometricLight> (prim));
+            }
+        }
     }
 
     void printInfo() const;
@@ -37,8 +41,14 @@ public:
             this->primitives.end(),
             std::make_move_iterator(primitives.begin()),
             std::make_move_iterator(primitives.end()));
-        for (auto& prim : this->primitives)
+            
+        for (auto& prim : primitives) {
             bbox.enclose(prim->getBBox());
+            // check for emissive prims, then make geometric lights for these
+            if (!prim->getMaterial()->getEmission().isBlack()) {
+                lights.push_back(std::make_shared <GeometricLight> (prim));
+            }
+        }
     }
 
     void addMaterials(const std::vector <std::shared_ptr<Material>>& materials) {

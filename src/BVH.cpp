@@ -27,6 +27,11 @@ void BVH::makeCLNodes(clBVHNode *&vec) {
 }
 */	
 
+const void BVH::print() const {
+	int node = 0;
+
+}
+
 const bool BVH::build() {
 
 	primitives = scene.getPrimitives();
@@ -55,7 +60,7 @@ const bool BVH::build() {
 		primitiveIndices[i] = i;
 		bboxes.push_back(primitives[i]->getBBox());
 		centroids.push_back(primitives[i]->getBBox().getCentroid());
-		cout << primitives[i]->getBBox().toString() << endl;
+		//cout << primitives[i]->getBBox().toString() << endl;
 	}
 	
 	for (int i = 0; i < numPrimitives; i++) {
@@ -103,7 +108,7 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 		//cb.enclose(centroids[node->faces[i]]);
 		cb.enclose(centroids[primitiveIndices[node.ptr+i]]);
 	}
-	cout << "Bounding box: " << cb.toString() << endl;
+	//cout << "Centroid bounding box: " << cb.toString() << endl;
 
 	glm::vec3 t = cb.max - cb.min;
 	/*	
@@ -218,7 +223,7 @@ void advance_cursor() {
 void BVH::buildBelow(BVHNode &node, int depth) {
 	
 	//if (node->numFaces == 0)	
-	cout << "atDepth: " << depth << "\tnumPrimitives: " << node.numPrimitives << endl;
+	//cout << "atDepth: " << depth << "\tnumPrimitives: " << node.numPrimitives << endl;
 	
 	if (!node.isLeaf()) {
 		printf("Error - splitting internal node\n");
@@ -231,7 +236,7 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 	float zSize = node->bbox.v1[2] - node->bbox.v0[2];
 	*/
 	glm::vec3 bboxSize = node.bbox.max - node.bbox.min;
-	if (depth > 25 || node.numPrimitives < 4 || glm::length(bboxSize) < .0001) {
+	if (depth > 25 || node.numPrimitives < 5 || glm::length(bboxSize) < .0001) {
 		//cout << "Leaf node with " << node.numPrimitives << " prims. \n";
 		fflush(stdout);
 		advance_cursor();
@@ -246,8 +251,8 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 		cout << "ERROR: split failed." << endl;
 		return;
 	}
-		cout << node.bbox.min[sp.axis] << " - " << node.bbox.max[sp.axis] << endl;
-	cout << sp.pos << endl;
+	//cout << "Splitting node: " << node.bbox << endl;
+	//cout << "\tAxis: " << sp.axis << " Pos: " << sp.pos << endl;
 	node.flags = 0; // set not a leaf
 	int le = node.ptr; int re = le + node.numPrimitives-1;
 	int lp = le; int rp = re;
@@ -316,12 +321,15 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 }
 
 const bool BVH::closestIntersection(const Ray& ray, const float tmin, const float tmax, IntersectRec &ans) const {
+	// in BVH internal node, left child is node+1, right child is node.ptr
+	// in BVH leaf, right child is node + 1, primitives start at node.ptr
+
 	ans.t = POS_INF; // ans->u = -1.0f;
 	bool hit = false;
 	IntersectRec tempIr;
 	int curPos = 0;
 	while (curPos < nextAllocedNode) {
-		
+
 		//if (rayIntersectsBBox(ray, nodes[curPos].v0, nodes[curPos].v1)) {
 		if (nodes[curPos].bbox.intersectYN(ray, tmin, tmax)) {		
 			//if (nodes[curPos].numFaces > 0) { // if so, this is a leaf
@@ -330,6 +338,7 @@ const bool BVH::closestIntersection(const Ray& ray, const float tmin, const floa
 				//return true;
 				uint ind;
 				float p, q, r;
+				
 				for (int i = 0; i < nodes[curPos].numPrimitives; ++i) {
 				//for (int i = 0; i < settings->numIndices/3; i++) {
 					/*
@@ -356,8 +365,10 @@ const bool BVH::closestIntersection(const Ray& ray, const float tmin, const floa
 					}
 				}				
 				//return false;
+				
 			}
 			curPos++;
+			
 		}
 		else {
 			if (!nodes[curPos].isLeaf()) { // if !isLeaf()
@@ -384,6 +395,7 @@ const bool BVH::intersectionYN(const Ray& ray, const float tmin, const float tma
 				//return true;
 				uint ind;
 				float p, q, r;
+				
 				for (int i = 0; i < nodes[curPos].numPrimitives; ++i) {
 				//for (int i = 0; i < settings->numIndices/3; i++) {
 					/*
@@ -393,7 +405,7 @@ const bool BVH::intersectionYN(const Ray& ray, const float tmin, const float tma
 					q = vload8(ind.y, vertices);
 					r = vload8(ind.z, vertices);
 					*/
-					if (primitives[primitiveIndices[nodes[curPos].ptr]+i]->intersectYN(ray, tmin, tmax)) {
+					if (primitives[primitiveIndices[nodes[curPos].ptr+i]]->intersectYN(ray, tmin, tmax)) {
 //					if (rayIntersectsTriangle2(ray, p.s012, q.s012, r.s012, &tempIr)) {
 						return true;
 					}

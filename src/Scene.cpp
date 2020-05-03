@@ -36,25 +36,28 @@ void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const BBox& dest, cons
     addMeshInstance(mptr, dest.getCentroid(), scale, axis, angle);
 }
 
-void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const glm::vec3 center, const float s, const glm::vec3 &axis, const float angle) {
-    const BBox& src = mptr->getBBox();
+void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const glm::vec3 center, const float finalSize, const glm::vec3 &axis, const float angle) {
+    BBox src = mptr->getBBox();
+    cout << "Starting bbox: " << src << endl;
     float srcSize = glm::length(src.max-src.min);
+    float scale = finalSize / srcSize;
     glm::mat4 rot = glm::rotate(angle, axis);
-    glm::mat4 trans = glm::translate(glm::mat4(1.0), center - src.getCentroid());
+    glm::mat4 trans = glm::translate(glm::mat4(1.0), center - scale * src.getCentroid());
     //glm::mat4 trans(1.0);
     // cout << glm::to_string(trans) << endl;
-    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(s / srcSize));
+    glm::mat4 scaleMat = glm::scale(glm::mat4(1.0), glm::vec3(scale));
     glm::mat4 xform;
     if (axis.length() > EPSILON && abs(angle) > EPSILON) {
-        xform = scale * trans * rot;
+        xform = trans * rot * scaleMat;
     }
     else {
-        xform = scale * trans;
+        xform = trans * scaleMat;
     }
     //glm::mat4 xform = trans;
-    // cout << glm::to_string(xform) << endl;
+    cout << glm::to_string(xform) << endl;
 
     shared_ptr<MeshInstance> miptr = make_shared <MeshInstance> (mptr, xform);
+    
     this->addPrimitives(miptr->toPrimitives());  
     this->addMaterials(miptr->getMaterials());
 }

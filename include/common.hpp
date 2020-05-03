@@ -1,6 +1,13 @@
 #pragma once
 
-#define EPSILON 0.000001
+#include <iostream>
+#include <glm/vec3.hpp>
+
+#define EPSILON 0.001
 #define POS_INF 9999999999.0
-#define M_PI 3.14159265359
-#define M_INV_PI 0.31830988618
+//#define DEBUG
+
+inline std::ostream& operator<<(std::ostream& os, const glm::vec3& c) {
+    os << "<" << c.x << ", " << c.y << ", " << c.z << ">";
+    return os;
+}

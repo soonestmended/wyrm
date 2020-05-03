@@ -12,6 +12,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+#include "Camera.hpp"
 #include "Color.hpp"
 #include "Mesh.hpp"
 #include "Scene.hpp"
@@ -27,7 +28,7 @@ public:
     static std::vector <MTLMat> parseMtl(std::string fileName);
 
     static std::shared_ptr <Mesh> parseObj(std::string fileName);
-    static std::unique_ptr <Scene> parseX3D(std::string fileName);
+    static std::unique_ptr <Scene> parseX3D(std::string fileName, std::shared_ptr <Camera>& cam);
 
 };
 

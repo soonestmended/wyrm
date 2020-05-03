@@ -132,6 +132,16 @@ protected:
     std::shared_ptr <glm::vec3> uvw;
 
 public:
+    Triangle(const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2, const std::shared_ptr <Material> m_) 
+    : Primitive(m_), v {v0, v1, v2} {
+        bbox.enclose(v0);
+        bbox.enclose(v1);
+        bbox.enclose(v2);
+        e0 = v1 - v0;
+        e1 = v2 - v0;
+        N = glm::normalize(glm::cross(e1, e0));
+    }
+
     Triangle(const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2, const glm::vec3 &N_, const std::shared_ptr <Material> m_) 
     : Primitive(m_), v {v0, v1, v2}, N (N_) {
         bbox.enclose(v0);

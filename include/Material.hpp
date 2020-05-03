@@ -37,11 +37,29 @@ public:
     Material(const std::string& name_, int id_) : name (name_), id (id_) {}
 
     virtual const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const = 0;
-    virtual const float pdf(const glm::vec3& wi_local, const IntersectRec& ir) const = 0;
+    virtual const float pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const = 0;
     virtual const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const = 0;
  
     virtual const Color getEmission() const {return Color::Black();}
     static int currentID;  
+};
+
+class GlassMaterial : public Material {
+public:
+    GlassMaterial() =delete;
+    GlassMaterial(const std::string& name, Color& color, float IOR) : Material(name) {
+        dBSDF = new Dielectric_BSDF(color, 1.00029, IOR);
+    }
+    ~GlassMaterial() {
+        if (dBSDF) delete (dBSDF);
+    }
+    const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const {return Color::Black();}
+    const float pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const {return 0;}
+    const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const {
+        dBSDF->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
+    }
+
+    Dielectric_BSDF* dBSDF = nullptr;
 };
 
 class ADMaterial : public Material {
@@ -111,7 +129,7 @@ public:
             metal_brdf = new GGX_BRDF();
         }
         if (specular > 0.) {
-            specular_brdf = new GGX_BRDF();
+            specular_brdf = new SpecularDielectric_BRDF(specular_color, 1.00029f, specular_IOR);
             specular_brdf_reflectance = specular_brdf->rho(81);
         }
         if (transmission >0.) {
@@ -125,7 +143,7 @@ public:
         }
     }
     const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const;
-    const float pdf(const glm::vec3& wi_local, const IntersectRec& ir) const;
+    const float pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const;
     const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const;
  
     const Color getEmission() const {return this->emission_color * this->emission;}
@@ -148,7 +166,7 @@ public:
     const float metalness = 0.0f;
     const float base = 0.8f;
     const Color base_color = Color::White();
-    const float specular = 1.0f;
+    const float specular = 0.0f;
     const Color specular_color = Color::White();
     const float specular_roughness = 0.2f;
     const float specular_IOR = 1.5f; 

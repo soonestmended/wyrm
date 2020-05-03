@@ -1,9 +1,10 @@
 #pragma once
 
+#include <memory>
 #include <glm/vec3.hpp>
 #include "ONB.hpp"
-#include "Material.hpp"
 
+class Material;
 class Primitive;
 
 class IntersectRec {

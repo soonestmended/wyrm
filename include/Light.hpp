@@ -14,14 +14,14 @@ class Light {
 public:
     virtual const Color getColor() const = 0;
     virtual const float getPower() const = 0;
-    const bool isDeltaLight() const {return false;}
+    virtual const bool isDeltaLight() const {return false;}
     //virtual void getRandomPoint(const glm::vec2& uv, glm::vec3& p) const = 0;
     //virtual void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const = 0;
 
     virtual const Color sample(const glm::vec2& uv, const IntersectRec& ir, glm::vec3& wi, float* pdf, VisibilityTester& vt) const = 0;
     virtual const float pdf(const IntersectRec& ir, const glm::vec3& wi_local) const {return 0.0f;}
-    const Primitive *getPrim() const {return nullptr;}
-    const Color LInf(const Ray& r) const {return Color::Black();} // this is for directional lights to contribute to rays leaving scene
+    virtual const Primitive *getPrim() const {return nullptr;}
+    virtual const Color LInf(const Ray& r) const {return Color::Black();} // this is for directional lights to contribute to rays leaving scene
 };
 
 class PointLight : public Light {
@@ -36,7 +36,7 @@ public:
     //void getRandomPointAndDirection(const glm::vec2& uv, glm::vec3& p, glm::vec3& d) const {
     //    p = P;
     //};
-    const Color sample(const glm::vec2& uv, const IntersectRec& ir, glm::vec3& wi, float& pdf, VisibilityTester& vt) const;
+    const Color sample(const glm::vec2& uv, const IntersectRec& ir, glm::vec3& wi, float* pdf, VisibilityTester& vt) const;
 
 private:
     glm::vec3 P;
@@ -46,7 +46,7 @@ private:
 
 class DirectionalLight;
 class SpotLight;
-class GeometricLight {
+class GeometricLight : public Light {
 public: 
     GeometricLight(const std::shared_ptr <Primitive> _prim) : prim (_prim) {}
 

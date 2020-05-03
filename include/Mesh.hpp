@@ -41,10 +41,10 @@ public:
 
     std::vector <std::shared_ptr<Primitive>> toPrimitives() const;
 
-    //void recenter(const glm::vec3 &c);
-    //void rotate(const glm::vec3 &axis, const float angle);
-    //void scale(const float s);
-    //void translate(const glm::vec3 &dx);
+    void setMaterial(const std::shared_ptr <Material> m) {
+        materials.clear();
+        materials.push_back(m);
+    }
 
     friend class MeshInstance;
 };
@@ -60,7 +60,6 @@ private:
 public:
     MeshInstance(std::shared_ptr<Mesh> ptr, glm::mat4 xform_, std::shared_ptr<Material> material_ = nullptr) : meshPtr(ptr), xform(xform_) {
         glm::mat3 tmp(xform_);
-
         inv_xform_T_3x3 = glm::inverseTranspose(tmp);
         if (material_ != nullptr) {
             this->materials.push_back(material_);

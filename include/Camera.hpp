@@ -10,7 +10,7 @@ class Camera {
 public:
 	Camera() =delete;
 
-	Camera(const glm::vec3& _eye, const glm::vec3& _look, const glm::vec3& _up, const glm::vec3& _right, float _s) :
+	Camera(const glm::vec3& _eye, const glm::vec3& _look, const glm::vec3& _up, const glm::vec3& _right, float _s = 1.0) :
 		eye (_eye), look (_look), up (_up), right (_right), s (_s) {}
 
 	// Generate ray through the image plane, which goes from -cam.right/2 --> +cam.right/2

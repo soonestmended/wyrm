@@ -84,6 +84,7 @@ public:
 	const bool build();
 	const bool closestIntersection(const Ray& ray, const float tmin, const float tmax, IntersectRec& ans) const;
     const bool intersectionYN(const Ray& ray, const float tmin, const float tmax) const;
+	const void print() const;
     
 private:
 	uint nextNewNode();

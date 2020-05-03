@@ -14,15 +14,18 @@ public:
     Accelerator(const Scene& s) : scene (s) {}
     virtual const bool closestIntersection(const Ray& ray, const float tmin, const float tmax, IntersectRec& ans) const {
         float bestT = POS_INF;
+        bool hit = false;
         IntersectRec tempIR;
         for (auto &prim : scene.getPrimitives()) {
-            if (prim->intersect(ray, tmin, tmax, tempIR)) {
+            if (prim->intersect(ray, tmin, bestT, tempIR)) {
                 if (tempIR.t < bestT) {
                     ans = tempIR;
+                    bestT = ans.t;
+                    hit = true;
                 }
             }
         }
-        return (ans.t < POS_INF);
+        return hit;
     }
     virtual const bool intersectionYN(const Ray& ray, const float tmin, const float tmax) const {
         for (auto &prim : scene.getPrimitives()) 

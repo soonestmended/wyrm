@@ -16,15 +16,12 @@
 <Camera location='0 0 -10' look='0 0 1' up= '0 1 0' right='1 0 0' s='1'/>
 <!--  <Camera location='0 -1.9 10' look='0 0 -1' up= '0 1 0' right='-1 0 0' s='1'/>-->
   <Scene>
-  <PointLight Location='0 3 -6' Power = '100' Color = '1 1 1'/>
-  <!--<PointLight Location='0 10 -2' Power = '200' Color = '1 1 1'/> -->
 
-<Shape>
-  <Triangle P='-.5, 3, -10' Q='.5 3 -10' R = '0 3 -11'/>
-  <Appearance>
-    <ADMaterial emission = '.3' emission_color = '1 1 1'/>
-  </Appearance>
-</Shape>
+  <PointLight Location='0 8 0' Power = '300' Color = '1 1 1'/>
+    <PointLight Location='0 8 16' Power = '300' Color = '1 1 1'/>
+    <PointLight Location='0 8 -16' Power = '300' Color = '1 1 1'/>
+
+  <!--<PointLight Location='0 10 -2' Power = '200' Color = '1 1 1'/> -->
 
 <!--
 <Transform translation='4 0 0'>
@@ -38,63 +35,33 @@
   </Transform>
 </Transform>
 -->
-
-    <Transform translation='-5 0 0'>
+<Transform translation='0 0 0'>
       <Shape DEF='DefaultShape'>
         <!--<Box DEF='DefaultBox' size='2 2 2'/>-->
         <Sphere radius='1'/>
         <Appearance>
-          <Material diffuseColor='1 0.2 0.2'/>
+          <GlassMaterial name='glass' color='1 1 1' IOR='1.5'/>
         </Appearance>
       </Shape>
-    </Transform>
-
-    <Transform translation='-2.5 0 0'>
-   	<Transform rotation='0 0 1 1'>
-   		<Transform rotation='1 0 0 .4'>
-
+</Transform>
+    <Transform translation='0 0 3'>
       <Shape>
-        <Cone DEF='DefaultCone' bottom='true' bottomRadius='1' height='2' side='true'/>
+        <Sphere radius='2'/>
         <Appearance>
-          <ADMaterial base_color='0.2 1 0.2'/>
+          <ADMaterial name='diffuseSphere' base='1' specular='0' base_color='0.5 .5 0.9'/>
         </Appearance>
       </Shape>
-
-
     </Transform>
-</Transform>
-</Transform>
 
 <Shape>
   <Triangle P='0, -2, -9999' Q='9999 -2 9999' R = '-9999 -2 9999'/>
   <Appearance>
-    <ADMaterial base_color = '.5 .2 .2'/>
+    <ADMaterial name='plane' base='1' base_color = '.25 .25 .25'/>
   </Appearance>
 </Shape>
 
 
 
-    <Transform>
-    	   		<Transform rotation='1 0 0 .4'>
-
-      <Shape>
-        <Cylinder DEF='DefaultCylinder' bottom='true' height='2' radius='1' side='true' top='true'/>
-        <Appearance>
-          <Material diffuseColor='0.2 0.2 1'/>
-        </Appearance>
-      </Shape>
-  </Transform>
-    </Transform>
-    <!--
-    	<Transform translation='2.5 0 0'>
-    	  <Shape>
-        	<Sphere DEF='DefaultSphere' radius='1'/>
-        		<Appearance>
-          			<Material diffuseColor='1 1 0.2'/>
-        		</Appearance>
-      		</Shape>
-	  	</Transform>
-    -->
     
   </Scene>
 </X3D>

@@ -6,5 +6,6 @@
 
 bool VisibilityTester::testVisibile(const Accelerator& a) const {
     Ray r(p, q - p);
-    return a.intersectionYN(r, EPSILON, POS_INF);
+    r.normalize();
+    return !a.intersectionYN(r, .001, glm::length(q - p) - .0001);
 }

@@ -56,7 +56,7 @@ const bool Triangle::intersect(const Ray &ray, float tmin, float tmax, Intersect
         ir.uvw[1] = u;
         ir.uvw[2] = v;
         ir.uvw[0] = 1.f - u - v;
-        //std::cout << ir.normal << std::endl;
+        //std::cout << "hit";
         return true;
     }
  
@@ -111,6 +111,8 @@ void Triangle::getRandomPoint(const glm::vec2& uv, glm::vec3& p, float* pdf) con
     glm::vec2 bg;
 	utils::uniformSampleTriangle(uv, bg);
 	p = bg[0] * v[0] + bg[1] * v[1] + (1.f - bg[0] - bg[1]) * v[2];
+    //cout << "\t" << utils::v2s(v[0]) << "\t" << utils::v2s(v[1]) << "\t" << utils::v2s(v[2]) << endl;
+    //cout << "[" << bg[0] << ", " << bg[1] << "]: " << (Color) p << endl;
     *pdf = 1.0f / getSurfaceArea();
 }
     
@@ -179,10 +181,20 @@ const bool Box::intersect(const Ray& r, float t0, float t1, IntersectRec& ir) co
 		tmax = tzmax;
 
 	if ( (tmin < t1) && (tmax > t0) ) {
+        if (tmin >= t0 && tmin <= t1) {
+            ir.t = tmin;
+        }
+        else if (tmax >= tmin && tmax <= t1) {
+            ir.t = tmax;
+        }
+        else {
+            return false;
+        }
         // hit
         ir.material = this->material;
-        ir.t = tmin;
         ir.isectPoint = r.o + ir.t * r.d;
+        //cout << "Box isectP: " << ir.isectPoint << "   t: " << ir.t << endl;
+        ir.primitive = (Primitive *) this;
         if (hitSide == LEFT)
             ir.normal = glm::vec3(-1, 0, 0);
         else if (hitSide == RIGHT)
@@ -231,11 +243,11 @@ const bool Cone::intersect(const Ray& ray, const float tmin, const float tmax, I
     float b = 2.0f * ((-ray.d[1] * -CO[1]) - glm::dot(ray.d, CO) * cosTheta2);
     float c = (CO[1] * CO[1]) - (glm::dot(CO, CO) * cosTheta2);
     float det = b*b - 4.0f*a*c;
-    if (det < 0.0f) return false;
+    if (det <= 0.0f) return false;
     
     float tClose = (-b - sqrt(det)) / (2.0f * a);
     float tFar = (-b + sqrt(det)) / (2.0f * a);
-    swap(tClose, tFar);
+    if (tFar < tClose) swap(tClose, tFar);
     float tCap = (-height/2.0f - ray.o.y) / ray.d.y; 
 
     glm::vec3 P = ray.o + ray.d * tClose;
@@ -246,7 +258,7 @@ const bool Cone::intersect(const Ray& ray, const float tmin, const float tmax, I
         ir.primitive = (Primitive *) this;
         // FILL IN NORMAL
         glm::vec3 cp = P - C;
-        ir.normal = -glm::normalize(cp * -cp[1] / glm::dot(cp, cp) - glm::vec3(0, -1, 0));
+        ir.normal = glm::normalize(cp * -cp[1] / glm::dot(cp, cp) - glm::vec3(0, -1, 0));
         ir.material = this->getMaterial();
         // FILL IN UVW (maybe)
         return true;
@@ -271,7 +283,7 @@ const bool Cone::intersect(const Ray& ray, const float tmin, const float tmax, I
         ir.primitive = (Primitive *) this;
         // FILL IN NORMAL
         glm::vec3 cp = P - C;//glm::vec3(0, height/2.0f, 0);
-        ir.normal = -glm::normalize(cp * -cp[1] / glm::dot(cp, cp) - glm::vec3(0, -1, 0));
+        ir.normal = glm::normalize(cp * -cp[1] / glm::dot(cp, cp) - glm::vec3(0, -1, 0));
 
         ir.material = this->getMaterial();
         // FILL IN UVW (maybe)
@@ -290,14 +302,17 @@ const bool Cone::intersectYN(const Ray& ray, const float tmin, const float tmax)
     float b = 2.0f * ((-ray.d[1] * -CO[1]) - glm::dot(ray.d, CO) * cosTheta2);
     float c = (CO[1] * CO[1]) - (glm::dot(CO, CO) * cosTheta2);
     float det = b*b - 4.0f*a*c;
-    if (det < 0.0f) return false;
+    if (det <= 0.0f) return false;
     float tClose = (-b - sqrt(det)) / (2.0f * a);
     float tFar = (-b + sqrt(det)) / (2.0f * a);
-    swap(tClose, tFar);
+    if (tFar < tClose) swap(tClose, tFar);
     glm::vec3 P = ray.o + ray.d * tClose;
     if (P.y > -height/2.0f && P.y < height/2.0f && tClose >= tmin && tClose <= tmax) return true;
+    float tCap = (-height/2.0f - ray.o.y) / ray.d.y; 
+    if (tClose <= tCap && tCap <= tFar && tCap >= tmin && tCap <= tmax) return true; // as with a cylinder, if the ray hits the end cap between hitting either side of the cone, then there's an end cap intersection
     P = ray.o + ray.d * tFar;
     if (P.y > -height/2.0f && P.y < height/2.0f && tFar >= tmin && tFar <= tmax) return true;
+
     return false;
 }
 
@@ -320,7 +335,7 @@ const bool Cylinder::intersect(const Ray& ray, const float tmin, const float tma
     float b = 2.0f * (ray.d.x*ray.o.x + ray.d.z*ray.o.z);
     float c = ray.o.x*ray.o.x + ray.o.z*ray.o.z - radius*radius;
     float det = b*b - 4.0f*a*c;
-    if (det < 0.0f) return false;
+    if (det <= 0.0f) return false;
     float ymin = -height/2.0f;
     float ymax = height/2.0f;
     float t[4] = {(-b - sqrt(det)) / (2.0f * a), (-b + sqrt(det)) / (2.0f * a), (ymin - ray.o.y) / ray.d.y, (ymax - ray.o.y) / ray.d.y};
@@ -392,7 +407,7 @@ const bool Cylinder::intersectYN(const Ray& ray, const float tmin, const float t
     float b = 2.0f * (ray.d.x*ray.o.x + ray.d.z*ray.o.z);
     float c = ray.o.x*ray.o.x + ray.o.z*ray.o.z - radius*radius;
     float det = b*b - 4.0f*a*c;
-    if (det < 0.0f) return false;
+    if (det <= 0.0f) return false;
     float ymin = -height/2.0f;
     float ymax = height/2.0f;
     float t[4] = {(-b - sqrt(det)) / (2.0f * a), (-b + sqrt(det)) / (2.0f * a), (ymin - ray.o.y) / ray.d.y, (ymax - ray.o.y) / ray.d.y};
@@ -459,6 +474,7 @@ const bool Sphere::intersect(const Ray& ray, const float tmin, const float tmax,
         ir.primitive = (Primitive *) this;
         ir.isectPoint = ray.o + t*ray.d;
         ir.normal = glm::normalize(ir.isectPoint);
+        //cout << "\t\tSphere isect normal: " << utils::v2s(ir.normal) << endl;
         return true;
     }
     t = (-b + sqrt(det)) / (2.0f * a);
@@ -468,6 +484,8 @@ const bool Sphere::intersect(const Ray& ray, const float tmin, const float tmax,
         ir.primitive = (Primitive *) this;
         ir.isectPoint = ray.o + t*ray.d;
         ir.normal = glm::normalize(ir.isectPoint);
+        //cout << "\t\tSphere isect normal: " << utils::v2s(ir.normal) << endl;
+
         return true;
     }
     return false;
@@ -478,7 +496,12 @@ const bool Sphere::intersectYN(const Ray& ray, const float tmin, const float tma
     float b = 2.0 * glm::dot(ray.o, ray.d);
     float c = glm::dot(ray.o, ray.o) - radius * radius;
     float det = b*b - 4.0f*a*c;
-    return (det >= 0.0f);
+    if (det <= 0.0f) return false;
+    float t = (-b - sqrt(det)) / (2.0f * a);
+    if (t >= tmin && t <= tmax) return true;
+    t = (-b + sqrt(det)) / (2.0f * a);
+    if (t >= tmin && t <= tmax) return true;
+    return false;
 }
 
 void Sphere::getRandomPoint(const glm::vec2& uv, glm::vec3& p, float* pdf) const {
@@ -531,5 +554,7 @@ void TransformedPrimitive::getRandomPointAndDirection(const glm::vec2& uv, glm::
 
 const float TransformedPrimitive::getSurfaceArea() const {
     // need to scale this by ... xf determinant?
-    // No; this is harder than I thought.
+    // No; this is harder than I thought. For now, just return underlying primitive surface area
+    return prim->getSurfaceArea();
+
 }

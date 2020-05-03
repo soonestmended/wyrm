@@ -32,4 +32,10 @@ public:
 	bool intersect(const Ray &r, float &a, float &b) const;
 	bool intersectYN(const Ray &r, const float t0, const float t1) const;
 
+	friend std::ostream& operator<<(std::ostream& os, const BBox& bbox) {
+		os << "[" << bbox.min[0] << ", " << bbox.min[1] << ", " << bbox.min[2] << "] - [";
+		os << bbox.max[0] << ", " << bbox.max[1] << ", " << bbox.max[2] << "]" << std::endl;
+
+		return os;
+	}
 };

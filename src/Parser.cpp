@@ -14,7 +14,7 @@
 #include <glm/gtx/string_cast.hpp>
 
 #include "pugixml.hpp"
-
+#include "Camera.hpp"
 #include "Color.hpp"
 #include "Mesh.hpp"
 #include "Parser.hpp"
@@ -58,6 +58,7 @@ const vec4 Parser::readVec4(const vector <string> &tokens, const float defaultVa
     }
     return vec4(xyz, w);
 }
+
 
 vector <MTLMat> Parser::parseMtl(string fileName) {
     vector <MTLMat> ans;
@@ -508,8 +509,55 @@ const pugi::xml_node& checkUSE(const pugi::xml_node &node, vector <shared_ptr<Li
     return node;
 }
 
-shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+shared_ptr <Camera> processCamera(const pugi::xml_node& node) {
+    glm::vec3 location = stringToVec3(node.attribute("location").as_string("0 0 -10"));
+    glm::vec3 look = stringToVec3(node.attribute("look").as_string("0 0 1"));
+    glm::vec3 up = stringToVec3(node.attribute("up").as_string("0 1 0"));
+    glm::vec3 right = stringToVec3(node.attribute("right").as_string("1 0 0"));
+    float s = stof(node.attribute("s").as_string("1"));
+    return make_shared <Camera> (location, look, up, right, s);
+}
 
+shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+    pugi::xml_node c = node.child("ADMaterial");
+    if (c) {
+        checkDEF(c, lights, materials, primitives);
+        c = checkUSE(c, lights, materials, primitives);
+        //glm::vec3 boxSize = stringToVec3(c.attribute("size").as_string("1 1 1")); // argument to as_string is default, returned if attribute doesn't exist
+        std::stringstream ss;
+        ss << c.hash_value();
+        string name = c.attribute("name").as_string(ss.str().c_str());
+        Color opacity = stringToVec3(c.attribute("opacity").as_string("1 1 1"));
+        float coat = stof(c.attribute("coat").as_string("0"));
+        Color coat_color = stringToVec3(c.attribute("coat_color").as_string("1 1 1"));
+        float coat_roughness = stof(c.attribute("coat_roughness").as_string("0.1"));
+        float coat_IOR = stof(c.attribute("coat_IOR").as_string("1.5"));
+        glm::vec3 coat_normal = stringToVec3(c.attribute("coat_normal").as_string("0 0 0"));
+        float emission = stof(c.attribute("emission").as_string("0"));
+        Color emission_color = stringToVec3(c.attribute("emission_color").as_string("1 1 1"));
+        float metalness = stof(c.attribute("metalness").as_string("0"));
+        float base = stof(c.attribute("base").as_string("0.8"));
+        Color base_color = stringToVec3(c.attribute("base_color").as_string("1 1 1"));
+        float specular = stof(c.attribute("specular").as_string("0"));
+        Color specular_color = stringToVec3(c.attribute("specular_color").as_string("1 1 1"));
+        float specular_roughness = stof(c.attribute("specular_roughness").as_string("0.2"));
+        float specular_IOR = stof(c.attribute("specular_IOR").as_string("1.5"));
+        float diffuse_roughness = stof(c.attribute("diffuse_roughness").as_string("0"));
+        float transmission = stof(c.attribute("transmission").as_string("0"));
+        Color transmission_color = stringToVec3(c.attribute("specular_color").as_string("1 1 1"));
+        return std::make_shared <ADMaterial> (name, opacity, coat, coat_color, coat_roughness, coat_IOR, coat_normal, emission, emission_color, 
+            metalness, base, base_color, specular, specular_color, specular_roughness, specular_IOR, diffuse_roughness,
+            transmission, transmission_color);
+    }
+    c = node.child("GlassMaterial");
+    if (c) {
+        std::stringstream ss;
+        ss << c.hash_value();
+        string name = c.attribute("name").as_string(ss.str().c_str());
+        Color color = stringToVec3(c.attribute("color").as_string("1 1 1"));
+        float IOR = stof(c.attribute("IOR").as_string("1.5"));
+        return std::make_shared <GlassMaterial> (name, color, IOR);
+    }
     return defaultMaterial;
 }
 
@@ -573,6 +621,45 @@ void processTransform(const pugi::xml_node &node) {
         currentTransform = glm::translate(currentTransform, -center);
     }
     transformStack.push(currentTransform);
+}
+
+
+void processOBJ(const pugi::xml_node &node, const shared_ptr <Material> material, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+    string fileName = node.attribute("src").as_string();
+    //glm::vec3 bbmin = stringToVec3(node.attribute("bbmin").as_string("-1 -1 -1"));
+    //glm::vec3 bbmax = stringToVec3(node.attribute("bbmax").as_string("1 1 1"));
+    float targetSize = stof(node.attribute("size").as_string("4"));
+    shared_ptr <Mesh> mesh = Parser::parseObj(fileName);
+    if (!mesh) {
+        cout << "ERROR: Failed to process mesh: " << fileName << endl;
+        return;
+    }
+    //bbmin = glm::vec3(transformStack.top() * glm::vec4(bbmin, 1.0));
+    //bbmax = glm::vec3(transformStack.top() * glm::vec4(bbmax, 1.0));
+    BBox src = mesh->getBBox();
+    //cout << "Starting bbox: " << src << endl;
+    float srcSize = glm::length(src.max-src.min);
+    float scale = targetSize / srcSize;
+    glm::mat4 trans = glm::translate(glm::mat4(1.0),  -scale * src.getCentroid());
+    //glm::mat4 trans(1.0);
+    // cout << glm::to_string(trans) << endl;
+    glm::mat4 scaleMat = glm::scale(glm::mat4(1.0), glm::vec3(scale));
+    glm::mat4 xform;
+    //if (axis.length() > EPSILON && abs(angle) > EPSILON) {
+    xform = transformStack.top() * trans * scaleMat;
+    //}
+    //else {
+    //    xform = trans * scaleMat;
+    //}
+    //glm::mat4 xform = trans;
+    //cout << glm::to_string(xform) << endl;
+    if (material) mesh->setMaterial(material);
+    shared_ptr<MeshInstance> miptr = make_shared <MeshInstance> (mesh, xform);
+    vector <shared_ptr <Primitive>> miPrims = miptr->toPrimitives();
+    primitives.insert(
+            primitives.end(),
+            std::make_move_iterator(miPrims.begin()),
+            std::make_move_iterator(miPrims.end()));
 }
 
 void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
@@ -649,12 +736,89 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
         return;
     }
 
+    c = node.child("Triangle");
+    if (c) {
+        cout << "Found a Triangle..." << endl;
+        checkDEF(c, lights, materials, primitives);
+        c = checkUSE(c, lights, materials, primitives);
+        
+        glm::vec3 P = stringToVec3(c.attribute("P").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        glm::vec3 Q = stringToVec3(c.attribute("Q").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        glm::vec3 R = stringToVec3(c.attribute("R").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        glm::mat4& m4 = transformStack.top();
+
+        P = glm::vec3(transformStack.top() * glm::vec4(P, 1.0));
+        Q = glm::vec3(transformStack.top() * glm::vec4(Q, 1.0));
+        R = glm::vec3(transformStack.top() * glm::vec4(R, 1.0));
+        primitives.push_back(make_shared <Triangle> (P, Q, R, m));
+        return;
+    }
+
+    c = node.child("Quad");
+    if (c) {
+        cout << "Found a Quad..." << endl;
+        checkDEF(c, lights, materials, primitives);
+        c = checkUSE(c, lights, materials, primitives);
+        glm::vec3 v[4];
+        v[0] = stringToVec3(c.attribute("P").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        v[1] = stringToVec3(c.attribute("Q").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        v[2] = stringToVec3(c.attribute("R").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        v[3] = stringToVec3(c.attribute("S").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        glm::vec3 N;
+        glm::mat4& m4 = transformStack.top();
+
+        for (int i = 0; i < 4; ++i) {
+            v[i] = glm::vec3(transformStack.top() * glm::vec4(v[i], 1.0));
+        }
+
+        pugi::xml_attribute attr = c.attribute("N");
+        if (attr) {
+            N = stringToVec3(attr.as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        }
+        else {
+            N = glm::normalize(glm::cross(v[1] - v[0], v[2] - v[1]));
+        }
+
+        N = glm::vec3(glm::inverse(glm::transpose(transformStack.top())) * glm::vec4(N, 0.0));
+
+        // can split this as: 012 023 or 013 123. the shorter of the cross edges should be the splitting edge.
+        if (glm::distance(v[1], v[3]) < glm::distance(v[0], v[2])) {
+            // split along v[1] --> v[3], i.e. 013 123
+            primitives.push_back(make_shared <Triangle> (v[0], v[1], v[3], N, m));
+            primitives.push_back(make_shared <Triangle> (v[1], v[2], v[3], N, m));
+        }
+        else {
+            primitives.push_back(make_shared <Triangle> (v[0], v[1], v[2], N, m));
+            primitives.push_back(make_shared <Triangle> (v[0], v[2], v[3], N, m));
+        }
+
+        return;
+    }
+    
+    c = node.child("OBJ");
+    if (c) {
+        cout << "Processing OBJ file..." << endl;
+        checkDEF(c, lights, materials, primitives);
+        c = checkUSE(c, lights, materials, primitives);
+        if (m != defaultMaterial) {
+            processOBJ(c, m, lights, materials, primitives);
+        } else {
+            processOBJ(c, nullptr, lights, materials, primitives);
+        }
+        return;
+    }
+
     cout << "ERROR: Shape has no geometry child." << endl;
 }
 
-void processMaterial(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+void processPointLight(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
+    // Color and Location
+    Color color = stringToVec3(node.attribute("Color").as_string("1 1 1"));
+    glm::vec3 P = stringToVec3(node.attribute("Location").as_string("0 1000 0"));
+    float power = stof(node.attribute("Power").as_string("100"));
+    P = glm::vec3(transformStack.top() * glm::vec4(P, 1.0));
+    lights.push_back(make_shared <PointLight> (P, color, power));
 }
-
 
 
 void process(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
@@ -695,6 +859,12 @@ void process(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vec
     else if (!strcmp(nodeName, "Scene")) {
         cout << "Processing Scene... \n";
     }
+
+    else if (!strcmp(nodeName, "PointLight")) {
+        cout << "Processing PointLight..." << endl;
+        processPointLight(node, lights, materials, primitives);
+        return;
+    }
         
     else {
         // Unknown node type, don't go down any further
@@ -706,7 +876,7 @@ void process(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vec
         process(c, lights, materials, primitives);
 }
 
-unique_ptr <Scene> Parser::parseX3D(std::string fileName) {
+unique_ptr <Scene> Parser::parseX3D(std::string fileName, shared_ptr <Camera>& cam) {
     vector <shared_ptr<Light>> lights;
     vector <shared_ptr<Material>> materials;
     vector <shared_ptr<Primitive>> primitives;
@@ -725,12 +895,22 @@ unique_ptr <Scene> Parser::parseX3D(std::string fileName) {
     simple_walker walker;
     doc.traverse(walker);
     auto sceneNode = doc.child("X3D").child("Scene");
+
     if (!sceneNode) {
         cout << "Scene not found." << endl;
         return Scene::emptyScene();
     }
 
     process(sceneNode, lights, materials, primitives);
+
+    auto cameraNode = doc.child("X3D").child("Camera");
+    if (!cameraNode) {
+        cout << "Camera not found." << endl;
+        cam = nullptr;
+    }
+    else {
+        cam = processCamera(cameraNode);
+    }
 
     return std::make_unique <Scene> (std::move(lights), std::move(materials), std::move(primitives));
 }

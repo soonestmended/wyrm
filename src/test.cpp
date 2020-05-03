@@ -49,42 +49,54 @@ int main (int argc, char ** argv) {
         cout << "Error: No input file provided." << endl;
         return 0;
     }
+    shared_ptr <Camera> c = nullptr;
+    unique_ptr <Scene> s = Parser::parseX3D(vm["input_file"].as<string>().c_str(), c);
+    
+//    unique_ptr <Scene> s = Scene::emptyScene();
 
-    unique_ptr <Scene> s = Parser::parseX3D("test.x3d");
-    /*
-    unique_ptr <Scene> s = Scene::emptyScene();
-
-    BBox wrapper(glm::vec3(-2.0, -2.0, -2.0), glm::vec3(2.0, 2.0, 2.0));
-    s->addMeshInstance(Parser::parseObj(vm["input_file"].as<string>()), wrapper, glm::vec3(0, 1, 0), 180);
     //s->addMesh(Scene::parseObj(vm["input_file"].as<string>()));
-    if (s == nullptr) {
-        cout << "Parse of " << vm["input_file"].as<string>() << " failed. " << endl;
-        exit(0);
-    }
 
-    */
     cout << "Parse successful." << endl;
     s->printInfo();
 
-    shared_ptr <Light> l = make_shared <PointLight> (glm::vec3(0.0, 0.0, -10.0), Color::White(), 100.0);
+    //BBox wrapper(glm::vec3(2.0, -2.0, -2.0), glm::vec3(6.0, 2.0, 2.0));
+    //s->addMeshInstance(Parser::parseObj("bunny.obj"), wrapper, glm::vec3(0, 1, 0), 180);
+ 
+/*
+    shared_ptr <Light> l = make_shared <PointLight> (glm::vec3(0.0, 0.0, -10.0), Color::White(), 200.0);
     vector <shared_ptr<Light>> bar;
     bar.push_back(l);
+    bar.push_back(make_shared <PointLight> (glm::vec3(0.0, 10.0, -2.0), Color::White(), 200.0));
     s->addLights(bar);
-
+*/
     // for now just implement quick render
-    Camera c(glm::vec3(0, 0, -10), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), 1);
+    if (!c) {
+        c = make_shared <Camera> (glm::vec3(0, 0, -10), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), 1);
+    }
 
     BVH bvh(*s);
     if (!bvh.build()) {
         cout << "Error building BVH." << endl;
         exit(1);
     }
-
+    else {
+        cout << "BVH build complete." << endl;
+    }
+    Accelerator da(*s);
     PathTracer pt(s.get(), &bvh);
+    cout << "Path tracer constructed." << endl;
     Image foo(512, 512);
+    cout << "Image constructed." << endl;
 
-    QuickRenderer qr(c, *s, pt, foo);
-    qr.render();
+//    QuickRenderer qr(*c, *s, pt, foo);
+
+#ifdef DEBUG
+    DebugRenderer dbr(*c, *s, pt);
+    dbr.render();
+#else
+    MultisampleRenderer mr(*c, *s, pt, foo, 81);
+    mr.render();
+#endif
     if (vm.count("output_file")) {
         foo.writePNG(vm["output_file"].as<string>().c_str());
     }

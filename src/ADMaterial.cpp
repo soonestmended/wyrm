@@ -1,18 +1,103 @@
+#include <memory>
+#include <typeinfo>
+
 #include "IntersectRec.hpp"
 #include "Material.hpp"
 #include "Utils.hpp"
 
-#include <memory>
-#include <typeinfo>
 
 using namespace std;
 using namespace utils;
 
 const Color ADMaterial::brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const {
-    // TODO: Compute brdf for given directions and shading point.
+    Color ans = Color::Black();
+    bool* isSpecular;
+    bool sameHemisphere = ir.onb.sameHemisphere(wo_local, wi_local);
+    //cout << "\t\topacity: " << opacity << endl;
+
+    Color pathWeight = opacity;
+    //cout << "\t\taccumPathWeight: " << pathWeight << endl;
+
+    Color coatPathWeight = pathWeight * coat;
+    //cout << "\t\tcoatPathWeight: " << coatPathWeight << endl;
+    if (!coatPathWeight.isBlack() && sameHemisphere) {
+        ans += coatPathWeight * coat_brdf->f(wo_local, wi_local, isSpecular);
+    }
+        //cout << "\t\taccumPathWeight: " << pathWeight << endl;
+
+    pathWeight *= lerp(Color::White(), this->coat_color * (Color(1) - coat_brdf_reflectance), this->coat);
+    //cout << "\t\taccumPathWeight: " << pathWeight << endl;
+
+    Color metalPathWeight = pathWeight * metalness; 
+    // metalness
+    //cout << "\t\tmetalPathWeight: " << metalPathWeight << endl;
+    //cout << "\t\taccumPathWeight: " << pathWeight << endl;
+    if (!metalPathWeight.isBlack() && sameHemisphere)
+        ans += metalPathWeight * metal_brdf->f(wo_local, wi_local, isSpecular);
+
+    pathWeight *= 1. - metalness;
+    
+    Color specularPathWeight = pathWeight * specular;
+    //cout << "\t\tspecularPathWeight: " << specularPathWeight << endl;    
+    //cout << "\t\taccumPathWeight: " << pathWeight << endl;
+    if (!specularPathWeight.isBlack() && sameHemisphere)
+        ans += specularPathWeight * specular_brdf->f(wo_local, wi_local, isSpecular);
+    
+    pathWeight *= Color(1) - this->specular_color * this->specular * specular_brdf_reflectance;
+    Color transPathWeight = pathWeight * transmission * transmission_color;
+    //cout << "\t\ttransPathWeight: " << transPathWeight << endl;
+    //cout << "\t\taccumPathWeight: " << pathWeight << endl;
+    
+    if (!transPathWeight.isBlack() && !sameHemisphere) 
+        ans += transPathWeight * specular_btdf->f(wo_local, wi_local, isSpecular);
+
+    pathWeight *= 1. - transmission;
+    //cout << "\t\tdiffusePathWeight: " << pathWeight << endl;
+
+    if (!pathWeight.isBlack() && sameHemisphere) 
+        ans += pathWeight * diffuse_brdf->f(wo_local, wi_local, isSpecular);
+    
+    return ans;
 }
-const float ADMaterial::pdf(const glm::vec3& wi_local, const IntersectRec& ir) const {
-    // TODO: Compute pdf for having chosen given direction 
+
+const float ADMaterial::pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const {
+    // TODO: Compute pdf for having chosen given direction
+    // weighted average of pdfs for individual lobes
+
+    // chance of choosing straight through tranmission direction is zero
+    float ans = 0.0f;
+    float pathProb = avg(opacity);
+    float coatProb = pathProb * coat;
+    //cout << "coatProb: " << coatProb << endl;
+    if (coatProb > 0)
+        ans += coatProb * coat_brdf->pdf(wo_local, wi_local);
+
+    pathProb *= 1. - coat;
+    float metalProb = pathProb * metalness;
+    //cout << "metalProb: " << metalProb << endl;
+
+    if (metalProb > 0) 
+        ans += metalProb * metal_brdf->pdf(wo_local, wi_local);
+
+    pathProb *= 1. - metalness;
+    float specularProb = pathProb * specular;
+    //cout << "specProb: " << specularProb << endl;
+
+    if (specularProb > 0) 
+        ans += specularProb * specular_brdf->pdf(wo_local, wi_local);
+    
+    pathProb *= 1. - specular;
+    float transmissionProb = pathProb * transmission;
+    //cout << "transProb: " << transmissionProb << endl;
+
+    if (transmissionProb > 0)
+        ans += transmissionProb * specular_btdf->pdf(wo_local, wi_local);
+    
+    pathProb *= 1. - transmission;
+    //cout << "pathProb: " << pathProb << endl;
+    ans += pathProb * diffuse_brdf->pdf(wo_local, wi_local);
+    return ans;
+
 }
 
 const void ADMaterial::sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const {
@@ -50,9 +135,9 @@ const void ADMaterial::sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, 
     }
 
     pathProb *= 1.0f - q;
-    pathWeight *= lerp(Color::White(), this->coat_color * (glm::vec3(1) - coat_brdf_reflectance), this->coat);
+    pathWeight *= lerp(Color::White(), this->coat_color * (Color(1) - coat_brdf_reflectance), this->coat);
 
-
+/*
 // emission_specular_mixture = emission * emission_color * emission() + specular_mixture
     r = rand01();
     q = this->emission;
@@ -61,11 +146,12 @@ const void ADMaterial::sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, 
         *pdf *= pathProb;
         *bsdf = this->emission * this->emission_color * pathWeight;
         // somehow set flags here to indicate emission
+        *isSpecular = false;
         return;
     }
 
     pathProb *= 1.0f - q;
-
+*/
 // specular_mixture = metalness * metal_brdf(...) + (1 - metalness) * specular_reflection_layer
     r = rand01();
     q = this->metalness;
@@ -76,8 +162,6 @@ const void ADMaterial::sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, 
         *bsdf *= this->metalness * pathWeight;
         return;
     }
-
-
 
     pathProb *= 1.0f - q;
     pathWeight *= 1.0f - this->metalness;
@@ -90,14 +174,18 @@ const void ADMaterial::sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, 
         pathProb *= q;
         specular_brdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
         *pdf *= pathProb;
-        *bsdf *= pathWeight * this->specular * this->specular_color;
+        *bsdf *= pathWeight * this->specular;
+        cout << "pdf: " << *pdf << endl;
+        cout << "pathweight: " << pathWeight << endl;
+        cout << "bsdf: " << *bsdf << endl;
+        cout << "cosTheta: " << ONB::cosTheta(wo_local) << endl;
         return;       
     }
 
     pathProb *= 1.0f - q;
-    pathWeight *= glm::vec3(1) - this->specular_color * this->specular * specular_brdf_reflectance;
+    pathWeight *= Color(1) - this->specular_color * this->specular * specular_brdf_reflectance;
 
-// transmission_sheen_mix = transmission * transm_color * specular_btdf(...) + (1 - transmission) * sheen_layer
+    // transmission_sheen_mix = transmission * transm_color * specular_btdf(...) + (1 - transmission) * sheen_layer
     r = rand01();
     q = this->transmission;
     if (r < q) {
