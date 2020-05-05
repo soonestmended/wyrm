@@ -13,49 +13,49 @@
     <meta content='X3D-Edit 3.3, https://savage.nps.edu/X3D-Edit' name='generator'/>
     <meta content='../license.html' name='license'/>
   </head>
-<Camera location='278 273 -800' look='0 0 1' up= '0 1 0' right='1 0 0' s='1'/>
+<Camera location='278 273 -800' look='0 0 1' up= '0 1 0' right='-1 0 0' s='1.223'/>
 <!--  <Camera location='0 -1.9 10' look='0 0 -1' up= '0 1 0' right='-1 0 0' s='1'/>-->
   <Scene>
 
     <Shape>
       <Quad P='343.0 548.79 227.0' Q='343.0 548.79 332.0' R='213.0 548.79 332.0' S='213.0 548.79 227.0' N='0 -1 0'/>
       <Appearance>
-        <ADMaterial emission = '.65' emission_color = '.43 .33 .14'/>
+        <ADMaterial emission = '200000' emission_color = '1 1 1'/>
       </Appearance>
     </Shape>
 
     <Shape DEF='floor'>
       <Quad P='552.8 0.0 0.0' Q='0 0 0' R = '0 0 559.2' S='549.6 0 559.2' N='0 1 0'/>
       <Appearance>
-        <ADMaterial DEF='white' base='1.0' base_color='.75 .75 .75'/>
+        <DiffuseMaterial DEF='white' color='.5 .5 .5'/>
       </Appearance>
     </Shape>
 
     <Shape DEF='ceiling'>
       <Quad P='556.0 548.8 0.0' Q='556.0 548.8 559.2' R='0.0 548.8 559.2' S='0.0 548.8 0.0' N='0 -1 0'/>
       <Appearance>
-        <ADMaterial USE='white'/>
+        <DiffuseMaterial USE='white'/>
       </Appearance>
     </Shape>
 
     <Shape DEF='backWall'>
       <Quad P='549.6 0.0 559.2' Q='0.0 0.0 559.2' R='0.0 548.8 559.2' S='556.0 548.8 559.2' N='0 0 -1'/>
       <Appearance>
-        <ADMaterial USE='white'/>
+        <DiffuseMaterial USE='white'/>
       </Appearance>
     </Shape>
 
     <Shape DEF='rightWall'>
       <Quad P='0.0 0.0 559.2' Q='0.0 0.0 0.0' R='0.0 548.8 0.0' S='0.0 548.8 559.2' N='-1 0 0'/>
       <Appearance>
-        <ADMaterial DEF='green' base='1.0' base_color='.14 .48 .13'/>
+        <DiffuseMaterial DEF='green' color='0 .5 0'/>
       </Appearance>
     </Shape>
 
     <Shape DEF='leftWall'>
       <Quad P='552.8 0.0 0.0' Q='549.6 0.0 559.2' R='556.0 548.8 559.2' S='556.0 548.8 0.0' N='1 0 0'/>
       <Appearance>
-        <ADMaterial DEF='red' base='1.0' base_color='.66 .06 .05'/>
+        <DiffuseMaterial DEF='red' color='.5 0 0'/>
       </Appearance>
     </Shape>
 
@@ -63,31 +63,31 @@
       <Shape>
         <Quad P='130.0 165.0 65.0' Q='82.0 165.0 225.0' R='240.0 165.0 272.0' S='290.0 165.0 114.0' />
         <Appearance>
-          <ADMaterial USE='white' />
+          <DiffuseMaterial USE='white' />
         </Appearance>
       </Shape>
       <Shape>
         <Quad P='290.0 0.0 114.0' Q='290.0 165.0 114.0' R='240.0 165.0 272.0' S='240.0 0.0 272.0' />
         <Appearance>
-          <ADMaterial USE='white' />
+          <DiffuseMaterial USE='white' />
         </Appearance>
       </Shape>
       <Shape>
         <Quad P='130.0 0.0  65.0' Q='130.0 165.0 65.0' R='290.0 165.0 114.0' S='290.0 0.0 114.0' />
         <Appearance>
-          <ADMaterial USE='white' />
+          <DiffuseMaterial USE='white' />
         </Appearance>
       </Shape>
       <Shape>
         <Quad P='82.0 0.0 225.0' Q='82.0 165.0 225.0' R='130.0 165.0 65.0' S='130.0 0.0 65.0' />
         <Appearance>
-          <ADMaterial USE='white' />
+          <DiffuseMaterial USE='white' />
         </Appearance>
       </Shape>
       <Shape>
         <Quad P='240.0 0.0 272.0' Q='240.0 165.0 272.0' R='82.0 165.0 225.0' S='82.0 0.0 225.0' />
         <Appearance>
-          <ADMaterial USE='white' />
+          <DiffuseMaterial USE='white' />
         </Appearance>
       </Shape>
     </Transform>
@@ -96,31 +96,31 @@
       <Shape>
         <Quad P='423.0 330.0 247.0' Q='265.0 330.0 296.0' R='314.0 330.0 456.0' S='472.0 330.0 406.0' />
         <Appearance>
-          <ADMaterial USE='white' />
+          <DiffuseMaterial USE='white' />
         </Appearance>
       </Shape>
       <Shape>
         <Quad P='423.0 0.0 247.0' Q='423.0 330.0 247.0' R='472.0 330.0 406.0' S='472.0 0.0 406.0' />
         <Appearance>
-          <ADMaterial USE='white' />
+          <DiffuseMaterial USE='white' />
         </Appearance>
       </Shape>
       <Shape>
         <Quad P='472.0 0.0 406.0' Q='472.0 330.0 406.0' R='314.0 330.0 456.0' S='314.0 0.0 456.0' />
         <Appearance>
-          <ADMaterial USE='white' />
+          <DiffuseMaterial USE='white' />
         </Appearance>
       </Shape>
       <Shape>
         <Quad P='314.0 0.0 456.0' Q='314.0 330.0 456.0' R='265.0 330.0 296.0' S='265.0 0.0 296.0' />
         <Appearance>
-          <ADMaterial USE='white' />
+          <DiffuseMaterial USE='white' />
         </Appearance>
       </Shape>
       <Shape>
         <Quad P='265.0 0.0 296.0' Q='265.0 330.0 296.0' R='423.0 330.0 247.0' S='423.0 0.0 247.0' />
         <Appearance>
-          <ADMaterial USE='white' />
+          <DiffuseMaterial USE='white' />
         </Appearance>
       </Shape>
     </Transform>

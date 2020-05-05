@@ -13,6 +13,7 @@ public:
     virtual const Color f(const glm::vec3& wo_local, const glm::vec3& wi_local, bool* isSpecular) const {return Color::White();};
     virtual const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const {
         // default is cosine sampling
+        *isSpecular = false;
         wi_local = ONB::cosineSampleHemisphere(utils::rand01vec2());
         if (wo_local.z < 0) wi_local.z *= -1; // flip wi if wo is in opposite hemisphere
         *pdf = this->pdf(wo_local, wi_local);

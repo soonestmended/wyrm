@@ -558,6 +558,15 @@ shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shar
         float IOR = stof(c.attribute("IOR").as_string("1.5"));
         return std::make_shared <GlassMaterial> (name, color, IOR);
     }
+    c = node.child("DiffuseMaterial");
+    if (c) {
+        cout << "Diffuse material" << endl;
+        std::stringstream ss;
+        ss << c.hash_value();
+        string name = c.attribute("name").as_string(ss.str().c_str());
+        Color color = stringToVec3(c.attribute("color").as_string("1 1 1"));
+        return std::make_shared <DiffuseMaterial> (name, color);
+    }
     return defaultMaterial;
 }
 

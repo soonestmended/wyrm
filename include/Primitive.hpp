@@ -46,6 +46,9 @@ public:
         Ray r{ir.isectPoint, ir.onb.local2world(wi_local)};
         if (!intersect(r, EPSILON, POS_INF, lightIR)) return 0.f;
         float dist2 = glm::length2(lightIR.isectPoint - ir.isectPoint);
+        //std::cout << "\t\tdist2: " << dist2 << std::endl;
+        //std::cout << "\t\tSA: " << getSurfaceArea() << std::endl;
+        //std::cout << "\t\tdot prod: " << abs(glm::dot(lightIR.normal, -r.d)) << std::endl;
         return dist2 / (abs(glm::dot(lightIR.normal, -r.d)) * getSurfaceArea());
     }
 

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <glm/vec3.hpp>
 
-#define EPSILON 0.001
+#define EPSILON 0.002
 #define POS_INF 9999999999.0
 //#define DEBUG
 

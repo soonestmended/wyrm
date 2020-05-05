@@ -3,7 +3,7 @@
 namespace utils {
 
     float powerHeuristic(int nf, float fPDF, int ng, float gPDF) {
-        float f = nf * fPDF, g = ng * gPDF;
+        float f = (float) nf * fPDF, g = (float) ng * gPDF;
 	    return (f*f) / (f*f + g*g);
     }
 

@@ -23,6 +23,7 @@ const Color GeometricLight::sample(const glm::vec2& uv, const IntersectRec& ir, 
     glm::vec3 pointOnLight, directionFromLight;
     prim->getRandomPointAndDirection(glm::vec2(utils::rand01(), utils::rand01()), pointOnLight, directionFromLight, pdf);
     //cout << (Color) pointOnLight << " pdf: " << *pdf << endl;
+
     vt = VisibilityTester(ir.isectPoint, pointOnLight);
     wi_world = glm::normalize(pointOnLight - ir.isectPoint);
     //float distSquared = glm::length2(wi);
@@ -31,5 +32,11 @@ const Color GeometricLight::sample(const glm::vec2& uv, const IntersectRec& ir, 
     // pdf assumes that shape is sampled uniformly with respect to surface area.
     // pdf returned is with respect to solid angle. 
     //pdf = distSquared / (prim->getSurfaceArea() * abs(glm::dot(directionFromLight, -wi)));
+    IntersectRec lightIR;
+    Ray r{ir.isectPoint, wi_world};
+    if (!prim->intersect(r, EPSILON, POS_INF, lightIR)) return 0.f;
+    float dist2 = glm::length2(pointOnLight - ir.isectPoint);
+    *pdf = (dist2 / abs(glm::dot(lightIR.normal, -r.d))) / (*pdf);
+    //cout << "pdf: " << *pdf << endl;
     return this->getColor() * this->getPower();
 }

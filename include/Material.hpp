@@ -36,12 +36,36 @@ public:
     Material(const std::string& name_) : name (name_), id (currentID++) {}
     Material(const std::string& name_, int id_) : name (name_), id (id_) {}
 
-    virtual const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const = 0;
+    virtual const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const = 0;
     virtual const float pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const = 0;
     virtual const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const = 0;
  
     virtual const Color getEmission() const {return Color::Black();}
     static int currentID;  
+};
+
+class DiffuseMaterial : public Material {
+public:
+    DiffuseMaterial(const std::string& name, Color& color) : Material (name) {
+        lbrdf = new Lambertian_BRDF(color);
+    }
+
+    ~DiffuseMaterial() {
+        if (lbrdf) delete(lbrdf);
+    }
+
+    const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
+        bool foo = false;
+        return lbrdf->f(wo_local, wi_local, &foo);
+    }
+    const float pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const {
+        return lbrdf->pdf(wo_local, wi_local);
+    }
+    const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const {
+        lbrdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
+    }
+
+    Lambertian_BRDF* lbrdf;
 };
 
 class GlassMaterial : public Material {
@@ -53,7 +77,10 @@ public:
     ~GlassMaterial() {
         if (dBSDF) delete (dBSDF);
     }
-    const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const {return Color::Black();}
+    const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
+        *isSpecular = true;
+        return Color::Black();
+    }
     const float pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const {return 0;}
     const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const {
         dBSDF->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
@@ -142,7 +169,7 @@ public:
             diffuse_brdf = new Lambertian_BRDF(base_color);
         }
     }
-    const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const;
+    const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const;
     const float pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const;
     const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const;
  

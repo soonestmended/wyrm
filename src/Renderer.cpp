@@ -42,9 +42,15 @@ void MultisampleRenderer::render() {
                 glm::vec2 p((float)i/(float)w, (float)j/(float)h); // center of pixel
                 p += (utils::rand01vec2() - glm::vec2(.5)) * pixelSize;
                 r = camera.getRay(p - glm::vec2(.5));
-                pixelColor += tracer.lightAlongRay(r);
+                if (j == 259 && i == 109) {
+                    pixelColor += tracer.lightAlongRay(r, false);
+                }
+                else {
+                    pixelColor += tracer.lightAlongRay(r, false);
+                }
             }
             target(i, j) = utils::clamp(pixelColor / (float) spp, 0.f, 1.f);
+            //if (utils::avg(pixelColor) > 10.0) cout << "col: " << i << "\tray: " << r << "\tcolor: " << pixelColor << endl;
         }
         printf("\b\b\b\b\b\b\b\b\b");
     }
@@ -53,8 +59,28 @@ void MultisampleRenderer::render() {
 }
 
 void DebugRenderer::render() {
-    Ray testRay {glm::vec3(0, sqrt(2.f)/2.f, -10.f), glm::vec3(0, 0, 1) };
-    for (int i = 0; i < 5; i++) {
-        Color foo = tracer.lightAlongRay(testRay);
+    int w = 512;
+    int h = 512;
+    
+    // one ray for each pixel in the result image
+    // one sample along each ray
+    Ray r;
+    glm::vec2 pixelSize{1./(float) w, 1./(float)h};
+    for (int j = 0; j < h; ++j) {
+        //printf("row: %4d", j);
+        //fflush(stdout);
+        for (int i = 0; i < w; ++i) {
+            Color pixelColor = Color::Black();
+            glm::vec2 p((float)109/(float)w, (float)259/(float)h); // center of pixel
+            p += (utils::rand01vec2() - glm::vec2(.5)) * pixelSize;
+            r = camera.getRay(p - glm::vec2(.5));
+            pixelColor = tracer.lightAlongRay(r);
+            // 0.228245, 0.004493, 0.973594
+            if (j == 259 && i == 109)
+                cout << "Ray: " << r << "\tColor: " << pixelColor << endl;
+        }
+        //printf("\b\b\b\b\b\b\b\b\b");
     }
+    cout << endl;
+    cout << "Called render" << endl;
 }

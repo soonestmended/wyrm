@@ -54,7 +54,12 @@ public:
     const float getPower() const {return prim->getSurfaceArea();}
 
     const Color sample(const glm::vec2& uv, const IntersectRec& ir, glm::vec3& wi, float* pdf, VisibilityTester& vt) const;
-    const float pdf(const IntersectRec& ir, const glm::vec3& wi_local) const {return prim->getRandomPointPdf(ir, wi_local);}
+    const float pdf(const IntersectRec& ir, const glm::vec3& wi_local) const {
+        if (!prim->intersectYN(Ray(ir.isectPoint, ir.onb.local2world(wi_local)), EPSILON, POS_INF)) {
+            return 0;
+        }
+        return prim->getRandomPointPdf(ir, wi_local);
+    }
 
     const Primitive *getPrim() const {return prim.get();}
 

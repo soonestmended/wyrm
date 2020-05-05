@@ -8,9 +8,9 @@
 class Tracer {
 public:
     Tracer(const Scene* s, const Accelerator* a) : scene (s), accel (a) {}
-    virtual const Color lightAlongRay(const Ray& r) const = 0;
-    const Color estimateDirectLighting(const glm::vec3& wo_world, IntersectRec& ir) const;
-    const Color EDLOneLight(const glm::vec3& wo_world, IntersectRec& ir, const Light& l) const;
+    virtual const Color lightAlongRay(const Ray& r, const bool debug = false) const = 0;
+    const Color estimateDirectLighting(const glm::vec3& wo_world, IntersectRec& ir, bool debug = false) const;
+    const Color EDLOneLight(const glm::vec3& wo_world, IntersectRec& ir, const Light& l, bool debug = false) const;
 
 protected:
     const Scene* scene;
@@ -20,5 +20,5 @@ protected:
 class PathTracer : public Tracer {
 public:
     PathTracer(const Scene* s, const Accelerator* a) : Tracer (s, a) {}
-    const Color lightAlongRay(const Ray& r) const;
+    const Color lightAlongRay(const Ray& r, const bool debug = false) const;
 };

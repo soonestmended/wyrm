@@ -9,9 +9,8 @@
 using namespace std;
 using namespace utils;
 
-const Color ADMaterial::brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const {
+const Color ADMaterial::brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
     Color ans = Color::Black();
-    bool* isSpecular;
     bool sameHemisphere = ir.onb.sameHemisphere(wo_local, wi_local);
     //cout << "\t\topacity: " << opacity << endl;
 
@@ -203,6 +202,6 @@ const void ADMaterial::sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, 
 // base_mix = (1 - subsurface) * base * base_color * diffuse_brdf(...) + subsurface * subsurface_mix
     diffuse_brdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
     *pdf *= pathProb;
-    *bsdf *= this->base * this->base_color;
+    *bsdf *= this->base;
     return;
 }
