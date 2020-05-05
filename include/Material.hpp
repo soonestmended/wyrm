@@ -3,20 +3,21 @@
 #include <glm/vec3.hpp>
 #include <string>
 
+#include "common.hpp"
 #include "BxDF.hpp"
 #include "Color.hpp"
 #include "IntersectRec.hpp"
 
 struct MTLMat {
     std::string name;    
-    glm::vec3 Ka;        // ambient
-    glm::vec3 Kd;        // diffuse
-    glm::vec3 Ks;        // specular
-    glm::vec3 Ke;        // emissive; extension to original
-    float Ns;       // specular coefficient
-    float Ni;       // index of refraction
-    float Pr;       // roughness; extension
-    float d;        // dissolve (transparency; d = 1.0 means fully opaque)
+    Vec3 Ka;        // ambient
+    Vec3 Kd;        // diffuse
+    Vec3 Ks;        // specular
+    Vec3 Ke;        // emissive; extension to original
+    Real Ns;       // specular coefficient
+    Real Ni;       // index of refraction
+    Real Pr;       // roughness; extension
+    Real d;        // dissolve (transparency; d = 1.0 means fully opaque)
     std::string map_Ka;  // these are textures
     std::string map_Kd;
     std::string map_Ks;
@@ -36,9 +37,9 @@ public:
     Material(const std::string& name_) : name (name_), id (currentID++) {}
     Material(const std::string& name_, int id_) : name (name_), id (id_) {}
 
-    virtual const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const = 0;
-    virtual const float pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const = 0;
-    virtual const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const = 0;
+    virtual const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const = 0;
+    virtual const Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const = 0;
+    virtual const void sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const = 0;
  
     virtual const Color getEmission() const {return Color::Black();}
     static int currentID;  
@@ -54,14 +55,14 @@ public:
         if (lbrdf) delete(lbrdf);
     }
 
-    const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
+    const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
         bool foo = false;
         return lbrdf->f(wo_local, wi_local, &foo);
     }
-    const float pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const {
+    const Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {
         return lbrdf->pdf(wo_local, wi_local);
     }
-    const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const {
+    const void sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const {
         lbrdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
     }
 
@@ -71,18 +72,18 @@ public:
 class GlassMaterial : public Material {
 public:
     GlassMaterial() =delete;
-    GlassMaterial(const std::string& name, Color& color, float IOR) : Material(name) {
+    GlassMaterial(const std::string& name, Color& color, Real IOR) : Material(name) {
         dBSDF = new Dielectric_BSDF(color, 1.00029, IOR);
     }
     ~GlassMaterial() {
         if (dBSDF) delete (dBSDF);
     }
-    const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
+    const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
         *isSpecular = true;
         return Color::Black();
     }
-    const float pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const {return 0;}
-    const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const {
+    const Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {return 0;}
+    const void sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const {
         dBSDF->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
     }
 
@@ -94,22 +95,22 @@ public:
     ADMaterial() =delete;
     ADMaterial( const std::string& name,
                 const Color& _opacity, 
-                const float _coat,
+                const Real _coat,
                 const Color& _coat_color,
-                const float _coat_roughness,
-                const float _coat_IOR,
-                const glm::vec3& _coat_normal,
-                const float _emission,
+                const Real _coat_roughness,
+                const Real _coat_IOR,
+                const Vec3& _coat_normal,
+                const Real _emission,
                 const Color& _emission_color,
-                const float _metalness,
-                const float _base,
+                const Real _metalness,
+                const Real _base,
                 const Color& _base_color,
-                const float _specular,
+                const Real _specular,
                 const Color& _specular_color,
-                const float _specular_roughness,
-                const float _specular_IOR,
-                const float _diffuse_roughness,
-                const float _transmission,
+                const Real _specular_roughness,
+                const Real _specular_IOR,
+                const Real _diffuse_roughness,
+                const Real _transmission,
                 const Color& _transmission_color) :
                 Material(name),
                 opacity(_opacity),
@@ -169,36 +170,36 @@ public:
             diffuse_brdf = new Lambertian_BRDF(base_color);
         }
     }
-    const Color brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const;
-    const float pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const;
-    const void sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const;
+    const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const;
+    const Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const;
+    const void sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const;
  
     const Color getEmission() const {return this->emission_color * this->emission;}
 
-    static std::shared_ptr <ADMaterial> makeDiffuse(const std::string& name, const Color& Kd, const float roughness) {
+    static std::shared_ptr <ADMaterial> makeDiffuse(const std::string& name, const Color& Kd, const Real roughness) {
         Color w = Color::White();
-        return std::make_shared <ADMaterial> (name, w, 0, w, 0, 0, glm::vec3(0), 0, 
+        return std::make_shared <ADMaterial> (name, w, 0, w, 0, 0, Vec3(0), 0, 
             w, 0, 1.0, Kd, 0, w, 0, 0, roughness, 0, w);
     }
 
     // member variables
     const Color opacity = Color::White();
-    const float coat = 0.0f;
+    const Real coat = 0.0f;
     const Color coat_color = Color::White();
-    const float coat_roughness = 0.1f;
-    const float coat_IOR = 1.5f;
-    const glm::vec3 coat_normal = glm::vec3(0.0);
-    const float emission = 0.0f;
+    const Real coat_roughness = 0.1f;
+    const Real coat_IOR = 1.5f;
+    const Vec3 coat_normal = Vec3(0.0);
+    const Real emission = 0.0f;
     const Color emission_color = Color::White();
-    const float metalness = 0.0f;
-    const float base = 0.8f;
+    const Real metalness = 0.0f;
+    const Real base = 0.8f;
     const Color base_color = Color::White();
-    const float specular = 0.0f;
+    const Real specular = 0.0f;
     const Color specular_color = Color::White();
-    const float specular_roughness = 0.2f;
-    const float specular_IOR = 1.5f; 
-    const float diffuse_roughness = 0.0f;
-    const float transmission = 0.0f;
+    const Real specular_roughness = 0.2f;
+    const Real specular_IOR = 1.5f; 
+    const Real diffuse_roughness = 0.0f;
+    const Real transmission = 0.0f;
     const Color transmission_color = Color::White();
 
     Color coat_brdf_reflectance;

@@ -569,7 +569,7 @@ PUGI__NS_BEGIN
 				*marker = static_cast<uint32_t>(reinterpret_cast<char*>(marker) - reinterpret_cast<char*>(out_page));
 				out_page->compact_page_marker = marker;
 
-				// since we don't reuse the page space until we reallocate it, we can just pretend that we freed the marker block
+				// since we don't reuse the page space until we floatlocate it, we can just pretend that we freed the marker block
 				// this will make sure deallocate_memory correctly tracks the size
 				out_page->freed_size += sizeof(uint32_t);
 
@@ -4810,9 +4810,9 @@ PUGI__NS_BEGIN
 			return make_parse_result(status_io_error);
 		}
 
-		xml_encoding real_encoding = get_buffer_encoding(encoding, contents, size);
+		xml_encoding float_encoding = get_buffer_encoding(encoding, contents, size);
 
-		return load_buffer_impl(doc, doc, contents, zero_terminate_buffer(contents, size, real_encoding), options, real_encoding, true, true, out_buffer);
+		return load_buffer_impl(doc, doc, contents, zero_terminate_buffer(contents, size, float_encoding), options, float_encoding, true, true, out_buffer);
 	}
 
 	PUGI__FN void close_file(FILE* file)
@@ -4964,9 +4964,9 @@ PUGI__NS_BEGIN
 
 		if (status != status_ok) return make_parse_result(status);
 
-		xml_encoding real_encoding = get_buffer_encoding(encoding, buffer, size);
+		xml_encoding float_encoding = get_buffer_encoding(encoding, buffer, size);
 
-		return load_buffer_impl(doc, doc, buffer, zero_terminate_buffer(buffer, size, real_encoding), options, real_encoding, true, true, out_buffer);
+		return load_buffer_impl(doc, doc, buffer, zero_terminate_buffer(buffer, size, float_encoding), options, float_encoding, true, true, out_buffer);
 	}
 #endif
 
@@ -7591,16 +7591,16 @@ PUGI__NS_BEGIN
 			}
 		}
 
-		void* reallocate(void* ptr, size_t old_size, size_t new_size)
+		void* floatlocate(void* ptr, size_t old_size, size_t new_size)
 		{
 			// round size up to block alignment boundary
 			old_size = (old_size + xpath_memory_block_alignment - 1) & ~(xpath_memory_block_alignment - 1);
 			new_size = (new_size + xpath_memory_block_alignment - 1) & ~(xpath_memory_block_alignment - 1);
 
-			// we can only reallocate the last object
+			// we can only floatlocate the last object
 			assert(ptr == 0 || static_cast<char*>(ptr) + old_size == &_root->data[0] + _root_size);
 
-			// try to reallocate the object inplace
+			// try to floatlocate the object inplace
 			if (ptr && _root_size - old_size + new_size <= _root->capacity)
 			{
 				_root_size = _root_size - old_size + new_size;
@@ -7748,7 +7748,7 @@ PUGI__NS_BEGIN
 			return xpath_string(str, false, 0);
 		}
 
-		static xpath_string from_heap_preallocated(const char_t* begin, const char_t* end)
+		static xpath_string from_heap_pfloatlocated(const char_t* begin, const char_t* end)
 		{
 			assert(begin <= end && *end == 0);
 
@@ -7790,10 +7790,10 @@ PUGI__NS_BEGIN
 				size_t result_length = target_length + source_length;
 
 				// allocate new buffer
-				char_t* result = static_cast<char_t*>(alloc->reallocate(_uses_heap ? const_cast<char_t*>(_buffer) : 0, (target_length + 1) * sizeof(char_t), (result_length + 1) * sizeof(char_t)));
+				char_t* result = static_cast<char_t*>(alloc->floatlocate(_uses_heap ? const_cast<char_t*>(_buffer) : 0, (target_length + 1) * sizeof(char_t), (result_length + 1) * sizeof(char_t)));
 				if (!result) return;
 
-				// append first string to the new buffer in case there was no reallocation
+				// append first string to the new buffer in case there was no floatlocation
 				if (!_uses_heap) memcpy(result, _buffer, target_length * sizeof(char_t));
 
 				// append second string to the new buffer
@@ -8288,7 +8288,7 @@ PUGI__NS_BEGIN
 		assert(s < result + result_size);
 		*s = 0;
 
-		return xpath_string::from_heap_preallocated(result, s);
+		return xpath_string::from_heap_pfloatlocated(result, s);
 	}
 
 	PUGI__FN bool check_string_to_number_format(const char_t* string)
@@ -8868,8 +8868,8 @@ PUGI__NS_BEGIN
 
 			if (size_ + count > capacity)
 			{
-				// reallocate the old array or allocate a new one
-				xpath_node* data = static_cast<xpath_node*>(alloc->reallocate(_begin, capacity * sizeof(xpath_node), (size_ + count) * sizeof(xpath_node)));
+				// floatlocate the old array or allocate a new one
+				xpath_node* data = static_cast<xpath_node*>(alloc->floatlocate(_begin, capacity * sizeof(xpath_node), (size_ + count) * sizeof(xpath_node)));
 				if (!data) return;
 
 				// finalize
@@ -8950,8 +8950,8 @@ PUGI__NS_BEGIN
 		// get new capacity (1.5x rule)
 		size_t new_capacity = capacity + capacity / 2 + 1;
 
-		// reallocate the old array or allocate a new one
-		xpath_node* data = static_cast<xpath_node*>(alloc->reallocate(_begin, capacity * sizeof(xpath_node), new_capacity * sizeof(xpath_node)));
+		// floatlocate the old array or allocate a new one
+		xpath_node* data = static_cast<xpath_node*>(alloc->floatlocate(_begin, capacity * sizeof(xpath_node), new_capacity * sizeof(xpath_node)));
 		if (!data) return;
 
 		// finalize
@@ -10558,7 +10558,7 @@ PUGI__NS_BEGIN
 
 			*ri = 0;
 
-			return xpath_string::from_heap_preallocated(result, ri);
+			return xpath_string::from_heap_pfloatlocated(result, ri);
 		}
 
 		xpath_string eval_string(const xpath_context& c, const xpath_stack& stack)
@@ -10719,7 +10719,7 @@ PUGI__NS_BEGIN
 
 				char_t* end = normalize_space(begin);
 
-				return xpath_string::from_heap_preallocated(begin, end);
+				return xpath_string::from_heap_pfloatlocated(begin, end);
 			}
 
 			case ast_func_normalize_space_1:
@@ -10731,7 +10731,7 @@ PUGI__NS_BEGIN
 
 				char_t* end = normalize_space(begin);
 
-				return xpath_string::from_heap_preallocated(begin, end);
+				return xpath_string::from_heap_pfloatlocated(begin, end);
 			}
 
 			case ast_func_translate:
@@ -10749,7 +10749,7 @@ PUGI__NS_BEGIN
 
 				char_t* end = translate(begin, from.c_str(), to.c_str(), to.length());
 
-				return xpath_string::from_heap_preallocated(begin, end);
+				return xpath_string::from_heap_pfloatlocated(begin, end);
 			}
 
 			case ast_opt_translate_table:
@@ -10761,7 +10761,7 @@ PUGI__NS_BEGIN
 
 				char_t* end = translate_table(begin, _data.table);
 
-				return xpath_string::from_heap_preallocated(begin, end);
+				return xpath_string::from_heap_pfloatlocated(begin, end);
 			}
 
 			case ast_variable:

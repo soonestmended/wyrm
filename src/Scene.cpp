@@ -27,33 +27,33 @@ void Scene::addMesh(const std::shared_ptr<Mesh>& m) {
 void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const BBox& dest) {
     // compute transform matrix from current mesh bbox to desired bbox (no rotation)
     // cout << "srcSize: " << srcSize << "\tdestSize: " << destSize << endl;
-    float scale = glm::length(dest.max - dest.min);
+    Real scale = glm::length(dest.max - dest.min);
     addMeshInstance(mptr, dest.getCentroid(), scale);
 }
 */
-void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const BBox& dest, const glm::vec3 &axis, const float angle) {
-    float scale = glm::length(dest.max - dest.min);
+void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const BBox& dest, const Vec3 &axis, const Real angle) {
+    Real scale = glm::length(dest.max - dest.min);
     addMeshInstance(mptr, dest.getCentroid(), scale, axis, angle);
 }
 
-void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const glm::vec3 center, const float finalSize, const glm::vec3 &axis, const float angle) {
+void Scene::addMeshInstance(const shared_ptr<Mesh>& mptr, const Vec3 center, const Real finalSize, const Vec3 &axis, const Real angle) {
     BBox src = mptr->getBBox();
     cout << "Starting bbox: " << src << endl;
-    float srcSize = glm::length(src.max-src.min);
-    float scale = finalSize / srcSize;
-    glm::mat4 rot = glm::rotate(angle, axis);
-    glm::mat4 trans = glm::translate(glm::mat4(1.0), center - scale * src.getCentroid());
-    //glm::mat4 trans(1.0);
+    Real srcSize = glm::length(src.max-src.min);
+    Real scale = finalSize / srcSize;
+    Mat4 rot = glm::rotate(angle, axis);
+    Mat4 trans = glm::translate(Mat4(1.0), center - scale * src.getCentroid());
+    //Mat4 trans(1.0);
     // cout << glm::to_string(trans) << endl;
-    glm::mat4 scaleMat = glm::scale(glm::mat4(1.0), glm::vec3(scale));
-    glm::mat4 xform;
+    Mat4 scaleMat = glm::scale(Mat4(1.0), Vec3(scale));
+    Mat4 xform;
     if (axis.length() > EPSILON && abs(angle) > EPSILON) {
         xform = trans * rot * scaleMat;
     }
     else {
         xform = trans * scaleMat;
     }
-    //glm::mat4 xform = trans;
+    //Mat4 xform = trans;
     cout << glm::to_string(xform) << endl;
 
     shared_ptr<MeshInstance> miptr = make_shared <MeshInstance> (mptr, xform);
@@ -75,11 +75,11 @@ void parseError(const string& line) {
     cout << "Parse error: " << line << endl;
 }
 
-const vec3 readVec3(const vector <string> &tokens, float defaultValue = 1.0, int numTokens = -1) {
+const Vec3 readVec3(const vector <string> &tokens, Real defaultValue = 1.0, int numTokens = -1) {
     if (numTokens == -1) {
         numTokens = tokens.size();
     }
-    float x, y, z;
+    Real x, y, z;
     x = y = z = defaultValue;
     if (numTokens > 1) {
         x = stof(tokens[1]);
@@ -90,19 +90,19 @@ const vec3 readVec3(const vector <string> &tokens, float defaultValue = 1.0, int
     if (numTokens > 3) {
         z = stof(tokens[3]);
     }
-    return vec3(x, y, z);
+    return Vec3(x, y, z);
 }
 
-const vec4 readVec4(const vector <string> &tokens, const float defaultValue = 1.0, int numTokens = -1) {
+const Vec4 readVec4(const vector <string> &tokens, const Real defaultValue = 1.0, int numTokens = -1) {
     if (numTokens == -1) {
         numTokens = tokens.size();
     }
-    const vec3 xyz = readVec3(tokens, defaultValue, numTokens);
-    float w = defaultValue;
+    const Vec3 xyz = readVec3(tokens, defaultValue, numTokens);
+    Real w = defaultValue;
     if (numTokens > 4) {
         w = stof(tokens[4]);
     }
-    return vec4(xyz, w);
+    return Vec4(xyz, w);
 }
 
 vector <MTLMat> Scene::parseMtl(string fileName) {
@@ -191,9 +191,9 @@ vector <MTLMat> Scene::parseMtl(string fileName) {
 }
 
 shared_ptr <Mesh> Scene::parseObj(string fileName) {
-    vector <vec4> vertices;
-    vector <vec3> normals;
-    vector <vec3> texCoords;
+    vector <Vec4> vertices;
+    vector <Vec3> normals;
+    vector <Vec3> texCoords;
     vector <Tri> tris;
 
     vector <shared_ptr<Material>> materials;
@@ -404,8 +404,8 @@ shared_ptr <Mesh> Scene::parseObj(string fileName) {
     for (auto& t : tris) {
         if (!t.explicitNormals) {
             // make a new vertex normal based on just this face and assign its index to vn[0->3]
-            vec3 e1 = vertices[t.v[1]] - vertices[t.v[0]];
-            vec3 e2 = vertices[t.v[2]] - vertices[t.v[1]];
+            Vec3 e1 = vertices[t.v[1]] - vertices[t.v[0]];
+            Vec3 e2 = vertices[t.v[2]] - vertices[t.v[1]];
             normals.push_back(glm::normalize(glm::cross(e1, e2)));
             t.vn[0] = t.vn[1] = t.vn[2] = normals.size() - 1;
         }
@@ -433,19 +433,19 @@ shared_ptr <Mesh> Scene::parseObj(string fileName) {
         // sg is a <int, vector <Tri *>> pair, mapping smoothing group number to list of tris in group
         auto sgTris = sg.second;
         // map vertex indices to normals
-        map<int, glm::vec3> groupNormals;
+        map<int, Vec3> groupNormals;
         // loop over tris in group
         for (auto t : sgTris) {
             
-            //vec3 e1 = vertices[t->v[1]] - vertices[t->v[0]];
-            //vec3 e2 = vertices[t->v[2]] - vertices[t->v[1]];
-            //glm::vec3 &n = groupNormals[t->s] += glm::cross(e1, e2); // un-normalized face normal
-            //glm::vec3 n = glm::cross(e1, e2); // un-normalized face normal
+            //Vec3 e1 = vertices[t->v[1]] - vertices[t->v[0]];
+            //Vec3 e2 = vertices[t->v[2]] - vertices[t->v[1]];
+            //Vec3 &n = groupNormals[t->s] += glm::cross(e1, e2); // un-normalized face normal
+            //Vec3 n = glm::cross(e1, e2); // un-normalized face normal
             
             // if we haven't encountered this group vertex yet, set its accumulated normal to zero
             for (int i = 0; i < 3; ++i) {
                 if (groupNormals.find(t->v[i]) == groupNormals.end()) {
-                    groupNormals[t->v[i]] = glm::vec3(0.0);
+                    groupNormals[t->v[i]] = Vec3(0.0);
                 }
             }
 

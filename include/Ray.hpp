@@ -5,13 +5,14 @@
 #include <glm/geometric.hpp>
 #include <glm/vec3.hpp>
 
+#include "common.hpp"
 
 class Ray {
 public:
 	Ray() {}
 
-	Ray(const glm::vec3& o_, const glm::vec3& d_) : o (o_), d (d_) {
-		inv_d = glm::vec3({1./d[0], 1./d[1], 1./d[2]});
+	Ray(const Vec3& o_, const Vec3& d_) : o (o_), d (d_) {
+		inv_d = Vec3({1./d[0], 1./d[1], 1./d[2]});
 		sign[0] = (inv_d[0] < 0);
 		sign[1] = (inv_d[1] < 0);
 		sign[2] = (inv_d[2] < 0);
@@ -25,7 +26,7 @@ public:
 		*this = Ray(o, glm::normalize(d));
 	}
 
-	glm::vec3 o, d, inv_d;
+	Vec3 o, d, inv_d;
 	unsigned char sign[3];
 };
 

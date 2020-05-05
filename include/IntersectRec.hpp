@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <glm/vec3.hpp>
+#include "common.hpp"
 #include "ONB.hpp"
 
 class Material;
@@ -10,10 +11,10 @@ class Primitive;
 class IntersectRec {
 public:
 	IntersectRec() {}
-	glm::vec3 isectPoint;
-	glm::vec3 normal, shadingNormal;
-	glm::vec3 uvw; // parameters at intersection point
-	float t;
+	Vec3 isectPoint;
+	Vec3 normal, shadingNormal;
+	Vec3 uvw; // parameters at intersection point
+	Real t;
 	ONB onb;
 	Primitive* primitive;
 	std::shared_ptr <Material> material;

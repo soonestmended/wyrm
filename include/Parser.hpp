@@ -12,6 +12,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+#include "common.hpp"
 #include "Camera.hpp"
 #include "Color.hpp"
 #include "Mesh.hpp"
@@ -20,10 +21,10 @@
 class Parser {
 public:
     /* Construct vec3 from tokens. If there aren't enough tokens, defaultValue is substituted. */
-    static const glm::vec3 readVec3(const std::vector <std::string> &tokens, float defaultValue, int numTokens);
+    static const Vec3 readVec3(const std::vector <std::string> &tokens, Real defaultValue, int numTokens);
 
     /* Construct vec4 from tokens. If there aren't enough tokens, defaultValue is substituted. */
-    static const glm::vec4 readVec4(const std::vector <std::string> &tokens, const float defaultValue, int numTokens);
+    static const Vec4 readVec4(const std::vector <std::string> &tokens, const Real defaultValue, int numTokens);
 
     static std::vector <MTLMat> parseMtl(std::string fileName);
 

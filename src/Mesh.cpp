@@ -16,12 +16,12 @@ std::vector <std::shared_ptr<Primitive>> MeshInstance::toPrimitives() const {
     vector <shared_ptr<Primitive>> ans;
     for (auto tri : meshPtr->tris) {
         // convert Tri to Triangle or TriangleWarp
-        glm::vec4 v0 = xform * meshPtr->vertices[tri.v[0]];
-        glm::vec4 v1 = xform * meshPtr->vertices[tri.v[1]];
-        glm::vec4 v2 = xform * meshPtr->vertices[tri.v[2]];
+        Vec4 v0 = xform * meshPtr->vertices[tri.v[0]];
+        Vec4 v1 = xform * meshPtr->vertices[tri.v[1]];
+        Vec4 v2 = xform * meshPtr->vertices[tri.v[2]];
 
-        glm::vec3 n0 = glm::normalize(inv_xform_T_3x3 * meshPtr->normals[tri.vn[0]]);
-        //glm::vec3 n0 = glm::vec4(meshPtr->normals[tri.vn[0]], 0.0);
+        Vec3 n0 = glm::normalize(inv_xform_T_3x3 * meshPtr->normals[tri.vn[0]]);
+        //Vec3 n0 = Vec4(meshPtr->normals[tri.vn[0]], 0.0);
         shared_ptr <Material> mPtr = meshPtr->materials[tri.m];
         if (this->materials.size() == 1) 
             mPtr = this->materials[0];
@@ -30,31 +30,31 @@ std::vector <std::shared_ptr<Primitive>> MeshInstance::toPrimitives() const {
             ans.push_back(make_shared<Triangle> (v0, v1, v2, n0, mPtr));
         }
         else {
-            glm::vec3 n1 = glm::normalize(inv_xform_T_3x3 * meshPtr->normals[tri.vn[1]]);
-            glm::vec3 n2 = glm::normalize(inv_xform_T_3x3 * meshPtr->normals[tri.vn[2]]);
+            Vec3 n1 = glm::normalize(inv_xform_T_3x3 * meshPtr->normals[tri.vn[1]]);
+            Vec3 n2 = glm::normalize(inv_xform_T_3x3 * meshPtr->normals[tri.vn[2]]);
             ans.push_back(make_shared<TriangleWarp> (v0, v1, v2, n0, n1, n2, mPtr));
         }
     }
     return ans;
 }
 /*
-void Mesh::rotate(const glm::vec3 &axis, const float angle) {
+void Mesh::rotate(const Vec3 &axis, const Real angle) {
 
 }
 
-void Mesh::scale(const float s) {
+void Mesh::scale(const Real s) {
     for (auto& v : this->vertices)
         v *= s;
     
 }
 
-void Mesh::translate(const glm::vec3 &dx) {
-    glm::vec4 dx4(dx, 1.0);
+void Mesh::translate(const Vec3 &dx) {
+    Vec4 dx4(dx, 1.0);
     for (auto& v : this->vertices)
         v += dx4;
 }
 
-void Mesh::recenter(const glm::vec3 &c) {
+void Mesh::recenter(const Vec3 &c) {
     translate(c - this->bbox.getCentroid());
 }
 */
@@ -64,19 +64,19 @@ vector <shared_ptr<Primitive>> Mesh::toPrimitives() const {
     vector <shared_ptr<Primitive>> ans;
     for (auto tri : tris) {
         // convert Tri to Triangle or TriangleWarp
-        const glm::vec3& v0 = this->vertices[tri.v[0]];
-        const glm::vec3& v1 = this->vertices[tri.v[1]];
-        const glm::vec3& v2 = this->vertices[tri.v[2]];
+        const Vec3& v0 = this->vertices[tri.v[0]];
+        const Vec3& v1 = this->vertices[tri.v[1]];
+        const Vec3& v2 = this->vertices[tri.v[2]];
 
-        const glm::vec3& n0 = this->normals[tri.vn[0]];
+        const Vec3& n0 = this->normals[tri.vn[0]];
         const shared_ptr <Material> mPtr = this->materials[tri.m];
 
         if (tri.vn[0] == tri.vn[1] && tri.vn[0] == tri.vn[2]) {
             ans.push_back(make_shared<Triangle> (v0, v1, v2, n0, mPtr));
         }
         else {
-            const glm::vec3& n1 = this->normals[tri.vn[1]];
-            const glm::vec3& n2 = this->normals[tri.vn[2]];
+            const Vec3& n1 = this->normals[tri.vn[1]];
+            const Vec3& n2 = this->normals[tri.vn[2]];
             ans.push_back(make_shared<TriangleWarp> (v0, v1, v2, n0, n1, n2, mPtr));
         }
     }

@@ -1,6 +1,7 @@
 #include <memory>
 #include <typeinfo>
 
+#include "common.hpp"
 #include "IntersectRec.hpp"
 #include "Material.hpp"
 #include "Utils.hpp"
@@ -9,7 +10,7 @@
 using namespace std;
 using namespace utils;
 
-const Color ADMaterial::brdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
+const Color ADMaterial::brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
     Color ans = Color::Black();
     bool sameHemisphere = ir.onb.sameHemisphere(wo_local, wi_local);
     //cout << "\t\topacity: " << opacity << endl;
@@ -59,34 +60,34 @@ const Color ADMaterial::brdf(const glm::vec3& wo_local, const glm::vec3& wi_loca
     return ans;
 }
 
-const float ADMaterial::pdf(const glm::vec3& wo_local, const glm::vec3& wi_local, const IntersectRec& ir) const {
+const Real ADMaterial::pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {
     // TODO: Compute pdf for having chosen given direction
     // weighted average of pdfs for individual lobes
 
     // chance of choosing straight through tranmission direction is zero
-    float ans = 0.0f;
-    float pathProb = avg(opacity);
-    float coatProb = pathProb * coat;
+    Real ans = 0.0f;
+    Real pathProb = avg(opacity);
+    Real coatProb = pathProb * coat;
     //cout << "coatProb: " << coatProb << endl;
     if (coatProb > 0)
         ans += coatProb * coat_brdf->pdf(wo_local, wi_local);
 
     pathProb *= 1. - coat;
-    float metalProb = pathProb * metalness;
+    Real metalProb = pathProb * metalness;
     //cout << "metalProb: " << metalProb << endl;
 
     if (metalProb > 0) 
         ans += metalProb * metal_brdf->pdf(wo_local, wi_local);
 
     pathProb *= 1. - metalness;
-    float specularProb = pathProb * specular;
+    Real specularProb = pathProb * specular;
     //cout << "specProb: " << specularProb << endl;
 
     if (specularProb > 0) 
         ans += specularProb * specular_brdf->pdf(wo_local, wi_local);
     
     pathProb *= 1. - specular;
-    float transmissionProb = pathProb * transmission;
+    Real transmissionProb = pathProb * transmission;
     //cout << "transProb: " << transmissionProb << endl;
 
     if (transmissionProb > 0)
@@ -99,15 +100,15 @@ const float ADMaterial::pdf(const glm::vec3& wo_local, const glm::vec3& wi_local
 
 }
 
-const void ADMaterial::sample_f(const glm::vec3& wo_local, glm::vec3& wi_local, Color* bsdf, float* pdf, bool* isSpecular) const {
+const void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const {
     // Run through the Autodesk shader code. Take each path with probability (1 - [accumulated edge weights])
     // OR
     // calculate each lobe of the material and weight appropriately. This would spawn multiple additional rays. I 
     // suppose these should be separate functions.
     Color pathWeight = Color::White(); // accumulated color of path
-    float r = rand01();
-    float q = avg(this->opacity); 
-    float pathProb = q; // accumulated probability of path
+    Real r = rand01();
+    Real q = avg(this->opacity); 
+    Real pathProb = q; // accumulated probability of path
     if (r > q) { // follow path for transmission
         *pdf = 1.0f - q;
         *bsdf = Color::White();

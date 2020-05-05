@@ -3,13 +3,15 @@
 #include <iostream>
 #include <glm/vec3.hpp>
 
-class Color : public glm::vec3 {
+#include "common.hpp"
+
+class Color : public Vec3 {
 public:
-    Color() : glm::vec3 (0.0) {}
-	Color(float x_) : glm::vec3(x_) {}
-    Color(float r_, float g_, float b_) : glm::vec3(r_, g_, b_) {}
-	Color(const glm::vec3& foo) : glm::vec3(foo) {}
-	Color(const Color& foo) : glm::vec3(foo.x, foo.y, foo.z) {}
+    Color() : Vec3 (0.0) {}
+	Color(Real x_) : Vec3(x_) {}
+    Color(Real r_, Real g_, Real b_) : Vec3(r_, g_, b_) {}
+	Color(const Vec3& foo) : Vec3(foo) {}
+	Color(const Color& foo) : Vec3(foo.x, foo.y, foo.z) {}
 
 	bool isBlack() const {return !(x > 0.0f || y > 0.0f || z > 0.0f);}
 
@@ -40,7 +42,7 @@ public:
 		return *this;
 	}
 
-	Color& operator*=(const float f) {
+	Color& operator*=(const Real f) {
 		x *= f;
 		y *= f;
 		z *= f;
@@ -54,7 +56,7 @@ public:
 		return *this;
 	}
 
-	Color& operator/=(const float f) {
+	Color& operator/=(const Real f) {
 		x /= f;
 		y /= f;
 		z /= f;
@@ -77,13 +79,13 @@ public:
 		return Color(lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z);
 	}
 
-	friend Color operator*(const Color& lhs, const float rhs) {
+	friend Color operator*(const Color& lhs, const Real rhs) {
 		Color ans = lhs;
 		ans *= rhs;
 		return ans;
 	}
 
-	friend Color operator*(const float lhs, const Color& rhs) {
+	friend Color operator*(const Real lhs, const Color& rhs) {
 		Color ans = rhs;
 		ans *= lhs;
 		return ans;
@@ -95,7 +97,7 @@ public:
 		return ans;
 	}
 
-	friend Color operator/(const Color& lhs, const float rhs) {
+	friend Color operator/(const Color& lhs, const Real rhs) {
 		Color ans = lhs;
 		ans /= rhs;
 		return ans;

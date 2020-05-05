@@ -11,9 +11,9 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
     IntersectRec ir;
     Color pathThroughput = Color(1.0);
     Color ans = Color(0.0);
-    glm::vec3 wi_local;
+    Vec3 wi_local;
     Color f;
-    float pdf;
+    Real pdf;
     bool isSpecular = true, hit;
     Ray nextRay = r;
     bool testB = false;
@@ -56,7 +56,7 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
         //cout << "ir.isectPoint: " << ir.isectPoint << endl;
         //cout << "post primitive->FI" << endl;
 
-        glm::vec3 wo_local = ir.onb.world2local(-nextRay.d);
+        Vec3 wo_local = ir.onb.world2local(-nextRay.d);
         //cout << "pre EDL" << endl;
         Color edl = estimateDirectLighting(-nextRay.d, ir, debug);
         if (debug) {
@@ -69,10 +69,10 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
         //cout << "pre material->sample_f" << endl;
         ir.material->sample_f(wo_local, wi_local, &f, &pdf, &isSpecular);
         //cout << "post material->sample_f" << endl;
-        glm::vec3 dir = ir.onb.local2world(wi_local);
+        Vec3 dir = ir.onb.local2world(wi_local);
         //if (i == 0) cout << (Color) dir << endl;
         Ray oldRay = nextRay;
-        nextRay = Ray{ir.isectPoint + (float) EPSILON * dir, dir};
+        nextRay = Ray{ir.isectPoint + (Real) EPSILON * dir, dir};
         if (debug) {
             cout << "BRDF: " << f << endl;
         }
@@ -80,8 +80,8 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
         pathThroughput *= f * ir.onb.absCosTheta(wi_local) / pdf;
 
         if (debug) {
-            glm::vec3 wi_world = ir.onb.local2world(wi_local);
-            glm::vec3 wo_world = ir.onb.local2world(wo_local);
+            Vec3 wi_world = ir.onb.local2world(wi_local);
+            Vec3 wo_world = ir.onb.local2world(wo_local);
 
             cout << "pathThroughput: " << pathThroughput << endl;
             cout << "pdf: " << pdf << "\tcosTheta: " << ir.onb.cosTheta(wi_local) << "\tf: " << f << endl;
@@ -106,7 +106,7 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
 
         // possibly stop (Russian roulette)
         if (i > 3) {
-            float q = utils::avg(pathThroughput);
+            Real q = utils::avg(pathThroughput);
             if (utils::rand01() < q) {
                 break;
             }
@@ -118,7 +118,7 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
 }
 
 
-const Color Tracer::EDLOneLight(const glm::vec3& wo_world, IntersectRec& ir, const Light& l, const bool debug) const {
+const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Light& l, const bool debug) const {
 
     // TODO need wo also
 
@@ -138,25 +138,25 @@ const Color Tracer::EDLOneLight(const glm::vec3& wo_world, IntersectRec& ir, con
 
     //ONB onb{ir.normal};
 
-    float lightPdf, irPdf;
-    float weight;
-    glm::vec3 wi_world;
+    Real lightPdf, irPdf;
+    Real weight;
+    Vec3 wi_world;
     VisibilityTester vt;
     Color f; // BRDF
     // 1) pick direction based on light
-    Color l_contrib = l.sample(glm::vec2(rand(), rand()), ir, wi_world, &lightPdf, vt);
+    Color l_contrib = l.sample(Vec2(rand(), rand()), ir, wi_world, &lightPdf, vt);
     //cout << "\tl_contrib: " << l_contrib << " pdf: " << lightPdf << endl;
-    glm::vec3 wi_local = ir.onb.world2local(wi_world);
-    glm::vec3 wo_local = ir.onb.world2local(wo_world);
+    Vec3 wi_local = ir.onb.world2local(wi_world);
+    Vec3 wo_local = ir.onb.world2local(wo_world);
     
-    //float absCosTheta = glm::clamp(glm::dot(ir.shadingNormal, wi_world), 0.f, 1.f);
-    float absCosTheta = ONB::absCosTheta(wi_local);
+    //Real absCosTheta = glm::clamp(glm::dot(ir.shadingNormal, wi_world), 0, 1);
+    Real absCosTheta = ONB::absCosTheta(wi_local);
     //absCosTheta = 1.0f;
     if (debug) {
         cout << "\tl_contrib: " << l_contrib << endl;
         cout << "\tlightPdf: " << lightPdf << endl;
     }
-    if (lightPdf > 0.f && !l_contrib.isBlack()) {
+    if (lightPdf > 0 && !l_contrib.isBlack()) {
         if (debug) cout << "pre f" << endl;
         f = ir.material->brdf(wo_local, wi_local, ir, &isSpecular);
         if (debug) cout << "post f" << endl;
@@ -199,11 +199,11 @@ const Color Tracer::EDLOneLight(const glm::vec3& wo_world, IntersectRec& ir, con
             cout << "\tlight part 2: " << endl;
         }
         ir.material->sample_f(wo_local, wi_local, &f, &irPdf, &isSpecular);
-        if (!f.isBlack() && irPdf > 0.f) {
+        if (!f.isBlack() && irPdf > 0) {
             if (!isSpecular) {
-                weight = 1.f;
+                weight = 1;
                 lightPdf = l.pdf(ir, wi_local);
-                if (lightPdf == 0.f) {
+                if (lightPdf == 0) {
                     if (debug) cout << "\tzero lightPdf. Returning. " << endl;
                     return ans; // no probability of choosing this ray given light distribution
                 }
@@ -212,7 +212,7 @@ const Color Tracer::EDLOneLight(const glm::vec3& wo_world, IntersectRec& ir, con
             l_contrib = Color::Black();
             Ray rayToLight{ir.isectPoint, wi_world};
             IntersectRec tempIr;
-            if (accel->closestIntersection(rayToLight, .0001, MAXFLOAT, tempIr)) {
+            if (accel->closestIntersection(rayToLight, .0001, POS_INF, tempIr)) {
                 if (l.getPrim() == tempIr.primitive) {
                     if (debug) cout << "\tray chosen by surface hits light!" << endl;
                     l_contrib = l.getColor() * l.getPower();
@@ -254,7 +254,7 @@ const Color Tracer::EDLOneLight(const glm::vec3& wo_world, IntersectRec& ir, con
     //return Color::White();
 }
 
-const Color Tracer::estimateDirectLighting(const glm::vec3& wo_world, IntersectRec& ir, const bool debug) const {
+const Color Tracer::estimateDirectLighting(const Vec3& wo_world, IntersectRec& ir, const bool debug) const {
     Color ans{0.0};
     for (const auto& l : scene->getLights()) {
         ans += EDLOneLight(wo_world, ir, *l, debug);

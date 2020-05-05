@@ -59,19 +59,19 @@ int main (int argc, char ** argv) {
     cout << "Parse successful." << endl;
     s->printInfo();
 
-    //BBox wrapper(glm::vec3(2.0, -2.0, -2.0), glm::vec3(6.0, 2.0, 2.0));
-    //s->addMeshInstance(Parser::parseObj("bunny.obj"), wrapper, glm::vec3(0, 1, 0), 180);
+    //BBox wrapper(Vec3(2.0, -2.0, -2.0), Vec3(6.0, 2.0, 2.0));
+    //s->addMeshInstance(Parser::parseObj("bunny.obj"), wrapper, Vec3(0, 1, 0), 180);
  
 /*
-    shared_ptr <Light> l = make_shared <PointLight> (glm::vec3(0.0, 0.0, -10.0), Color::White(), 200.0);
+    shared_ptr <Light> l = make_shared <PointLight> (Vec3(0.0, 0.0, -10.0), Color::White(), 200.0);
     vector <shared_ptr<Light>> bar;
     bar.push_back(l);
-    bar.push_back(make_shared <PointLight> (glm::vec3(0.0, 10.0, -2.0), Color::White(), 200.0));
+    bar.push_back(make_shared <PointLight> (Vec3(0.0, 10.0, -2.0), Color::White(), 200.0));
     s->addLights(bar);
 */
     // for now just implement quick render
     if (!c) {
-        c = make_shared <Camera> (glm::vec3(0, 0, -10), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), 1);
+        c = make_shared <Camera> (Vec3(0, 0, -10), Vec3(0, 0, 1), Vec3(0, 1, 0), Vec3(1, 0, 0), 1);
     }
 
     BVH bvh(*s);

@@ -14,30 +14,30 @@
 
 class XForm {
 public:
-    XForm(const glm::mat4& xf) : xform (xf), inv_xform (glm::inverse(xf)) {}
+    XForm(const Mat4& xf) : xform (xf), inv_xform (glm::inverse(xf)) {}
 
-    glm::vec3 transformPoint(const glm::vec3& p) const {
-        return glm::vec3(xform * glm::vec4(p, 1.0));
+    Vec3 transformPoint(const Vec3& p) const {
+        return Vec3(xform * Vec4(p, 1.0));
     }
 
-    glm::vec3 inverseTransformPoint(const glm::vec3& p) const {
-        return glm::vec3(inv_xform * glm::vec4(p, 1.0));
+    Vec3 inverseTransformPoint(const Vec3& p) const {
+        return Vec3(inv_xform * Vec4(p, 1.0));
     }
 
-    glm::vec3 transformVector(const glm::vec3& v) const {
-        return glm::vec3(xform * glm::vec4(v, 0.0));
+    Vec3 transformVector(const Vec3& v) const {
+        return Vec3(xform * Vec4(v, 0.0));
     }
 
-    glm::vec3 inverseTransformVector(const glm::vec3& v) const {
-        return glm::vec3(inv_xform * glm::vec4(v, 0.0));
+    Vec3 inverseTransformVector(const Vec3& v) const {
+        return Vec3(inv_xform * Vec4(v, 0.0));
     }
 
-    glm::vec3 transformNormal(const glm::vec3& n) const {
-        return glm::vec3(glm::transpose(inv_xform) * glm::vec4(n, 0.0));
+    Vec3 transformNormal(const Vec3& n) const {
+        return Vec3(glm::transpose(inv_xform) * Vec4(n, 0.0));
     }
 
-    glm::vec3 inverseTransformNormal(const glm::vec3& n) const {
-        return glm::vec3(glm::transpose(xform) * glm::vec4(n, 0.0));
+    Vec3 inverseTransformNormal(const Vec3& n) const {
+        return Vec3(glm::transpose(xform) * Vec4(n, 0.0));
     }
 
     Ray transformRay(const Ray& ray) const {
@@ -53,16 +53,16 @@ public:
 
         // transform all 8 vertices, then re-enclose
         BBox ans;
-        glm::vec3 verts[8] = {
-            glm::vec3(bbox.min[0], bbox.min[1], bbox.min[2]),
-            glm::vec3(bbox.min[0], bbox.min[1], bbox.max[2]),
-            glm::vec3(bbox.min[0], bbox.max[1], bbox.min[2]),
-            glm::vec3(bbox.min[0], bbox.max[1], bbox.max[2]),
+        Vec3 verts[8] = {
+            Vec3(bbox.min[0], bbox.min[1], bbox.min[2]),
+            Vec3(bbox.min[0], bbox.min[1], bbox.max[2]),
+            Vec3(bbox.min[0], bbox.max[1], bbox.min[2]),
+            Vec3(bbox.min[0], bbox.max[1], bbox.max[2]),
 
-            glm::vec3(bbox.max[0], bbox.min[1], bbox.min[2]),
-            glm::vec3(bbox.max[0], bbox.min[1], bbox.max[2]),
-            glm::vec3(bbox.max[0], bbox.max[1], bbox.min[2]),
-            glm::vec3(bbox.max[0], bbox.max[1], bbox.max[2]),
+            Vec3(bbox.max[0], bbox.min[1], bbox.min[2]),
+            Vec3(bbox.max[0], bbox.min[1], bbox.max[2]),
+            Vec3(bbox.max[0], bbox.max[1], bbox.min[2]),
+            Vec3(bbox.max[0], bbox.max[1], bbox.max[2]),
         };
         for (auto v : verts) 
             ans.enclose(transformPoint(v));
@@ -73,21 +73,21 @@ public:
     BBox inverseTransformBBox(const BBox& bbox) const {
         // transform all 8 vertices, then re-enclose
         BBox ans;
-        glm::vec3 verts[8] = {
-            glm::vec3(bbox.min[0], bbox.min[1], bbox.min[2]),
-            glm::vec3(bbox.min[0], bbox.min[1], bbox.max[2]),
-            glm::vec3(bbox.min[0], bbox.max[1], bbox.min[2]),
-            glm::vec3(bbox.min[0], bbox.max[1], bbox.max[2]),
+        Vec3 verts[8] = {
+            Vec3(bbox.min[0], bbox.min[1], bbox.min[2]),
+            Vec3(bbox.min[0], bbox.min[1], bbox.max[2]),
+            Vec3(bbox.min[0], bbox.max[1], bbox.min[2]),
+            Vec3(bbox.min[0], bbox.max[1], bbox.max[2]),
 
-            glm::vec3(bbox.max[0], bbox.min[1], bbox.min[2]),
-            glm::vec3(bbox.max[0], bbox.min[1], bbox.max[2]),
-            glm::vec3(bbox.max[0], bbox.max[1], bbox.min[2]),
-            glm::vec3(bbox.max[0], bbox.max[1], bbox.max[2]),
+            Vec3(bbox.max[0], bbox.min[1], bbox.min[2]),
+            Vec3(bbox.max[0], bbox.min[1], bbox.max[2]),
+            Vec3(bbox.max[0], bbox.max[1], bbox.min[2]),
+            Vec3(bbox.max[0], bbox.max[1], bbox.max[2]),
         };
         for (auto v : verts) 
             ans.enclose(inverseTransformPoint(v));
         return ans;
     }
 
-    const glm::mat4 xform, inv_xform;
+    const Mat4 xform, inv_xform;
 };

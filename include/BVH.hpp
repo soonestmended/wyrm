@@ -16,16 +16,16 @@ class Scene;
 typedef struct _clBVHNode {
 	union {
 		cl_uint4 ptr;
-		cl_float4 v0;
+		cl_Real4 v0;
 	};
 	union {
 		cl_uint4 numFaces;
-		cl_float4 v1;
+		cl_Real4 v1;
 	};
 } clBVHNode;
 */
 typedef struct _XSP {
-	float pos;
+	Real pos;
 	int axis;
 } SP;	
 
@@ -82,13 +82,13 @@ public:
 	}
 
 	const bool build();
-	const bool closestIntersection(const Ray& ray, const float tmin, const float tmax, IntersectRec& ans) const;
-    const bool intersectionYN(const Ray& ray, const float tmin, const float tmax) const;
+	const bool closestIntersection(const Ray& ray, const Real tmin, const Real tmax, IntersectRec& ans) const;
+    const bool intersectionYN(const Ray& ray, const Real tmin, const Real tmax) const;
 	const void print() const;
     
 private:
 	uint nextNewNode();
-	glm::vec3 getCentroid(const unsigned int face);
+	Vec3 getCentroid(const unsigned int face);
 	SP findSplitPlane(const BVHNode &node);
 	void buildBelow(BVHNode &node, int depth);
 	//void makeCLNodes(clBVHNode *&vec);
@@ -98,7 +98,7 @@ private:
 	std::vector <int> primitiveIndices;
 	uint nextAllocedNode;
 	std::vector <BBox> bboxes;
-	std::vector <glm::vec3> centroids;
+	std::vector <Vec3> centroids;
 	BBox bboxOfCentroids;
 	BVHStats bvhstats;
 	bool built;

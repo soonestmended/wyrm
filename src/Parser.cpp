@@ -28,11 +28,11 @@ void parseError(const string& line) {
 }
 
 /* Construct vec3 from tokens. If there aren't enough tokens, defaultValue is substituted. */
-const vec3 Parser::readVec3(const vector <string> &tokens, float defaultValue = 1.0, int numTokens = -1) {
+const Vec3 Parser::readVec3(const vector <string> &tokens, Real defaultValue = 1.0, int numTokens = -1) {
     if (numTokens == -1) {
         numTokens = tokens.size();
     }
-    float x, y, z;
+    Real x, y, z;
     x = y = z = defaultValue;
     if (numTokens > 1) {
         x = stof(tokens[1]);
@@ -43,20 +43,20 @@ const vec3 Parser::readVec3(const vector <string> &tokens, float defaultValue = 
     if (numTokens > 3) {
         z = stof(tokens[3]);
     }
-    return vec3(x, y, z);
+    return Vec3(x, y, z);
 }
 
 /* Construct vec4 from tokens. If there aren't enough tokens, defaultValue is substituted. */
-const vec4 Parser::readVec4(const vector <string> &tokens, const float defaultValue = 1.0, int numTokens = -1) {
+const Vec4 Parser::readVec4(const vector <string> &tokens, const Real defaultValue = 1.0, int numTokens = -1) {
     if (numTokens == -1) {
         numTokens = tokens.size();
     }
-    const vec3 xyz = readVec3(tokens, defaultValue, numTokens);
-    float w = defaultValue;
+    const Vec3 xyz = readVec3(tokens, defaultValue, numTokens);
+    Real w = defaultValue;
     if (numTokens > 4) {
         w = stof(tokens[4]);
     }
-    return vec4(xyz, w);
+    return Vec4(xyz, w);
 }
 
 
@@ -146,9 +146,9 @@ vector <MTLMat> Parser::parseMtl(string fileName) {
 }
 
 shared_ptr <Mesh> Parser::parseObj(string fileName) {
-    vector <vec4> vertices;
-    vector <vec3> normals;
-    vector <vec3> texCoords;
+    vector <Vec4> vertices;
+    vector <Vec3> normals;
+    vector <Vec3> texCoords;
     vector <Tri> tris;
 
     vector <shared_ptr<Material>> materials;
@@ -359,8 +359,8 @@ shared_ptr <Mesh> Parser::parseObj(string fileName) {
     for (auto& t : tris) {
         if (!t.explicitNormals) {
             // make a new vertex normal based on just this face and assign its index to vn[0->3]
-            vec3 e1 = vertices[t.v[1]] - vertices[t.v[0]];
-            vec3 e2 = vertices[t.v[2]] - vertices[t.v[1]];
+            Vec3 e1 = vertices[t.v[1]] - vertices[t.v[0]];
+            Vec3 e2 = vertices[t.v[2]] - vertices[t.v[1]];
             normals.push_back(glm::normalize(glm::cross(e1, e2)));
             t.vn[0] = t.vn[1] = t.vn[2] = normals.size() - 1;
         }
@@ -388,19 +388,19 @@ shared_ptr <Mesh> Parser::parseObj(string fileName) {
         // sg is a <int, vector <Tri *>> pair, mapping smoothing group number to list of tris in group
         auto sgTris = sg.second;
         // map vertex indices to normals
-        map<int, glm::vec3> groupNormals;
+        map<int, Vec3> groupNormals;
         // loop over tris in group
         for (auto t : sgTris) {
             
-            //vec3 e1 = vertices[t->v[1]] - vertices[t->v[0]];
-            //vec3 e2 = vertices[t->v[2]] - vertices[t->v[1]];
-            //glm::vec3 &n = groupNormals[t->s] += glm::cross(e1, e2); // un-normalized face normal
-            //glm::vec3 n = glm::cross(e1, e2); // un-normalized face normal
+            //Vec3 e1 = vertices[t->v[1]] - vertices[t->v[0]];
+            //Vec3 e2 = vertices[t->v[2]] - vertices[t->v[1]];
+            //Vec3 &n = groupNormals[t->s] += glm::cross(e1, e2); // un-normalized face normal
+            //Vec3 n = glm::cross(e1, e2); // un-normalized face normal
             
             // if we haven't encountered this group vertex yet, set its accumulated normal to zero
             for (int i = 0; i < 3; ++i) {
                 if (groupNormals.find(t->v[i]) == groupNormals.end()) {
-                    groupNormals[t->v[i]] = glm::vec3(0.0);
+                    groupNormals[t->v[i]] = Vec3(0.0);
                 }
             }
 
@@ -458,28 +458,28 @@ struct simple_walker: pugi::xml_tree_walker
 
 unordered_map <string, const pugi::xml_node> namedNodes;
 shared_ptr <Material> defaultMaterial = ADMaterial::makeDiffuse("defaultMaterial", Color::Blue(), 0);
-stack <mat4> transformStack;
+stack <Mat4> transformStack;
 
-glm::vec3 stringToVec3(string s) {
+Vec3 stringToVec3(string s) {
     vector <string> tokens;
     boost::trim_if(s, boost::is_any_of(" \r"));
     boost::split(tokens, s, [](char c) {return c == ' ';}, boost::token_compress_on);
     if (tokens.size() != 3) {
-        cout << "ERROR: Attempt to read vec3 from string failed: " << s << endl;
-        return glm::vec3(0.0);
+        cout << "ERROR: Attempt to read Vec3 from string failed: " << s << endl;
+        return Vec3(0.0);
     }
-    return glm::vec3(stof(tokens[0]), stof(tokens[1]), stof(tokens[2]));
+    return Vec3(stof(tokens[0]), stof(tokens[1]), stof(tokens[2]));
 }
 
-glm::vec4 stringToVec4(string s) {
+Vec4 stringToVec4(string s) {
     vector <string> tokens;
     boost::trim_if(s, boost::is_any_of(" \r"));
     boost::split(tokens, s, [](char c) {return c == ' ';}, boost::token_compress_on);
     if (tokens.size() != 4) {
-        cout << "ERROR: Attempt to read vec4 from string failed: " << s << endl;
-        return glm::vec4(0.0);
+        cout << "ERROR: Attempt to read Vec4 from string failed: " << s << endl;
+        return Vec4(0.0);
     }
-    return glm::vec4(stof(tokens[0]), stof(tokens[1]), stof(tokens[2]), stof(tokens[3]));
+    return Vec4(stof(tokens[0]), stof(tokens[1]), stof(tokens[2]), stof(tokens[3]));
 }
 
 bool checkDEF(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
@@ -510,11 +510,11 @@ const pugi::xml_node& checkUSE(const pugi::xml_node &node, vector <shared_ptr<Li
 }
 
 shared_ptr <Camera> processCamera(const pugi::xml_node& node) {
-    glm::vec3 location = stringToVec3(node.attribute("location").as_string("0 0 -10"));
-    glm::vec3 look = stringToVec3(node.attribute("look").as_string("0 0 1"));
-    glm::vec3 up = stringToVec3(node.attribute("up").as_string("0 1 0"));
-    glm::vec3 right = stringToVec3(node.attribute("right").as_string("1 0 0"));
-    float s = stof(node.attribute("s").as_string("1"));
+    Vec3 location = stringToVec3(node.attribute("location").as_string("0 0 -10"));
+    Vec3 look = stringToVec3(node.attribute("look").as_string("0 0 1"));
+    Vec3 up = stringToVec3(node.attribute("up").as_string("0 1 0"));
+    Vec3 right = stringToVec3(node.attribute("right").as_string("1 0 0"));
+    Real s = stof(node.attribute("s").as_string("1"));
     return make_shared <Camera> (location, look, up, right, s);
 }
 
@@ -523,27 +523,27 @@ shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shar
     if (c) {
         checkDEF(c, lights, materials, primitives);
         c = checkUSE(c, lights, materials, primitives);
-        //glm::vec3 boxSize = stringToVec3(c.attribute("size").as_string("1 1 1")); // argument to as_string is default, returned if attribute doesn't exist
+        //Vec3 boxSize = stringToVec3(c.attribute("size").as_string("1 1 1")); // argument to as_string is default, returned if attribute doesn't exist
         std::stringstream ss;
         ss << c.hash_value();
         string name = c.attribute("name").as_string(ss.str().c_str());
         Color opacity = stringToVec3(c.attribute("opacity").as_string("1 1 1"));
-        float coat = stof(c.attribute("coat").as_string("0"));
+        Real coat = stof(c.attribute("coat").as_string("0"));
         Color coat_color = stringToVec3(c.attribute("coat_color").as_string("1 1 1"));
-        float coat_roughness = stof(c.attribute("coat_roughness").as_string("0.1"));
-        float coat_IOR = stof(c.attribute("coat_IOR").as_string("1.5"));
-        glm::vec3 coat_normal = stringToVec3(c.attribute("coat_normal").as_string("0 0 0"));
-        float emission = stof(c.attribute("emission").as_string("0"));
+        Real coat_roughness = stof(c.attribute("coat_roughness").as_string("0.1"));
+        Real coat_IOR = stof(c.attribute("coat_IOR").as_string("1.5"));
+        Vec3 coat_normal = stringToVec3(c.attribute("coat_normal").as_string("0 0 0"));
+        Real emission = stof(c.attribute("emission").as_string("0"));
         Color emission_color = stringToVec3(c.attribute("emission_color").as_string("1 1 1"));
-        float metalness = stof(c.attribute("metalness").as_string("0"));
-        float base = stof(c.attribute("base").as_string("0.8"));
+        Real metalness = stof(c.attribute("metalness").as_string("0"));
+        Real base = stof(c.attribute("base").as_string("0.8"));
         Color base_color = stringToVec3(c.attribute("base_color").as_string("1 1 1"));
-        float specular = stof(c.attribute("specular").as_string("0"));
+        Real specular = stof(c.attribute("specular").as_string("0"));
         Color specular_color = stringToVec3(c.attribute("specular_color").as_string("1 1 1"));
-        float specular_roughness = stof(c.attribute("specular_roughness").as_string("0.2"));
-        float specular_IOR = stof(c.attribute("specular_IOR").as_string("1.5"));
-        float diffuse_roughness = stof(c.attribute("diffuse_roughness").as_string("0"));
-        float transmission = stof(c.attribute("transmission").as_string("0"));
+        Real specular_roughness = stof(c.attribute("specular_roughness").as_string("0.2"));
+        Real specular_IOR = stof(c.attribute("specular_IOR").as_string("1.5"));
+        Real diffuse_roughness = stof(c.attribute("diffuse_roughness").as_string("0"));
+        Real transmission = stof(c.attribute("transmission").as_string("0"));
         Color transmission_color = stringToVec3(c.attribute("specular_color").as_string("1 1 1"));
         return std::make_shared <ADMaterial> (name, opacity, coat, coat_color, coat_roughness, coat_IOR, coat_normal, emission, emission_color, 
             metalness, base, base_color, specular, specular_color, specular_roughness, specular_IOR, diffuse_roughness,
@@ -555,7 +555,7 @@ shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shar
         ss << c.hash_value();
         string name = c.attribute("name").as_string(ss.str().c_str());
         Color color = stringToVec3(c.attribute("color").as_string("1 1 1"));
-        float IOR = stof(c.attribute("IOR").as_string("1.5"));
+        Real IOR = stof(c.attribute("IOR").as_string("1.5"));
         return std::make_shared <GlassMaterial> (name, color, IOR);
     }
     c = node.child("DiffuseMaterial");
@@ -581,9 +581,9 @@ void processTransform(const pugi::xml_node &node) {
     // reverse scaleOrientation
     // reverseCenter
     bool doCenter = false, doScaleOrientation = false;
-    glm::vec3 trans{0.0}, center{0.0}, scale{1.0};
-    glm::vec4 rotation{0.0}, scaleOrientation{0.0}; 
-    glm::mat4 currentTransform = transformStack.top();
+    Vec3 trans{0.0}, center{0.0}, scale{1.0};
+    Vec4 rotation{0.0}, scaleOrientation{0.0}; 
+    Mat4 currentTransform = transformStack.top();
 
     pugi::xml_attribute attr = node.attribute("translation");
     if (attr) {
@@ -604,7 +604,7 @@ void processTransform(const pugi::xml_node &node) {
     if (attr) {
         cout << "\trotation: " << attr.value() << endl;
         rotation = stringToVec4(attr.as_string("0 0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
-        currentTransform = glm::rotate(currentTransform, rotation.w, glm::vec3(rotation));
+        currentTransform = glm::rotate(currentTransform, rotation.w, Vec3(rotation));
     }
 
     attr = node.attribute("scaleOrientation");
@@ -612,7 +612,7 @@ void processTransform(const pugi::xml_node &node) {
         cout << "\tscaleOrientation: " << attr.value() << endl;
         scaleOrientation = stringToVec4(attr.as_string("0 0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
         doScaleOrientation = true;
-        currentTransform = glm::rotate(currentTransform, scaleOrientation.w, glm::vec3(scaleOrientation));
+        currentTransform = glm::rotate(currentTransform, scaleOrientation.w, Vec3(scaleOrientation));
     }
 
     attr = node.attribute("scale");
@@ -624,7 +624,7 @@ void processTransform(const pugi::xml_node &node) {
 
     // currentTransform = currentTransform * T * C * R * SR * S * -SR * -C
     if (doScaleOrientation) {
-        currentTransform = glm::rotate(currentTransform, -scaleOrientation.w, glm::vec3(scaleOrientation));
+        currentTransform = glm::rotate(currentTransform, -scaleOrientation.w, Vec3(scaleOrientation));
     }
     if (doCenter) {
         currentTransform = glm::translate(currentTransform, -center);
@@ -635,32 +635,32 @@ void processTransform(const pugi::xml_node &node) {
 
 void processOBJ(const pugi::xml_node &node, const shared_ptr <Material> material, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
     string fileName = node.attribute("src").as_string();
-    //glm::vec3 bbmin = stringToVec3(node.attribute("bbmin").as_string("-1 -1 -1"));
-    //glm::vec3 bbmax = stringToVec3(node.attribute("bbmax").as_string("1 1 1"));
-    float targetSize = stof(node.attribute("size").as_string("4"));
+    //Vec3 bbmin = stringToVec3(node.attribute("bbmin").as_string("-1 -1 -1"));
+    //Vec3 bbmax = stringToVec3(node.attribute("bbmax").as_string("1 1 1"));
+    Real targetSize = stof(node.attribute("size").as_string("4"));
     shared_ptr <Mesh> mesh = Parser::parseObj(fileName);
     if (!mesh) {
         cout << "ERROR: Failed to process mesh: " << fileName << endl;
         return;
     }
-    //bbmin = glm::vec3(transformStack.top() * glm::vec4(bbmin, 1.0));
-    //bbmax = glm::vec3(transformStack.top() * glm::vec4(bbmax, 1.0));
+    //bbmin = Vec3(transformStack.top() * Vec4(bbmin, 1.0));
+    //bbmax = Vec3(transformStack.top() * Vec4(bbmax, 1.0));
     BBox src = mesh->getBBox();
     //cout << "Starting bbox: " << src << endl;
-    float srcSize = glm::length(src.max-src.min);
-    float scale = targetSize / srcSize;
-    glm::mat4 trans = glm::translate(glm::mat4(1.0),  -scale * src.getCentroid());
-    //glm::mat4 trans(1.0);
+    Real srcSize = glm::length(src.max-src.min);
+    Real scale = targetSize / srcSize;
+    Mat4 trans = glm::translate(Mat4(1.0),  -scale * src.getCentroid());
+    //Mat4 trans(1.0);
     // cout << glm::to_string(trans) << endl;
-    glm::mat4 scaleMat = glm::scale(glm::mat4(1.0), glm::vec3(scale));
-    glm::mat4 xform;
+    Mat4 scaleMat = glm::scale(Mat4(1.0), Vec3(scale));
+    Mat4 xform;
     //if (axis.length() > EPSILON && abs(angle) > EPSILON) {
     xform = transformStack.top() * trans * scaleMat;
     //}
     //else {
     //    xform = trans * scaleMat;
     //}
-    //glm::mat4 xform = trans;
+    //Mat4 xform = trans;
     //cout << glm::to_string(xform) << endl;
     if (material) mesh->setMaterial(material);
     shared_ptr<MeshInstance> miptr = make_shared <MeshInstance> (mesh, xform);
@@ -693,7 +693,7 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
 
         checkDEF(c, lights, materials, primitives);
         c = checkUSE(c, lights, materials, primitives);
-        glm::vec3 boxSize = stringToVec3(c.attribute("size").as_string("1 1 1")); // argument to as_string is default, returned if attribute doesn't exist
+        Vec3 boxSize = stringToVec3(c.attribute("size").as_string("1 1 1")); // argument to as_string is default, returned if attribute doesn't exist
         cout << "\tboxSize: (" << boxSize.x << ", " << boxSize.y << ", " << boxSize.z << ")" << endl;
         shared_ptr <Box> box = make_shared <Box> (boxSize, m);
         primitives.push_back(make_shared <TransformedPrimitive> (transformStack.top(), box));
@@ -707,9 +707,9 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
         c = checkUSE(c, lights, materials, primitives);
         cout << "Post USE in Cone" << endl;
         if (c.empty()) cout << "c is empty." << endl;
-        float bottomRadius = stof(c.attribute("bottomRadius").as_string("1"));
+        Real bottomRadius = stof(c.attribute("bottomRadius").as_string("1"));
         cout << "Post bottomRadius" << endl;
-        float height = stof(c.attribute("height").as_string("2"));
+        Real height = stof(c.attribute("height").as_string("2"));
         cout << "Post height" << endl;
 
         cout << "\tbottomRadius: " << bottomRadius << ", height: " << height << endl;
@@ -724,8 +724,8 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
         checkDEF(c, lights, materials, primitives);
         c = checkUSE(c, lights, materials, primitives);
         
-        float radius = stof(c.attribute("radius").as_string("1"));
-        float height = stof(c.attribute("height").as_string("2"));
+        Real radius = stof(c.attribute("radius").as_string("1"));
+        Real height = stof(c.attribute("height").as_string("2"));
         cout << "\tradius: " << radius << ", height: " << height << endl;
         shared_ptr <Cylinder> cyl = make_shared <Cylinder> (radius, height, m);
         primitives.push_back(make_shared <TransformedPrimitive> (transformStack.top(), cyl));
@@ -738,7 +738,7 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
         checkDEF(c, lights, materials, primitives);
         c = checkUSE(c, lights, materials, primitives);
         
-        float radius = stof(c.attribute("radius").as_string("1"));
+        Real radius = stof(c.attribute("radius").as_string("1"));
         cout << "\tradius: " << radius << endl;
         shared_ptr <Sphere> sphere = make_shared <Sphere> (radius, m);
         primitives.push_back(make_shared <TransformedPrimitive> (transformStack.top(), sphere));
@@ -751,14 +751,14 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
         checkDEF(c, lights, materials, primitives);
         c = checkUSE(c, lights, materials, primitives);
         
-        glm::vec3 P = stringToVec3(c.attribute("P").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
-        glm::vec3 Q = stringToVec3(c.attribute("Q").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
-        glm::vec3 R = stringToVec3(c.attribute("R").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
-        glm::mat4& m4 = transformStack.top();
+        Vec3 P = stringToVec3(c.attribute("P").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        Vec3 Q = stringToVec3(c.attribute("Q").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        Vec3 R = stringToVec3(c.attribute("R").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
+        Mat4& m4 = transformStack.top();
 
-        P = glm::vec3(transformStack.top() * glm::vec4(P, 1.0));
-        Q = glm::vec3(transformStack.top() * glm::vec4(Q, 1.0));
-        R = glm::vec3(transformStack.top() * glm::vec4(R, 1.0));
+        P = Vec3(transformStack.top() * Vec4(P, 1.0));
+        Q = Vec3(transformStack.top() * Vec4(Q, 1.0));
+        R = Vec3(transformStack.top() * Vec4(R, 1.0));
         primitives.push_back(make_shared <Triangle> (P, Q, R, m));
         return;
     }
@@ -768,16 +768,16 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
         cout << "Found a Quad..." << endl;
         checkDEF(c, lights, materials, primitives);
         c = checkUSE(c, lights, materials, primitives);
-        glm::vec3 v[4];
+        Vec3 v[4];
         v[0] = stringToVec3(c.attribute("P").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
         v[1] = stringToVec3(c.attribute("Q").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
         v[2] = stringToVec3(c.attribute("R").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
         v[3] = stringToVec3(c.attribute("S").as_string("0 0 0")); // argument to as_string is default, returned if attribute doesn't exist
-        glm::vec3 N;
-        glm::mat4& m4 = transformStack.top();
+        Vec3 N;
+        Mat4& m4 = transformStack.top();
 
         for (int i = 0; i < 4; ++i) {
-            v[i] = glm::vec3(transformStack.top() * glm::vec4(v[i], 1.0));
+            v[i] = Vec3(transformStack.top() * Vec4(v[i], 1.0));
         }
 
         pugi::xml_attribute attr = c.attribute("N");
@@ -788,7 +788,7 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
             N = glm::normalize(glm::cross(v[1] - v[0], v[2] - v[1]));
         }
 
-        N = glm::vec3(glm::inverse(glm::transpose(transformStack.top())) * glm::vec4(N, 0.0));
+        N = Vec3(glm::inverse(glm::transpose(transformStack.top())) * Vec4(N, 0.0));
 
         // can split this as: 012 023 or 013 123. the shorter of the cross edges should be the splitting edge.
         if (glm::distance(v[1], v[3]) < glm::distance(v[0], v[2])) {
@@ -823,9 +823,9 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
 void processPointLight(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
     // Color and Location
     Color color = stringToVec3(node.attribute("Color").as_string("1 1 1"));
-    glm::vec3 P = stringToVec3(node.attribute("Location").as_string("0 1000 0"));
-    float power = stof(node.attribute("Power").as_string("100"));
-    P = glm::vec3(transformStack.top() * glm::vec4(P, 1.0));
+    Vec3 P = stringToVec3(node.attribute("Location").as_string("0 1000 0"));
+    Real power = stof(node.attribute("Power").as_string("100"));
+    P = Vec3(transformStack.top() * Vec4(P, 1.0));
     lights.push_back(make_shared <PointLight> (P, color, power));
 }
 
@@ -890,7 +890,7 @@ unique_ptr <Scene> Parser::parseX3D(std::string fileName, shared_ptr <Camera>& c
     vector <shared_ptr<Material>> materials;
     vector <shared_ptr<Primitive>> primitives;
     unique_ptr <Scene> ans;
-    transformStack.push(glm::mat4(1.0)); // start with identity matrix on the stack
+    transformStack.push(Mat4(1.0)); // start with identity matrix on the stack
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(fileName.c_str());
     if (result) {

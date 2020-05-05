@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "common.hpp"
 #include "Light.hpp"
 #include "Material.hpp"
 #include "Mesh.hpp"
@@ -33,8 +34,8 @@ public:
     void printInfo() const;
 
     void addMesh(const std::shared_ptr<Mesh>& m);
-    void addMeshInstance(const std::shared_ptr<Mesh>& mptr, const BBox& dest, const glm::vec3 &axis = glm::vec3(0.0), const float angle = 0.0);
-    void addMeshInstance(const std::shared_ptr<Mesh>& mptr, const glm::vec3 center, const float scale, const glm::vec3 &axis, const float angle);
+    void addMeshInstance(const std::shared_ptr<Mesh>& mptr, const BBox& dest, const Vec3 &axis = Vec3(0.0), const Real angle = 0.0);
+    void addMeshInstance(const std::shared_ptr<Mesh>& mptr, const Vec3 center, const Real scale, const Vec3 &axis, const Real angle);
 
     void addPrimitives(const std::vector <std::shared_ptr<Primitive>>& primitives) {
         this->primitives.insert(

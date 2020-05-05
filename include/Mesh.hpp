@@ -16,9 +16,9 @@
 class Mesh {
 protected:
     BBox bbox;
-    std::vector <glm::vec4> vertices; 
-    std::vector <glm::vec3> texCoords;
-    std::vector <glm::vec3> normals;
+    std::vector <Vec4> vertices; 
+    std::vector <Vec3> texCoords;
+    std::vector <Vec3> normals;
     std::vector <std::shared_ptr <Material>> materials;
     std::vector <Tri> tris;
 
@@ -27,7 +27,7 @@ public:
     // Principally this is used for reading from obj files.
     Mesh() =delete;
 
-    Mesh(std::vector <glm::vec4> &&vertices_, std::vector <glm::vec3> &&texCoords_, std::vector <glm::vec3> &&normals_, std::vector <std::shared_ptr <Material>> &&materials_, std::vector <Tri> &&tris_) 
+    Mesh(std::vector <Vec4> &&vertices_, std::vector <Vec3> &&texCoords_, std::vector <Vec3> &&normals_, std::vector <std::shared_ptr <Material>> &&materials_, std::vector <Tri> &&tris_) 
     : vertices (std::move(vertices_)), texCoords (std::move(texCoords_)), normals (std::move(normals_)), materials (std::move(materials_)), tris (std::move(tris_)) 
     {
         for (auto& v : vertices) 
@@ -54,11 +54,11 @@ class MeshInstance {
 private:
     std::shared_ptr<Mesh> meshPtr;
     std::vector <std::shared_ptr <Material>> materials;
-    glm::mat4 xform;
+    Mat4 xform;
     glm::mat3 inv_xform_T_3x3;
 
 public:
-    MeshInstance(std::shared_ptr<Mesh> ptr, glm::mat4 xform_, std::shared_ptr<Material> material_ = nullptr) : meshPtr(ptr), xform(xform_) {
+    MeshInstance(std::shared_ptr<Mesh> ptr, Mat4 xform_, std::shared_ptr<Material> material_ = nullptr) : meshPtr(ptr), xform(xform_) {
         glm::mat3 tmp(xform_);
         inv_xform_T_3x3 = glm::inverseTranspose(tmp);
         if (material_ != nullptr) {

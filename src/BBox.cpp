@@ -1,6 +1,6 @@
 #include "BBox.hpp"
 
-void BBox::enclose(const glm::vec3& v) {
+void BBox::enclose(const Vec3& v) {
     min.x = min.x < v.x ? min.x : v.x;
     min.y = min.y < v.y ? min.y : v.y;
     min.z = min.z < v.z ? min.z : v.z;
@@ -22,10 +22,10 @@ void BBox::enclose(const BBox& bbox) {
 }
 
 // Intersect BBox, store tmin and tmax of intersection in a and b.
-bool BBox::intersect(const Ray &r, float &a, float &b) const {
-	float tymin, tymax, tzmin, tzmax;
+bool BBox::intersect(const Ray &r, Real &a, Real &b) const {
+	Real tymin, tymax, tzmin, tzmax;
 	
-	const glm::vec3 *bounds[2] = {&min, &max};
+	const Vec3 *bounds[2] = {&min, &max};
 
 	a = ((*bounds[r.sign[0]])[0] - r.o[0]) * r.inv_d[0];
 	b = ((*bounds[1-r.sign[0]])[0] - r.o[0]) * r.inv_d[0];
@@ -58,10 +58,10 @@ bool BBox::intersect(const Ray &r, float &a, float &b) const {
 }
 
 // Intersect BBox, store nothing
-bool BBox::intersectYN(const Ray &r, float t0, float t1) const {
-	float tmin, tmax, tymin, tymax, tzmin, tzmax;
+bool BBox::intersectYN(const Ray &r, Real t0, Real t1) const {
+	Real tmin, tmax, tymin, tymax, tzmin, tzmax;
 	
-	const glm::vec3 *bounds[2] = {&min, &max};
+	const Vec3 *bounds[2] = {&min, &max};
 
 	tmin = ((*bounds[r.sign[0]])[0] - r.o[0]) * r.inv_d[0];
 	tmax = ((*bounds[1-r.sign[0]])[0] - r.o[0]) * r.inv_d[0];

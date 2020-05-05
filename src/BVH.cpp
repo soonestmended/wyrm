@@ -43,12 +43,12 @@ const bool BVH::build() {
 	//bboxes = new BBox[numFaces];
 	bboxes.reserve(numPrimitives);
 
-	// centroids = new glm::vec3[numFaces];
+	// centroids = new Vec3[numFaces];
 	centroids.reserve(numPrimitives);
 
 	for (int i = 0; i < numPrimitives; i++) {
 /*
-		glm::vec3 p, q, r;
+		Vec3 p, q, r;
 		int v0ei = i*3; // v0 element index
 		p = s->vertices[s->elements[v0ei]];
 		q = s->vertices[s->elements[v0ei+1]];
@@ -86,10 +86,10 @@ uint BVH::nextNewNode() {
 	return nextAllocedNode++;
 }
 
-float surfaceArea(const BBox &bbox) {
-	float width = bbox.max[0] - bbox.min[0];
-	float height = bbox.max[1] - bbox.min[1];
-	float depth = bbox.max[2] - bbox.min[2];
+Real surfaceArea(const BBox &bbox) {
+	Real width = bbox.max[0] - bbox.min[0];
+	Real height = bbox.max[1] - bbox.min[1];
+	Real depth = bbox.max[2] - bbox.min[2];
 	return 2.0*width*height + 2.0*width*depth + 2.0* height*depth;
 }
 
@@ -110,9 +110,9 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 	}
 	//cout << "Centroid bounding box: " << cb.toString() << endl;
 
-	glm::vec3 t = cb.max - cb.min;
+	Vec3 t = cb.max - cb.min;
 	/*	
-	float t0, t1, t2; // sizes of centroid bounds in diff axes
+	Real t0, t1, t2; // sizes of centroid bounds in diff axes
 	t0 = cb.v1[0] - cb.v0[0];
 	t1 = cb.v1[1] - cb.v0[1];
 	t2 = cb.v1[2] - cb.v0[2];
@@ -140,8 +140,8 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 		return sp;
 	}
 	
-	float k1 = (N*(1.0f-LOCAL_EPSILON)) / (t[axis]);
-	float k0 = cb.min[axis];
+	Real k1 = (N*(1.0f-LOCAL_EPSILON)) / (t[axis]);
+	Real k0 = cb.min[axis];
 	
 
 	int numIn[N]; // number of primitives in bin i
@@ -153,7 +153,7 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 	BBox binBounds[N]; 
 	BBox leftBounds, rightBounds;
 	int numLeft[N-1];
-	float SAleft[N-1];
+	Real SAleft[N-1];
 	
 		// compute bin IDs
 	for (int i = 0; i < node.numPrimitives; i++) {
@@ -176,7 +176,7 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 	}
 	
 	// compute costs
-	float cost[N-1];
+	Real cost[N-1];
 	rightBounds.enclose(binBounds[N-1]);
 	int numRight = numIn[N-1];
 	cost[N-2] = numLeft[N-2]*SAleft[N-2] + (numRight*surfaceArea(rightBounds));
@@ -190,14 +190,14 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 	
 	SP sp;
 	sp.axis = axis;
-	float bestCost = POS_INF;
+	Real bestCost = POS_INF;
 	// find minimum cost
 	int bestPlane = -1;
 	for (int i = 0; i < N-1; i++) {
 		if (cost[i] < bestCost) {
 			bestCost = cost[i];
 			bestPlane = i;
-			sp.pos = cb.min[axis] + ((float)(i+1)*(t[axis]) / N);
+			sp.pos = cb.min[axis] + ((Real)(i+1)*(t[axis]) / N);
 		}
 	}
 	
@@ -231,11 +231,11 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 	}
 	//advance_cursor();
 	/*
-	float xSize = node->bbox.v1[0] - node->bbox.v0[0];
-	float ySize = node->bbox.v1[1] - node->bbox.v0[1];
-	float zSize = node->bbox.v1[2] - node->bbox.v0[2];
+	Real xSize = node->bbox.v1[0] - node->bbox.v0[0];
+	Real ySize = node->bbox.v1[1] - node->bbox.v0[1];
+	Real zSize = node->bbox.v1[2] - node->bbox.v0[2];
 	*/
-	glm::vec3 bboxSize = node.bbox.max - node.bbox.min;
+	Vec3 bboxSize = node.bbox.max - node.bbox.min;
 	if (depth > 25 || node.numPrimitives < 5 || glm::length(bboxSize) < .0001) {
 		//cout << "Leaf node with " << node.numPrimitives << " prims. \n";
 		fflush(stdout);
@@ -320,7 +320,7 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 	}
 }
 
-const bool BVH::closestIntersection(const Ray& ray, const float tmin, const float tmax, IntersectRec &ans) const {
+const bool BVH::closestIntersection(const Ray& ray, const Real tmin, const Real tmax, IntersectRec &ans) const {
 	// in BVH internal node, left child is node+1, right child is node.ptr
 	// in BVH leaf, right child is node + 1, primitives start at node.ptr
 
@@ -337,7 +337,7 @@ const bool BVH::closestIntersection(const Ray& ray, const float tmin, const floa
 			if (nodes[curPos].isLeaf()) {
 				//return true;
 				uint ind;
-				float p, q, r;
+				Real p, q, r;
 				
 				for (int i = 0; i < nodes[curPos].numPrimitives; ++i) {
 				//for (int i = 0; i < settings->numIndices/3; i++) {
@@ -383,7 +383,7 @@ const bool BVH::closestIntersection(const Ray& ray, const float tmin, const floa
     
 	
 	
-const bool BVH::intersectionYN(const Ray& ray, const float tmin, const float tmax) const {
+const bool BVH::intersectionYN(const Ray& ray, const Real tmin, const Real tmax) const {
 	int curPos = 0;
 	while (curPos < nextAllocedNode) {
 		
@@ -394,7 +394,7 @@ const bool BVH::intersectionYN(const Ray& ray, const float tmin, const float tma
 			if (nodes[curPos].isLeaf()) {
 				//return true;
 				uint ind;
-				float p, q, r;
+				Real p, q, r;
 				
 				for (int i = 0; i < nodes[curPos].numPrimitives; ++i) {
 				//for (int i = 0; i < settings->numIndices/3; i++) {
@@ -428,7 +428,7 @@ const bool BVH::intersectionYN(const Ray& ray, const float tmin, const float tma
 /*
 typedef struct _face_pos {
 	uint face;
-	float pos;
+	Real pos;
 } FP;
 
 int compare (const void * a, const void * b)
