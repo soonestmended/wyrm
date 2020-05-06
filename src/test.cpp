@@ -94,7 +94,7 @@ int main (int argc, char ** argv) {
     DebugRenderer dbr(*c, *s, pt);
     dbr.render();
 #else
-    MultisampleRenderer mr(*c, *s, pt, foo, 81);
+    MultisampleRenderer mr(*c, *s, pt, foo, 400);
     mr.render();
 #endif
     if (vm.count("output_file")) {

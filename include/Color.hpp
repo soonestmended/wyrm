@@ -21,6 +21,12 @@ public:
 	static Color Red() {return Color(1.0, 0.0, 0.0);}
 	static Color White() {return Color(1.0, 1.0, 1.0);}
 
+	static Color abs(const Color& c) {return Color{std::abs(c.x), std::abs(c.y), std::abs(c.z)};}
+
+	bool allComponentsLessThanEqualTo(const Color& c) const {
+		return (x <= c.x && y <= c.y && z <= c.z);
+	}
+
 	Color& operator+=(const Color& c) {
 		x += c.x;
 		y += c.y;

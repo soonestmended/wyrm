@@ -16,6 +16,13 @@ protected:
     const Tracer& tracer;
 };
 
+class DebugRenderer : public Renderer {
+public:
+    DebugRenderer(const Camera& c, const Scene& s, const Tracer& t) : 
+        Renderer(c, s, t) {}
+    void render();
+};
+
 class QuickRenderer : public Renderer {
 public:
     QuickRenderer(const Camera& c, const Scene& s, const Tracer& t, Image &target_) : 
@@ -29,9 +36,9 @@ private:
 
 class MultisampleRenderer : public Renderer {
 public:
-    MultisampleRenderer(const Camera& c, const Scene& s, const Tracer& t, Image &target_, int _spp) : 
+    MultisampleRenderer(const Camera& c, const Scene& s, const Tracer& t, Image &_target, int _spp) : 
         Renderer(c, s, t),
-        target (target_),
+        target (_target),
         spp (_spp) {}
     void render();
 
@@ -40,9 +47,11 @@ private:
     int spp; // samples per pixel
 };
 
-class DebugRenderer : public Renderer {
+class MultiThreadRenderer : public MultisampleRenderer {
 public:
-    DebugRenderer(const Camera& c, const Scene& s, const Tracer& t) : 
-        Renderer(c, s, t) {}
+    MultiThreadRenderer(const Camera& c, const Scene& s, const Tracer& t, Image &_target, int _spp, int _threads) :
+    MultisampleRenderer(c, s, t, _target, _spp), numThreads(_threads) {}
     void render();
+    int numThreads;
 };
+
