@@ -3,6 +3,7 @@
 
 #include <glm/vec3.hpp>
 
+#include "common.hpp"
 #include "Mesh.hpp"
 #include "Primitive.hpp"
 using namespace std;

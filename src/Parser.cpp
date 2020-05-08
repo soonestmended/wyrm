@@ -1,3 +1,5 @@
+#include "common.hpp"
+
 #include <fstream>
 #include <iostream>
 #include <map>

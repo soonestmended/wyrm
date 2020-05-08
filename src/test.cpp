@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <boost/program_options.hpp>
@@ -26,9 +27,10 @@ int main (int argc, char ** argv) {
       ("input_file,i", po::value<string>(), "input file -- or specify at end")
       ("output_file,o", po::value<string>(), "output file")
       ("quick_render,q", "quick render")
-      ("samples_per_pixel,s", po::value<int>(), "samples per pixel")
+      ("spp,s", po::value<int>(), "samples per pixel")
       ("width,w", po::value<int>(), "width of output image")
-      ("height,h", po::value<int>(), "height of output image");
+      ("height,h", po::value<int>(), "height of output image")
+      ("threads,j", po::value<int>(), "number of threads to use; 0 for all available");
 
     // positional options
     po::positional_options_description positionalOptions; 
@@ -48,6 +50,30 @@ int main (int argc, char ** argv) {
     if (!vm.count("input_file")) {
         cout << "Error: No input file provided." << endl;
         return 0;
+    }
+    int imageWidth, imageHeight, spp, nt;
+    if (vm.count("width")) {
+      imageWidth = vm["width"].as<int>();
+    } else {
+      imageWidth = 500;
+    }
+    if (vm.count("height")) {
+      imageHeight = vm["height"].as<int>();
+    } else {
+      imageHeight = 500;
+    }
+    if (vm.count("spp")) {
+      spp = vm["spp"].as<int>();
+    } else {
+      spp = 9;
+    }
+    if (vm.count("threads")) {
+      nt = vm["threads"].as<int>();
+    } else {
+      nt = 1;
+    }
+    if (nt == 0) {
+      nt = std::thread::hardware_concurrency();
     }
     shared_ptr <Camera> c = nullptr;
     unique_ptr <Scene> s = Parser::parseX3D(vm["input_file"].as<string>().c_str(), c);
@@ -85,17 +111,18 @@ int main (int argc, char ** argv) {
     Accelerator da(*s);
     PathTracer pt(s.get(), &bvh);
     cout << "Path tracer constructed." << endl;
-    Image foo(512, 512);
+    Image foo(imageWidth, imageHeight);
     cout << "Image constructed." << endl;
 
 //    QuickRenderer qr(*c, *s, pt, foo);
+    cout << "Starting render. " << spp << " samples per pixel, " << nt << " threads." << endl;
 
 #ifdef DEBUG
     DebugRenderer dbr(*c, *s, pt);
     dbr.render();
 #else
-    MultisampleRenderer mr(*c, *s, pt, foo, 400);
-    mr.render();
+    MultiThreadRenderer mtr(*c, *s, pt, foo, spp, nt);
+    mtr.render();
 #endif
     if (vm.count("output_file")) {
         foo.writePNG(vm["output_file"].as<string>().c_str());

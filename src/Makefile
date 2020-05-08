@@ -6,7 +6,7 @@ ODIR =../obj
 LDIR =../lib
 BDIR =../bin
 
-LIBS=-lboost_program_options -lpng
+LIBS=-lboost_program_options -lpng -lpthread
 
 _DEPS = Accelerator.hpp BBox.hpp BVH.hpp BxDF.hpp Camera.hpp Color.hpp common.hpp Image.hpp IntersectRec.hpp Light.hpp Material.hpp Mesh.hpp ONB.hpp Parser.hpp Primitive.hpp Ray.hpp Renderer.hpp Scene.hpp Tracer.hpp Utils.hpp VisibilityTester.hpp XForm.hpp
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))

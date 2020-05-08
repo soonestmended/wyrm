@@ -1,3 +1,6 @@
+#include "common.hpp"
+
+
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -12,7 +15,6 @@
 #include <glm/gtx/transform.hpp>
 
 #include "Color.hpp"
-#include "common.hpp"
 #include "Mesh.hpp"
 #include "Scene.hpp"
 
