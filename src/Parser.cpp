@@ -558,7 +558,7 @@ shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shar
         string name = c.attribute("name").as_string(ss.str().c_str());
         Color color = stringToVec3(c.attribute("color").as_string("1 1 1"));
         Real IOR = stof(c.attribute("IOR").as_string("1.5"));
-        return std::make_shared <GlassMaterial> (name, color, IOR);
+        return std::make_shared <GlassMaterial> (name, color, color, IOR);
     }
     c = node.child("DiffuseMaterial");
     if (c) {
@@ -791,7 +791,7 @@ void processShape(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights
         }
 
         N = Vec3(glm::inverse(glm::transpose(transformStack.top())) * Vec4(N, 0.0));
-
+        cout << "*****************Quad normal: " << N << endl;
         // can split this as: 012 023 or 013 123. the shorter of the cross edges should be the splitting edge.
         if (glm::distance(v[1], v[3]) < glm::distance(v[0], v[2])) {
             // split along v[1] --> v[3], i.e. 013 123

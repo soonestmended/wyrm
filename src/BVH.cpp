@@ -36,7 +36,7 @@ const bool BVH::build() {
 
 	primitives = scene.getPrimitives();
 	int numPrimitives = primitives.size();
-	nodes.reserve(2*numPrimitives-1);
+	nodes.resize(2*numPrimitives-1);
 	primitiveIndices.reserve(numPrimitives);
 	//root = new BVHNode[2*numFaces-1]; // max possible nodes needed
 	

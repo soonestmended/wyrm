@@ -42,5 +42,17 @@ namespace utils {
             return -testVec;
         return testVec;
     }
+ 
+  void winsorize(std::vector <Color>& v, Real amt) {
+    std::sort(v.begin(), v.end(), [](const Color& a, const Color& b) {
+                                    return avg(a) < avg(b);
+                                  });
+    int numToClip = (int) (.5 * (1. - amt) * v.size());
+    for (int i = 0; i < numToClip; ++i)
+      v[i] = v[numToClip];
+    for (int i = v.size() - 1; i > v.size() - numToClip; --i)
+      v[i] = v[v.size()-numToClip];
+  }
+  
 
 }

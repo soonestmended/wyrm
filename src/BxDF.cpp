@@ -58,7 +58,7 @@ const void SpecularDielectric_BRDF::sample_f(const Vec3& wo_local, Vec3& wi_loca
     *isSpecular = true;
     wi_local = Vec3{-wo_local.x, -wo_local.y, wo_local.z};
     *pdf = 1;
-    *bsdf = color * Schlick(ONB::cosTheta(wo_local), etaI, etaT);
+    *bsdf = color * Schlick(ONB::cosTheta(wi_local), etaI, etaT);
 }
 
 const void SpecularDielectric_BTDF::sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const {
@@ -72,7 +72,8 @@ const void SpecularDielectric_BTDF::sample_f(const Vec3& wo_local, Vec3& wi_loca
     }
     *pdf = 1;
     *isSpecular = true;
-    *bsdf = color * (1.0f - BxDF::Schlick(ONB::cosTheta(wo_local), etaI, etaT)) / ONB::absCosTheta(wi_local);
+    // changed wo_local to wi_local in the line below
+    *bsdf = color * (1. - BxDF::Schlick(ONB::cosTheta(wi_local), etaI, etaT)) / ONB::absCosTheta(wi_local);
 }
 const void Dielectric_BSDF::sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const {
 
@@ -83,7 +84,8 @@ const void Dielectric_BSDF::sample_f(const Vec3& wo_local, Vec3& wi_local, Color
         // do reflection
         wi_local = Vec3{-wo_local.x, -wo_local.y, wo_local.z};
         *pdf = fresnel;
-        *bsdf = color * fresnel;
+        *bsdf = R * fresnel / ONB::absCosTheta(wi_local);
+        //        *bsdf = Color::Black();
 #ifdef DEBUG
         cout << "Reflected ray: ";
 #endif
@@ -98,8 +100,8 @@ const void Dielectric_BSDF::sample_f(const Vec3& wo_local, Vec3& wi_local, Color
         }
         //cout << "wi_local " << (Color) wi_local << endl;
         *pdf = 1 - fresnel;
-        *bsdf = color * (1 - fresnel) / ONB::absCosTheta(wi_local);
-
+        *bsdf = T * (1 - fresnel) / ONB::absCosTheta(wi_local);
+        //*bsdf = Color::Black();
         //cout << "bsdf: " << *bsdf << endl;
 #ifdef DEBUG
         cout << "Refracted ray: ";

@@ -17,7 +17,7 @@ public:
         bool hit = false;
         IntersectRec tempIR;
         for (auto &prim : scene.getPrimitives()) {
-            if (prim->intersect(ray, tmin, bestT, tempIR)) {
+          if (prim->intersect(ray, tmin, bestT, tempIR)) {
                 if (tempIR.t < bestT) {
                     ans = tempIR;
                     bestT = ans.t;

@@ -54,7 +54,12 @@ public:
 
     virtual void getRandomPointAndDirection(const Vec2& uv, Vec3& p, Vec3& d, Real* pdf) const = 0;
     virtual const Real getSurfaceArea() const = 0;
-    virtual const std::string toString() const = 0;
+  virtual const std::string toString() const = 0;
+  friend std::ostream& operator<<(std::ostream& ios, const Primitive& p) {
+    ios << p.toString();
+    return ios;
+  }
+    
 };
 
 class Box : public Primitive {
@@ -160,28 +165,50 @@ public:
     void getRandomPoint(const Vec2& uv, Vec3& p, Real* pdf) const;
     void getRandomPointAndDirection(const Vec2& uv, Vec3& p, Vec3& d, Real* pdf) const;
     const Real getSurfaceArea() const;
-    const std::string toString() const {return "Triangle";}
+  const std::string toString() const {
+    std::stringstream ss;
+    ss << "Triangle: " << std::endl;
+    ss << "\tbbmin: " << bbox.min << "\tbbmax: " << bbox.max << std::endl;
+    ss << "\tV0: " << v[0] << std::endl;
+    ss << "\tV1: " << v[1] << std::endl;
+    ss << "\tV2: " << v[2] << std::endl;
+    ss << "\tN: " << N << std::endl;
+    ss << "\tMaterial: " << getMaterial()->name << std::endl;
+    return ss.str();
+  }
 
+  
 };
 
 // This is a triangle with different normal at each vertex -- for normal smoothing in meshes
 class TriangleWarp : public Triangle {
 protected:
-    Vec3 N1, N2;
+  Vec3 N1, N2;
 
 public:
-    TriangleWarp (const Vec3 &v0, const Vec3 &v1, const Vec3 &v2, const Vec3 &N0, const Vec3 &N1, const Vec3 &N2, const std::shared_ptr <Material> m)
+  TriangleWarp (const Vec3 &v0, const Vec3 &v1, const Vec3 &v2, const Vec3 &N0, const Vec3 &N1, const Vec3 &N2, const std::shared_ptr <Material> m)
     : Triangle(v0, v1, v2, N0, m), N1 (N1), N2 (N2) {} 
-
+  
     //const bool intersect(const Ray& ray, const Real tmin, const Real tmax, IntersectRec& ir) const;
-    void finishIntersection(IntersectRec& ir) const {
-        ir.shadingNormal = ir.uvw[0] * N + ir.uvw[1] * N1 + ir.uvw[2] * N2;
-        ir.onb.init(ir.shadingNormal); 
-    }
-    void getRandomPoint(const Vec2& uv, Vec3& p, Real* pdf) const;
-    void getRandomPointAndDirection(const Vec2& uv, Vec3& p, Vec3& d, Real* pdf) const;
-    const std::string toString() const {return "TriangleWarp";}
-
+  void finishIntersection(IntersectRec& ir) const {
+    ir.shadingNormal = ir.uvw[0] * N + ir.uvw[1] * N1 + ir.uvw[2] * N2;
+    ir.onb.init(ir.shadingNormal); 
+  }
+  void getRandomPoint(const Vec2& uv, Vec3& p, Real* pdf) const;
+  void getRandomPointAndDirection(const Vec2& uv, Vec3& p, Vec3& d, Real* pdf) const;
+  const std::string toString() const {
+    std::stringstream ss;
+    ss << "TriangleWarp: " << std::endl;
+    ss << "\tbbmin: " << bbox.min << "\tbbmax: " << bbox.max << std::endl;
+    ss << "\tV0: " << v[0] << std::endl;
+    ss << "\tV1: " << v[1] << std::endl;
+    ss << "\tV2: " << v[2] << std::endl;
+    ss << "\tN0: " << N << std::endl;
+    ss << "\tN1: " << N1 << std::endl;
+    ss << "\tN2: " << N2 << std::endl;
+    ss << "\tMaterial: " << getMaterial()->name << std::endl;
+    return ss.str();
+  }
 };
 
 class TransformedPrimitive : public Primitive {

@@ -131,11 +131,11 @@ void TriangleWarp::getRandomPointAndDirection(const Vec2& uv, Vec3& p, Vec3& d, 
 
 const Real Triangle::getSurfaceArea() const {
 	// Heron's method
-	Real a = e0.length();
-	Real b = e1.length();
-	Real c = (v[2]-v[1]).length();
-	Real s = 0.5 * (a+b+c);
-	return sqrtf(s*(s-a)*(s-b)*(s-c));
+  Real a = glm::length(e0);
+  Real b = glm::length(e1);
+  Real c = glm::length(v[2]-v[1]);
+  Real s = 0.5 * (a+b+c);
+  return sqrtf(s*(s-a)*(s-b)*(s-c));
 }
 
 const bool Box::intersectYN(const Ray& ray, const Real tmin, const Real tmax) const {

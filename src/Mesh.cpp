@@ -26,7 +26,8 @@ std::vector <std::shared_ptr<Primitive>> MeshInstance::toPrimitives() const {
         shared_ptr <Material> mPtr = meshPtr->materials[tri.m];
         if (this->materials.size() == 1) 
             mPtr = this->materials[0];
-
+        cout << "tri.vn[0]: " << tri.vn[0] << "\ttri.vn[1]: " << tri.vn[1] << "\ttri.vn[2]: " << tri.vn[2] << endl;
+        
         if (tri.vn[0] == tri.vn[1] && tri.vn[0] == tri.vn[2]) {
             ans.push_back(make_shared<Triangle> (v0, v1, v2, n0, mPtr));
         }

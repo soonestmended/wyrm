@@ -23,4 +23,5 @@ namespace utils {
     Color clamp(const Color& c, const Real min, const Real max);
     Real clamp(const Real f, const Real min, const Real max);
     Vec3 sameSide(const Vec3& testVec, const Vec3& v);
+  void winsorize(std::vector <Color>& v, Real amt);
 }

@@ -43,7 +43,7 @@ public:
 
 	Color& operator*=(const Color& c) {
 		x *= c.x;
-		y *= c.z;
+		y *= c.y;
 		z *= c.z;
 		return *this;
 	}
@@ -57,7 +57,7 @@ public:
 
 	Color& operator/=(const Color& c) {
 		x /= c.x;
-		y /= c.z;
+		y /= c.y;
 		z /= c.z;
 		return *this;
 	}

@@ -19,6 +19,7 @@ protected:
 
 class PathTracer : public Tracer {
 public:
-    PathTracer(const Scene* s, const Accelerator* a) : Tracer (s, a) {}
+  PathTracer(const Scene* s, const Accelerator* a, int _maxDepth) : Tracer (s, a), maxDepth (_maxDepth) {}
     const Color lightAlongRay(const Ray& r, const bool debug = false) const;
+  int maxDepth;
 };

@@ -2,7 +2,7 @@
 #include "common.hpp"
 #include "Tracer.hpp"
 
-#define MAX_DEPTH 5
+#define MAX_DEPTH 1
 
 using namespace std;
 
@@ -17,15 +17,38 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
     bool isSpecular = true, hit;
     Ray nextRay = r;
     bool testB = false;
-    for (int i = 0; i < MAX_DEPTH; ++i) {
+    if (debug) cout << "############### starting pathThroughput: " << pathThroughput << endl;
+    //Primitive* lastPrim = nullptr;
+    for (int i = 0; i < maxDepth; ++i) {
         if (debug) {
-                        cout << endl;
+          cout << endl;
+          cout << "Tracing ray: " << nextRay << endl;
             cout << "i: " << i << endl;
+            cout << "isSpecular: " << isSpecular << endl;
         }
         //cout << "pre accel->CI" << endl;
         hit = accel->closestIntersection(nextRay, EPSILON, POS_INF, ir);
+        /*
+        if (hit) {
+          cout << "hit";
+          return ((DiffuseMaterial*) ir.material.get())->lbrdf->color;
+        }
+        */
         //cout << "post accel->CI" << endl;
-        
+        if (debug) {
+          if (hit) {
+            cout << "Hit: " << ir.primitive->toString() << endl;
+            cout << "Material: " << ir.material->name << endl;
+            cout << "isect P: " << (Color) ir.isectPoint << endl;
+            cout << "isect t: " << ir.t << endl;
+            cout << "world geometric normal: " << (Color) ir.normal << endl;
+          }
+          else {
+            cout << "Missed.";
+          }
+        }
+        //if (hit && ir.t < .001) cout << "Close intersection with " << ir.primitive->toString() << ". ir.t: " << ir.t << endl;
+        //if (hit && ir.primitive == lastPrim && strcmp(ir.primitive->toString().c_str(), "Sphere")) cout << "Self intersection at " << ir.t << ", prim is "<< ir.primitive->toString() << endl;
         if (isSpecular) {
             //cout << "isSpecular true. Hit " << hit << endl;
             //cout << "ir.material: " << ir.material << "\tir.primitive: " << ir.primitive << endl;
@@ -35,12 +58,24 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
                 //cout << "ir.primitive->toString: " << ir.primitive->toString() << endl;
                 //cout << "ir.primitive->getSurfaceArea: " << ir.primitive->getSurfaceArea() << endl;
                        // ir.primitive->finishIntersection(ir);
+              Color luminaire = glm::dot(ir.normal, -nextRay.d) > 0 ? pathThroughput * ir.material->getEmission() : Color::Black();
 
-                ans += pathThroughput * ir.material->getEmission() * ir.primitive->getSurfaceArea();
+
+              if (debug) {
+                cout << "Adding luminaire emission if applicable: " << endl;
+                cout << "\tans pre: " << ans << endl;
+              }
+              ans += luminaire;
+              if (debug) {
+                cout << "\tLuminaire: " << luminaire << endl;
+                cout << "\tans post: " << ans << endl;
+              }
+                
                 //return ((ADMaterial*) ir.material.get())->base_color;
             }
             else {
                 // ray escaped scene
+              if (debug) cout << "Ray escaped scene." << endl;
                 for (const auto& l : scene->getLights()) {
                     ans += pathThroughput * l->LInf(nextRay);
                 }
@@ -53,19 +88,27 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
         }
         //cout << "pre primitive->FI" << endl;
         ir.primitive->finishIntersection(ir);
+        if (debug) {
+          cout << "world shading normal: " << ir.shadingNormal << endl;
+        }
+        //lastPrim = ir.primitive;
         //cout << "ir.isectPoint: " << ir.isectPoint << endl;
         //cout << "post primitive->FI" << endl;
 
         Vec3 wo_local = ir.onb.world2local(-nextRay.d);
         //cout << "pre EDL" << endl;
+        if (debug) cout << "**************** BEGIN EDL *****************" << endl;
         Color edl = estimateDirectLighting(-nextRay.d, ir, debug);
+        if (debug)cout << "**************** END EDL *******************" << endl;
         if (debug) {
-            cout << "EDL: " << edl << endl;
+            cout << "EDL at hit point: " << edl << endl;
         }
         ans += pathThroughput * edl;
         //return ans;
         //cout << "post EDL" << endl;
-
+        if (debug) {
+          cout << "ans + EDL: " << ans << endl;
+        }
         //cout << "pre material->sample_f" << endl;
         ir.material->sample_f(wo_local, wi_local, &f, &pdf, &isSpecular);
         //cout << "post material->sample_f" << endl;
@@ -73,28 +116,25 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
         //if (i == 0) cout << (Color) dir << endl;
         Ray oldRay = nextRay;
         nextRay = Ray{ir.isectPoint + (Real) EPSILON * dir, dir};
-        if (debug) {
-            cout << "BRDF: " << f << endl;
-        }
         //cout << "pre bounce throughput: " << pathThroughput << endl;
-        pathThroughput *= f * ir.onb.absCosTheta(wi_local) / pdf;
-
-        if (debug) {
+                Color multiplier = f * ir.onb.absCosTheta(wi_local) / pdf;
+        //        Color multiplier = f * abs(glm::dot(dir, ir.shadingNormal)) / pdf;
+        if   (debug) cout << "~~~PRE multiplier PThroughput: " << pathThroughput << endl;
+        pathThroughput *= multiplier;
+        if   (debug) {
+          cout << "Multiplier: " << multiplier << endl;
+          cout << "~~~POST multiplier PThroughput: " << pathThroughput << endl;
+        }
+          if (debug) {
             Vec3 wi_world = ir.onb.local2world(wi_local);
             Vec3 wo_world = ir.onb.local2world(wo_local);
-
+            cout << "BRDF at hit point: " << f << "\t";
+            cout << "Sampled ray in world (wi_world): " << wi_world << endl;
+            cout << "Sampled ray in local (wi_local): " << wi_local << endl;
+            
+            cout << "pdf for sampled ray: " << pdf << "\tcosTheta: " << ir.onb.cosTheta(wi_local) << endl;
+            cout << "pathThroughput multiplier: " << multiplier << endl;
             cout << "pathThroughput: " << pathThroughput << endl;
-            cout << "pdf: " << pdf << "\tcosTheta: " << ir.onb.cosTheta(wi_local) << "\tf: " << f << endl;
-            cout << "ans: " << ans << endl;
-            cout << "Traced ray: " << oldRay << endl;
-            cout << "Hit: " << ir.primitive->toString();
-            cout << "isSpecular: " << isSpecular << endl;
-            cout << "isect P: " << (Color) ir.isectPoint << endl;
-            cout << "isect t: " << ir.t << endl;
-            cout << "world shading normal: " << (Color) ir.shadingNormal << endl;
-            cout << "Next ray: " << nextRay << endl;
-            cout << "world wo: " << (Color) wo_world << endl;
-            cout << "world wi: " << (Color)  wi_world << endl;
             cout << "wo_world dot N: " << glm::dot(wo_world, ir.shadingNormal) << endl;
             cout << "wi_world dot N: " << glm::dot(wi_world, ir.shadingNormal) << endl;
             cout << "onb.cosTheta(wo_local): " << ir.onb.cosTheta(wo_local) << endl;
@@ -114,6 +154,7 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
         }
 
     }
+    //return utils::clamp(ans, 0, 1);
     return ans;
 }
 
@@ -143,6 +184,8 @@ const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Li
     Vec3 wi_world;
     VisibilityTester vt;
     Color f; // BRDF
+
+    
     // 1) pick direction based on light
     Color l_contrib = l.sample(Vec2(rand(), rand()), ir, wi_world, &lightPdf, vt);
     //cout << "\tl_contrib: " << l_contrib << " pdf: " << lightPdf << endl;
@@ -156,9 +199,10 @@ const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Li
         cout << "\tl_contrib: " << l_contrib << endl;
         cout << "\tlightPdf: " << lightPdf << endl;
     }
+    
     if (lightPdf > 0 && !l_contrib.isBlack()) {
         if (debug) cout << "pre f" << endl;
-        f = ir.material->brdf(wo_local, wi_local, ir, &isSpecular);
+        f = ir.material->brdf(wo_local, wi_local, ir, &isSpecular) * abs(glm::dot(wi_world, ir.shadingNormal));
         if (debug) cout << "post f" << endl;
         //if (utils::avg(f) < .1) cout << "SMALL BRDF:" << f << " avg: " << utils::avg(f) << endl;
         //cout << "\tEDL surface BRDF: " << f << endl;
@@ -169,15 +213,17 @@ const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Li
         if (!f.isBlack() && vt.testVisibile(*this->accel)) {
             if (debug) cout << "\tpassed vt" << endl;
             if (l.isDeltaLight()) {
-                ans += f * l_contrib * (absCosTheta / lightPdf);
+                ans += f * l_contrib / lightPdf;
             }
             else {
                 irPdf = ir.material->pdf(wo_local, wi_local, ir);
                 weight = utils::powerHeuristic(1, lightPdf, 1, irPdf);
                 //weight = 1.0f;
                 //cout << "irPdf: " << irPdf << endl;
-                ans += f * l_contrib * (absCosTheta * weight / lightPdf);
+                Color foo = f * l_contrib * weight / lightPdf;
+                ans += foo;
                 if (debug) {
+                  cout << "\tpart 1 contrib: " << foo << endl;
                     cout << "\tirPdf: " << irPdf << endl;
                     cout << "\tweight: " << weight << endl;
                     cout << "\tans: " << ans << endl;
@@ -199,23 +245,26 @@ const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Li
             cout << "\tlight part 2: " << endl;
         }
         ir.material->sample_f(wo_local, wi_local, &f, &irPdf, &isSpecular);
+        //f *= ir.onb.absCosTheta(wi_local);
+        wi_world = ir.onb.local2world(wi_local);
+        f *= abs(glm::dot(wi_world, ir.shadingNormal));
         if (!f.isBlack() && irPdf > 0) {
-            if (!isSpecular) {
-                weight = 1;
-                lightPdf = l.pdf(ir, wi_local);
-                if (lightPdf == 0) {
-                    if (debug) cout << "\tzero lightPdf. Returning. " << endl;
-                    return ans; // no probability of choosing this ray given light distribution
-                }
-                weight = utils::powerHeuristic(1, irPdf, 1, lightPdf);
+          weight = 1;
+          if (!isSpecular) {
+            lightPdf = l.pdf(ir, wi_local);
+            if (lightPdf == 0) {
+              if (debug) cout << "\tzero lightPdf. Returning. " << endl;
+              return ans; // no probability of choosing this ray given light distribution
             }
-            l_contrib = Color::Black();
+            weight = utils::powerHeuristic(1, irPdf, 1, lightPdf);
+          }
+          l_contrib = Color::Black();
             Ray rayToLight{ir.isectPoint, wi_world};
             IntersectRec tempIr;
-            if (accel->closestIntersection(rayToLight, .0001, POS_INF, tempIr)) {
+            if (accel->closestIntersection(rayToLight, EPSILON, POS_INF, tempIr)) {
                 if (l.getPrim() == tempIr.primitive) {
-                    if (debug) cout << "\tray chosen by surface hits light!" << endl;
-                    l_contrib = l.getColor() * l.getPower();
+                  if (debug) cout << "\tray chosen by surface hits light!" << endl;
+                    l_contrib = glm::dot(tempIr.normal, -rayToLight.d) > 0. ? tempIr.material->getEmission() : Color::Black();
                 }
             }
             else {
@@ -223,13 +272,14 @@ const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Li
                 l_contrib = l.LInf(rayToLight); // account for infinite light
             }
             if (!l_contrib.isBlack()) {
-                ans += f * l_contrib * absCosTheta * weight / irPdf; 
-                // problem comes when ray chosen by surface also hits light
+                Color local_contrib = f * l_contrib * absCosTheta * weight / irPdf;
+                ans += local_contrib;
                 // check this code
                 if (debug) {
                     cout << "\tdist: " << tempIr.t << endl;
                     cout << "\tf: " << f << endl;
                     cout << "\tl_contrib: " << l_contrib << endl;
+                    cout << "\tpart 2 contrib: " << local_contrib << endl;
                     cout << "\tabsCosTheta: " << absCosTheta << endl;
                     cout << "\tweight: " << weight << endl;
                     cout << "\tlightPdf: " << lightPdf << endl;

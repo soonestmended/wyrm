@@ -12,7 +12,10 @@
 #include "Image.hpp"
 #include "Material.hpp"
 #include "Parser.hpp"
+#include "PBRTParser.hpp"
 #include "Renderer.hpp"
+#include "RenderPackage.hpp"
+#include "SampleGenerator.hpp"
 #include "Scene.hpp"
 #include "Tracer.hpp"
 
@@ -51,39 +54,51 @@ int main (int argc, char ** argv) {
         cout << "Error: No input file provided." << endl;
         return 0;
     }
-    int imageWidth, imageHeight, spp, nt;
-    if (vm.count("width")) {
-      imageWidth = vm["width"].as<int>();
-    } else {
-      imageWidth = 500;
-    }
-    if (vm.count("height")) {
-      imageHeight = vm["height"].as<int>();
-    } else {
-      imageHeight = 500;
-    }
-    if (vm.count("spp")) {
-      spp = vm["spp"].as<int>();
-    } else {
-      spp = 9;
-    }
-    if (vm.count("threads")) {
-      nt = vm["threads"].as<int>();
-    } else {
-      nt = 1;
-    }
-    if (nt == 0) {
-      nt = std::thread::hardware_concurrency();
-    }
-    shared_ptr <Camera> c = nullptr;
-    unique_ptr <Scene> s = Parser::parseX3D(vm["input_file"].as<string>().c_str(), c);
-    
+
+    Options o;
+    //    unique_ptr <Scene> s = Parser::parseX3D(vm["input_file"].as<string>().c_str(), c);
+    PBRTParser pbrtp;
+    unique_ptr <Scene> s = pbrtp.parse(vm["input_file"].as<string>().c_str(), o);
 //    unique_ptr <Scene> s = Scene::emptyScene();
 
     //s->addMesh(Scene::parseObj(vm["input_file"].as<string>()));
 
-    cout << "Parse successful." << endl;
+    if (s != nullptr) {
+      cout << "Parse successful." << endl;
+    }
+    else {
+      cout << "Parse failed." << endl;
+      exit(0);
+    }
     s->printInfo();
+
+    if (vm.count("output_file")) {
+      o.imageFilename = vm["output_file"].as<string>();
+    }
+
+
+    if (vm.count("width")) {
+      o.imageWidth = vm["width"].as<int>();
+    }
+    
+    if (vm.count("height")) {
+      o.imageHeight = vm["height"].as<int>();
+    }
+    
+    if (vm.count("spp")) {
+      o.spp = vm["spp"].as<int>();
+    }
+    
+    if (vm.count("threads")) {
+      o.nt = vm["threads"].as<int>();
+    }
+    else {
+      o.nt = 0;
+    }
+    
+    if (o.nt == 0) {
+      o.nt = std::thread::hardware_concurrency();
+    }
 
     //BBox wrapper(Vec3(2.0, -2.0, -2.0), Vec3(6.0, 2.0, 2.0));
     //s->addMeshInstance(Parser::parseObj("bunny.obj"), wrapper, Vec3(0, 1, 0), 180);
@@ -96,35 +111,8 @@ int main (int argc, char ** argv) {
     s->addLights(bar);
 */
     // for now just implement quick render
-    if (!c) {
-        c = make_shared <Camera> (Vec3(0, 0, -10), Vec3(0, 0, 1), Vec3(0, 1, 0), Vec3(1, 0, 0), 1);
-    }
+    //    shared_ptr <Camera> c = make_shared <Camera> (Vec3(0, 0, -10), Vec3(0, 0, 1), Vec3(0, 1, 0), Vec3(1, 0, 0), 1);
 
-    BVH bvh(*s);
-    if (!bvh.build()) {
-        cout << "Error building BVH." << endl;
-        exit(1);
-    }
-    else {
-        cout << "BVH build complete." << endl;
-    }
-    Accelerator da(*s);
-    PathTracer pt(s.get(), &bvh);
-    cout << "Path tracer constructed." << endl;
-    Image foo(imageWidth, imageHeight);
-    cout << "Image constructed." << endl;
-
-//    QuickRenderer qr(*c, *s, pt, foo);
-    cout << "Starting render. " << spp << " samples per pixel, " << nt << " threads." << endl;
-
-#ifdef DEBUG
-    DebugRenderer dbr(*c, *s, pt);
-    dbr.render();
-#else
-    MultiThreadRenderer mtr(*c, *s, pt, foo, spp, nt);
-    mtr.render();
-#endif
-    if (vm.count("output_file")) {
-        foo.writePNG(vm["output_file"].as<string>().c_str());
-    }
+    RenderPackage::go(o, *s);
+    
 }

@@ -17,7 +17,7 @@ const Color PointLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi,
     Real dist = sqrtf(distSquared);
     wi /= dist;
     *pdf = 1;
-    return this->color * this->power / distSquared;
+    return this->color / distSquared;
 }
 
 const Color GeometricLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi_world, Real* pdf, VisibilityTester& vt) const {
@@ -35,9 +35,11 @@ const Color GeometricLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3&
     //pdf = distSquared / (prim->getSurfaceArea() * abs(glm::dot(directionFromLight, -wi)));
     IntersectRec lightIR;
     Ray r{ir.isectPoint, wi_world};
-    if (!prim->intersect(r, EPSILON, POS_INF, lightIR)) return Color::Black();
+    if (!prim->intersect(r, 0, POS_INF, lightIR)) return Color::Black();
+    //prim->intersect(r, .001, POS_INF, lightIR);
+    //cout << "Random light point: " << pointOnLight << endl;
     Real dist2 = glm::length2(pointOnLight - ir.isectPoint);
-    *pdf = (dist2 / abs(glm::dot(lightIR.normal, -r.d))) / (*pdf);
+    *pdf = (dist2 / abs(glm::dot(lightIR.normal, -r.d))) * (*pdf);
     //cout << "pdf: " << *pdf << endl;
-    return this->getColor() * this->getPower();
+    return this->getColor();
 }

@@ -47,33 +47,40 @@ public:
 
 class DiffuseMaterial : public Material {
 public:
-    DiffuseMaterial(const std::string& name, Color& color) : Material (name) {
-        lbrdf = new Lambertian_BRDF(color);
-    }
+  DiffuseMaterial(const std::string& name, Color color) : Material (name), emissionColor (Color::Black()) {
+    lbrdf = new Lambertian_BRDF(color);
+  }
+  
+  DiffuseMaterial(const std::string& name, Color color, Color emit) : Material (name), emissionColor (emit) {
+    lbrdf = new Lambertian_BRDF(color);
+  }
 
-    ~DiffuseMaterial() {
-        if (lbrdf) delete(lbrdf);
-    }
+  ~DiffuseMaterial() {
+    if (lbrdf) delete(lbrdf);
+  }
 
-    const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
-        bool foo = false;
-        return lbrdf->f(wo_local, wi_local, &foo);
-    }
-    const Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {
-        return lbrdf->pdf(wo_local, wi_local);
-    }
-    const void sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const {
-        lbrdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
-    }
+  const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
+    return lbrdf->f(wo_local, wi_local, isSpecular);
+  }
+  const Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {
+    return lbrdf->pdf(wo_local, wi_local);
+  }
+  const void sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const {
+    lbrdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
+    *isSpecular = false;
+  }
 
-    Lambertian_BRDF* lbrdf;
+  const Color getEmission() const {return emissionColor;}
+  
+  Color emissionColor;
+  Lambertian_BRDF* lbrdf;
 };
 
 class GlassMaterial : public Material {
 public:
     GlassMaterial() =delete;
-    GlassMaterial(const std::string& name, Color& color, Real IOR) : Material(name) {
-        dBSDF = new Dielectric_BSDF(color, 1.00029, IOR);
+  GlassMaterial(const std::string& name, const Color& _R, const Color& _T, Real IOR) : Material(name) {
+    dBSDF = new Dielectric_BSDF(_R, _T, 1.00029, IOR);
     }
     ~GlassMaterial() {
         if (dBSDF) delete (dBSDF);

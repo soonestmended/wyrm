@@ -2,7 +2,7 @@
 
 #include "common.hpp"
 #include "Renderer.hpp"
-
+#include "SampleGenerator.hpp"
 #include <chrono>
 #include <thread>
 
@@ -38,61 +38,30 @@ void MultisampleRenderer::render() {
     Ray r;
     Vec2 pixelSize{1./(Real) w, 1./(Real)h};
     int rejectedSamples = 0;
-
+    StratifiedSampleGenerator ssg;
     for (int j = 0; j < h; ++j) {
         printf("row: %4d", j);
         fflush(stdout);
         for (int i = 0; i < w; ++i) {
             Color pixelColor = Color::Black();
-            Color samples[spp];
-            for (int k = 0; k < spp; ++k) {
-                Vec2 p((Real)i/(Real)w, (Real)j/(Real)h); // center of pixel
-                p += (utils::rand01vec2() - Vec2(.5)) * pixelSize;
-                r = camera.getRay(p - Vec2(.5));
-                if (j == 259 && i == 109) {
-                    samples[k] = tracer.lightAlongRay(r, false);
-                }
-                else {
-                    samples[k] = tracer.lightAlongRay(r, false);
-                }
+            Vec2 pixelCenter {(Real)i/(Real)w, (Real)j/(Real)h};
+            vector <Vec2> subPixels = ssg.generate(pixelCenter - pixelSize, pixelCenter + pixelSize, spp);
+            Color samples[subPixels.size()];
+
+            for (int k = 0; k < subPixels.size(); ++k) {
+              r = camera.getRay(subPixels[k]);
+              samples[k] = tracer.lightAlongRay(r, false);
             }
-            // remove outliers -- calculate stdev
-            Color mean{0};
-            for (int k = 0; k < spp; k++) {
-                mean += samples[k];
-            }
-            mean /= (Real) spp;
-            Color stdev{0};
-            for (int k = 0; k < spp; k++) {
-                stdev += (samples[k] - mean) * (samples[k] - mean);
-            }
-            stdev = glm::sqrt(stdev / (Real) spp);
-            int usedSamples = 0;
+            for (auto& c : samples)
+              pixelColor += c;
             
-            for (int k = 0; k < spp; k++) {
-                Color foo = Color::abs(samples[k] - mean);
-                if (foo.allComponentsLessThanEqualTo(5 * stdev)) {
-                    pixelColor += samples[k];
-                    usedSamples++;
-                }
-                else {
-                    rejectedSamples++;
-                }
-            }
-            //cout << "Used samples: " << usedSamples << endl;
-            /*
-            if (j == 50) {
-                cout << "Mean: " << mean << "\tStdev: " << stdev << endl;
-                cout << "Samples used: " << usedSamples << endl;
-            }
-*/
-            target(i, j) = utils::clamp(pixelColor / (Real) usedSamples, 0, 1);
-            //if (utils::avg(pixelColor) > 10.0) cout << "col: " << i << "\tray: " << r << "\tcolor: " << pixelColor << endl;
+            // remove outliers -- calculate stdev
+            target(i, j) = utils::clamp(pixelColor / (Real) subPixels.size(), 0, 1);
+
         }
         printf("\b\b\b\b\b\b\b\b\b");
     }
     cout << endl;
-    cout << "Rejected " << rejectedSamples << " samples, " << 100. * (Real) rejectedSamples / (Real) (spp * w * h) << " pct. " << endl;
 }
 
 std::string format_duration( std::chrono::milliseconds ms ) {
@@ -164,49 +133,33 @@ void MultiThreadRenderer::renderPane(const ImagePane& ip) {
     Ray r;
     Vec2 pixelSize{1./(Real) target.width(), 1./(Real)target.height()};
     int rejectedSamples = 0;
-
+    StratifiedSampleGenerator ssg;
     for (int j = ip.y0; j < ip.y0+ip.h; ++j) {
         for (int i = ip.x0; i < ip.x0+ip.w; ++i) {
             Color pixelColor = Color::Black();
-            Color samples[spp];
-            for (int k = 0; k < spp; ++k) {
-              Vec2 p((Real)i/(Real)target.width(), (Real)j/(Real)target.height()); // center of pixel
-                p += (utils::rand01vec2() - Vec2(.5)) * pixelSize;
-                r = camera.getRay(p - Vec2(.5));
-                samples[k] = tracer.lightAlongRay(r, false);
+            Vec2 pixelCenter {(Real)i/(Real)target.width()-.5, (Real)j/(Real)target.height()-.5};
+            vector <Vec2> subPixels = ssg.generate(pixelCenter - .5*pixelSize, pixelCenter + .5*pixelSize, spp);
+            vector <Color> samples;
+            samples.reserve(subPixels.size());
+            for (int k = 0; k < subPixels.size(); ++k) {
+              r = camera.getRay(subPixels[k]);
+              Color pc = tracer.lightAlongRay(r, false);
+
+              if ((i == 10 || i == 480) && j == 250 && k == 0) {
+                cout << "i: " << i << "   j: " << j << endl;
+                cout << Vec3(subPixels[k], 0) << endl;
+                cout << r << endl;
+                cout << "color: " << pc << endl;
+              }
+              samples.push_back(pc);
+              //r = camera.getRay(pixelCenter);
             }
-            // remove outliers -- calculate stdev
-            Color mean{0};
-            for (int k = 0; k < spp; k++) {
-                mean += samples[k];
-            }
-            mean /= (Real) spp;
-            Color stdev{0};
-            for (int k = 0; k < spp; k++) {
-                stdev += (samples[k] - mean) * (samples[k] - mean);
-            }
-            stdev = glm::sqrt(stdev / (Real) spp);
-            int usedSamples = 0;
-            
-            for (int k = 0; k < spp; k++) {
-                Color foo = Color::abs(samples[k] - mean);
-                if (foo.allComponentsLessThanEqualTo(5 * stdev)) {
-                    pixelColor += samples[k];
-                    usedSamples++;
-                }
-                else {
-                    rejectedSamples++;
-                }
-            }
-            //cout << "Used samples: " << usedSamples << endl;
-            /*
-            if (j == 50) {
-                cout << "Mean: " << mean << "\tStdev: " << stdev << endl;
-                cout << "Samples used: " << usedSamples << endl;
-            }
-*/
-            target(i, j) = utils::clamp(pixelColor / (Real) usedSamples, 0, 1);
-            //if (utils::avg(pixelColor) > 10.0) cout << "col: " << i << "\tray: " << r << "\tcolor: " << pixelColor << endl;
+            //utils::winsorize(samples, .95);
+            for (auto& c : samples)
+              pixelColor += utils::clamp(c, 0, 13);
+                        
+            target(i, j) = utils::clamp(pixelColor / (Real) subPixels.size(), 0, 1);
+            //            if (target(i, j).g > .2) cout << "(i, j): (" << i << ", " << j << ")\tray: " << r << "\tcolor: " << target(i,j) << endl;
         }
     }
     //cout << endl;
@@ -240,21 +193,13 @@ void DebugRenderer::render() {
     // one sample along each ray
     Ray r;
     Vec2 pixelSize{1./(Real) w, 1./(Real)h};
-    for (int j = 0; j < h; ++j) {
-        //printf("row: %4d", j);
-        //fflush(stdout);
-        for (int i = 0; i < w; ++i) {
-            Color pixelColor = Color::Black();
-            Vec2 p((Real)109/(Real)w, (Real)259/(Real)h); // center of pixel
-            p += (utils::rand01vec2() - Vec2(.5)) * pixelSize;
-            r = camera.getRay(p - Vec2(.5));
-            pixelColor = tracer.lightAlongRay(r);
-            // 0.228245, 0.004493, 0.973594
-            if (j == 259 && i == 109)
-                cout << "Ray: " << r << "\tColor: " << pixelColor << endl;
-        }
-        //printf("\b\b\b\b\b\b\b\b\b");
-    }
+    Vec2 p((Real)100/(Real)w, (Real)259/(Real)h); // center of pixel
+    r = camera.getRay(p - Vec2(.5));
+    Color pixelColor = tracer.lightAlongRay(r, true);
+    // 0.228245, 0.004493, 0.973594
+    cout << "Pixel color: " << pixelColor << endl;
+    //printf("\b\b\b\b\b\b\b\b\b");
+    
     cout << endl;
     cout << "Called render" << endl;
 }
