@@ -1,3 +1,4 @@
+Scale -1 1 1 
 Integrator "path" "integer maxdepth" [ 65 ] 
 Transform [ 1 -0 -0 -0 -0 1 -0 -0 -0 -0 -1 -0 -0 1 6.8 1]
 Sampler "sobol" "integer pixelsamples" [ 64 ] 

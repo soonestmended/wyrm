@@ -1,8 +1,10 @@
 #include "common.hpp"
 #include "Utils.hpp"
+#include <random>
 
 namespace utils {
 
+  
     Real powerHeuristic(int nf, Real fPDF, int ng, Real gPDF) {
         Real f = (Real) nf * fPDF, g = (Real) ng * gPDF;
 	    return (f*f) / (f*f + g*g);
@@ -14,8 +16,6 @@ namespace utils {
 	    bg[0] = 1 - sqrtu;
 	    bg[1] = uv[1] * sqrtu;
     }
-    Real rand01() {return (Real) rand() / (Real) RAND_MAX;}
-    Vec2 rand01vec2() {return Vec2(rand01(), rand01());}
 
     Real avg(const Vec3& v) {return (v[0] + v[1] + v[2]) * (Real) (1./3.);}
     Color lerp(const Color& a, const Color& b, const Real t) {return (1 - t) * a + t * b;}
@@ -53,6 +53,21 @@ namespace utils {
     for (int i = v.size() - 1; i > v.size() - numToClip; --i)
       v[i] = v[v.size()-numToClip];
   }
-  
+
+  std::string format_duration( std::chrono::milliseconds ms ) {
+    using namespace std::chrono;
+    auto secs = duration_cast<seconds>(ms);
+    ms -= duration_cast<milliseconds>(secs);
+    auto mins = duration_cast<minutes>(secs);
+    secs -= duration_cast<seconds>(mins);
+    auto hour = duration_cast<hours>(mins);
+    mins -= duration_cast<minutes>(hour);
+
+    std::stringstream ss;
+    ss << hour.count() << "h " << mins.count() << "m " << secs.count() << "s."; // << ms.count() << " Milliseconds";
+    return ss.str();
+}
+
+
 
 }

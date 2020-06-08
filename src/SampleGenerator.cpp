@@ -3,35 +3,16 @@
 #include "Utils.hpp"
 using namespace std;
 
-vector <Vec2> SampleGenerator::generate(const Vec2& min, const Vec2& max, int N) const {
-  vector <Vec2> ans;
-  ans.reserve(N);
-  Vec2 size = max - min;
-  
-  for (int i = 0; i < N; i++)
-    ans.push_back(utils::rand01vec2()*size + min);
-  return ans;
-}
 
-vector <Vec2> StratifiedSampleGenerator::generate(const Vec2& min, const Vec2& max, int N) const {
-  vector <Vec2> ans;
-  Real sn = sqrt(N);
-  Real fsn = floor(sn);
-  int w = (int) fsn;
-  if (sn != fsn)  {
-    w++;
-    N = w*w;
-  }
-  //cout << "N: " << N << endl;
-  ans.reserve(N);
-  Vec2 size = max - min;
-  Vec2 ds = size / (Real) w;
-  Vec2 s = min;
-  for (; s.y < max.y; s.y+=ds.y) {
-    for (; s.x < max.x; s.x+=ds.x) {
-      ans.push_back(s + utils::rand01vec2() * ds);
+void StratifiedSampleGenerator::generate() {
+  int w = sqrt(N); // N guaranteed to be perfect square 
+  samples.reserve(N);
+  Vec2 ds = rangeSize / (Real) w;
+  Vec2 s = rangeMin;
+  for (; s.y < rangeMax.y; s.y+=ds.y) {
+    for (; s.x < rangeMax.x; s.x+=ds.x) {
+      samples.push_back(s + randVec2() * ds);
     }
-    s.x = min.x;
+    s.x = rangeMin.x;
   }
-  return ans;
 }

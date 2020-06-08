@@ -12,7 +12,7 @@
 class Accelerator {
 public:
     Accelerator(const Scene& s) : scene (s) {}
-    virtual const bool closestIntersection(const Ray& ray, const Real tmin, const Real tmax, IntersectRec& ans) const {
+    virtual bool closestIntersection(const Ray& ray, const Real tmin, const Real tmax, IntersectRec& ans) const {
         Real bestT = POS_INF;
         bool hit = false;
         IntersectRec tempIR;
@@ -27,12 +27,12 @@ public:
         }
         return hit;
     }
-    virtual const bool intersectionYN(const Ray& ray, const Real tmin, const Real tmax) const {
+    virtual bool intersectionYN(const Ray& ray, const Real tmin, const Real tmax) const {
         for (auto &prim : scene.getPrimitives()) 
             if (prim->intersectYN(ray, tmin, tmax)) return true;
         return false;
     }
-    virtual const bool build() {return true;}
+    virtual bool build() {return true;}
     
 protected:
     const Scene& scene;

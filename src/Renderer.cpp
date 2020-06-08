@@ -5,6 +5,7 @@
 #include "SampleGenerator.hpp"
 #include <chrono>
 #include <thread>
+#include <random>
 
 using namespace std;
 
@@ -38,25 +39,26 @@ void MultisampleRenderer::render() {
     Ray r;
     Vec2 pixelSize{1./(Real) w, 1./(Real)h};
     int rejectedSamples = 0;
-    StratifiedSampleGenerator ssg;
+
     for (int j = 0; j < h; ++j) {
         printf("row: %4d", j);
         fflush(stdout);
         for (int i = 0; i < w; ++i) {
             Color pixelColor = Color::Black();
             Vec2 pixelCenter {(Real)i/(Real)w, (Real)j/(Real)h};
-            vector <Vec2> subPixels = ssg.generate(pixelCenter - pixelSize, pixelCenter + pixelSize, spp);
-            Color samples[subPixels.size()];
+            StratifiedSampleGenerator ssg(pixelCenter - pixelSize, pixelCenter + pixelSize, spp);
+            ssg.generate();
+            Color samples[spp];
 
-            for (int k = 0; k < subPixels.size(); ++k) {
-              r = camera.getRay(subPixels[k]);
+            for (int k = 0; k < spp; ++k) {
+              r = camera.getRay(ssg.next());
               samples[k] = tracer.lightAlongRay(r, false);
             }
             for (auto& c : samples)
               pixelColor += c;
             
             // remove outliers -- calculate stdev
-            target(i, j) = utils::clamp(pixelColor / (Real) subPixels.size(), 0, 1);
+            target(i, j) = utils::clamp(pixelColor / (Real) spp, 0, 1);
 
         }
         printf("\b\b\b\b\b\b\b\b\b");
@@ -64,19 +66,6 @@ void MultisampleRenderer::render() {
     cout << endl;
 }
 
-std::string format_duration( std::chrono::milliseconds ms ) {
-    using namespace std::chrono;
-    auto secs = duration_cast<seconds>(ms);
-    ms -= duration_cast<milliseconds>(secs);
-    auto mins = duration_cast<minutes>(secs);
-    secs -= duration_cast<seconds>(mins);
-    auto hour = duration_cast<hours>(mins);
-    mins -= duration_cast<minutes>(hour);
-
-    std::stringstream ss;
-    ss << hour.count() << "h " << mins.count() << "m " << secs.count() << "s."; // << ms.count() << " Milliseconds";
-    return ss.str();
-}
 
 void MultiThreadRenderer::render() {
   int paneWidth = target.width() < 64 ? target.width() : 64;
@@ -96,11 +85,29 @@ void MultiThreadRenderer::render() {
   /*  for (auto ip : panes) {
     cout << "x0: " << ip.x0 << " y0: " << ip.y0 << " w: " << ip.w << " h: " << ip.h << endl;
     }*/
-
   std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();  
+
+  vector <std::thread> threads;
   for (int i = 0; i < numThreads; ++i) {
-    std::thread(&MultiThreadRenderer::threadFunc, this).detach();
+    threads.push_back(std::thread(&MultiThreadRenderer::threadFunc, this));
+    // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
+    // only CPU i as set.
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(i, &cpuset);
+    int rc = pthread_setaffinity_np(threads[i].native_handle(),
+                                    sizeof(cpu_set_t), &cpuset);
+    if (rc != 0) {
+      std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
+    }
+    threads[i].detach();
   }
+
+  
+  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();  
+  cout << endl << "Thread creation: ";
+  std::chrono::milliseconds rt_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  cout << utils::format_duration(rt_ms) << endl;
 
   //  for (auto& thr : threads) 
   //  thr.join();
@@ -121,45 +128,52 @@ void MultiThreadRenderer::render() {
                   return threadsRemaining == 0;
                 });
   }
-  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();  
-  cout << endl << "Render complete." << endl;
-  std::chrono::milliseconds rt_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  cout << format_duration(rt_ms) << endl;
+  cout << "Count: " << count << endl;
 }
+
 
 void MultiThreadRenderer::renderPane(const ImagePane& ip) {
     // one ray for each pixel in the result image
     // one sample along each ray
     Ray r;
     Vec2 pixelSize{1./(Real) target.width(), 1./(Real)target.height()};
+    Vec2 pixelCenter;
     int rejectedSamples = 0;
-    StratifiedSampleGenerator ssg;
+    vector <Vec2> subPixels;
+    Color pixelColor;
+    Real ans = 0;
+    int result = 0;
     for (int j = ip.y0; j < ip.y0+ip.h; ++j) {
         for (int i = ip.x0; i < ip.x0+ip.w; ++i) {
-            Color pixelColor = Color::Black();
-            Vec2 pixelCenter {(Real)i/(Real)target.width()-.5, (Real)j/(Real)target.height()-.5};
-            vector <Vec2> subPixels = ssg.generate(pixelCenter - .5*pixelSize, pixelCenter + .5*pixelSize, spp);
-            vector <Color> samples;
-            samples.reserve(subPixels.size());
-            for (int k = 0; k < subPixels.size(); ++k) {
-              r = camera.getRay(subPixels[k]);
-              Color pc = tracer.lightAlongRay(r, false);
-
-              if ((i == 10 || i == 480) && j == 250 && k == 0) {
-                cout << "i: " << i << "   j: " << j << endl;
-                cout << Vec3(subPixels[k], 0) << endl;
-                cout << r << endl;
-                cout << "color: " << pc << endl;
-              }
-              samples.push_back(pc);
-              //r = camera.getRay(pixelCenter);
+          
+          pixelColor = Color::Black();
+          pixelCenter = Vec2{(Real)i/(Real)target.width()-.5, (Real)j/(Real)target.height()-.5};
+          StratifiedSampleGenerator ssg{pixelCenter - .5*pixelSize, pixelCenter + .5*pixelSize, spp};
+          ssg.generate();
+          //          vector <Color> samples;
+          //samples.reserve(spp);
+          for (int k = 0; k < spp; ++k) {
+            r = camera.getRay(ssg.next());
+            
+            Color pc;
+            if (i == 640 && j == 359) {
+              pc = tracer.lightAlongRay(r, true);
             }
-            //utils::winsorize(samples, .95);
-            for (auto& c : samples)
-              pixelColor += utils::clamp(c, 0, 13);
-                        
-            target(i, j) = utils::clamp(pixelColor / (Real) subPixels.size(), 0, 1);
-            //            if (target(i, j).g > .2) cout << "(i, j): (" << i << ", " << j << ")\tray: " << r << "\tcolor: " << target(i,j) << endl;
+            else {
+              pc = tracer.lightAlongRay(r, false);
+            }
+            pixelColor += utils::clamp(pc, 0, 13);
+            //Color pc = Color::Blue();
+            //samples.push_back(pc);
+            //            pixelColor += Color {(Real) rand() / (Real) RAND_MAX};
+            //            pixelColor += Color{(Real)mt_rand() / (Real)RAND_MAX};
+            
+          }
+          
+          //          for (auto& c : samples)
+          
+          target(i, j) = utils::clamp(pixelColor / (Real) spp, 0, 1);
+          
         }
     }
     //cout << endl;

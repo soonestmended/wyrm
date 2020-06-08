@@ -7,7 +7,7 @@
 #include "BxDF.hpp"
 #include "Color.hpp"
 #include "IntersectRec.hpp"
-
+#include "SampleGenerator.hpp"
 struct MTLMat {
     std::string name;    
     Vec3 Ka;        // ambient
@@ -30,16 +30,17 @@ struct MTLMat {
 
 class Material {
 public:
-    int id;
     std::string name;
+    int id;
     Material() : id(currentID++) {}
+
     Material(int id_) : id(id_) {}
     Material(const std::string& name_) : name (name_), id (currentID++) {}
     Material(const std::string& name_, int id_) : name (name_), id (id_) {}
 
     virtual const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const = 0;
-    virtual const Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const = 0;
-    virtual const void sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const = 0;
+    virtual Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const = 0;
+ 	virtual void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const = 0;
  
     virtual const Color getEmission() const {return Color::Black();}
     static int currentID;  
@@ -47,26 +48,30 @@ public:
 
 class DiffuseMaterial : public Material {
 public:
-  DiffuseMaterial(const std::string& name, Color color) : Material (name), emissionColor (Color::Black()) {
-    lbrdf = new Lambertian_BRDF(color);
-  }
-  
-  DiffuseMaterial(const std::string& name, Color color, Color emit) : Material (name), emissionColor (emit) {
-    lbrdf = new Lambertian_BRDF(color);
-  }
+	DiffuseMaterial(const std::string& name, Color color) : Material (name), emissionColor (Color::Black()) {
+	  lbrdf = new Lambertian_BRDF(color);
+	}
 
-  ~DiffuseMaterial() {
-    if (lbrdf) delete(lbrdf);
-  }
+	DiffuseMaterial(const std::string& name, Color color, Color emit) : Material (name), emissionColor (emit) {
+	  lbrdf = new Lambertian_BRDF(color);
+	}
 
-  const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
-    return lbrdf->f(wo_local, wi_local, isSpecular);
-  }
-  const Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {
-    return lbrdf->pdf(wo_local, wi_local);
-  }
-  const void sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const {
-    lbrdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
+	DiffuseMaterial(const std::string& name, const std::shared_ptr <Texture>& texture) : Material (name), emissionColor (Color::Black()) {
+		lbrdf = new TexturedLambertian_BRDF(texture);
+	}
+
+	~DiffuseMaterial() {
+	  if (lbrdf) delete(lbrdf);
+	}
+
+	const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
+	  return lbrdf->f(wo_local, wi_local, ir, isSpecular);
+	}
+  	Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {
+    	return lbrdf->pdf(wo_local, wi_local, ir);
+	}
+  void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const {
+    lbrdf->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
     *isSpecular = false;
   }
 
@@ -79,7 +84,7 @@ public:
 class GlassMaterial : public Material {
 public:
     GlassMaterial() =delete;
-  GlassMaterial(const std::string& name, const Color& _R, const Color& _T, Real IOR) : Material(name) {
+	GlassMaterial(const std::string& name, const Color& _R, const Color& _T, Real IOR) : Material(name) {
     dBSDF = new Dielectric_BSDF(_R, _T, 1.00029, IOR);
     }
     ~GlassMaterial() {
@@ -89,9 +94,9 @@ public:
         *isSpecular = true;
         return Color::Black();
     }
-    const Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {return 0;}
-    const void sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const {
-        dBSDF->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
+    Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {return 0;}
+	void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const {
+	    dBSDF->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
     }
 
     Dielectric_BSDF* dBSDF = nullptr;
@@ -141,9 +146,8 @@ public:
                     init();
                 }
 
-    ADMaterial(const MTLMat& mat) : Material (mat.name), 
-    opacity (Color(mat.d)), base_color (mat.Kd), specular_color (mat.Ks), emission_color (mat.Ke), 
-    diffuse_roughness (mat.Pr), specular_roughness (mat.Pr) {
+  ADMaterial(const MTLMat& mat) : Material (mat.name), 
+                                  opacity (Color(mat.d)), base_color (mat.Kd), specular_color (mat.Ks), emission_color (mat.Ke), diffuse_roughness (mat.Pr), specular_roughness (mat.Pr) {
         init();
     }  
 
@@ -156,16 +160,19 @@ public:
     }
 
     void init() {
-        if (coat > 0.) {
+      int rhoSamples = 81;
+      SampleGenerator sg(Vec2(0), Vec2(1), rhoSamples*2);
+      IntersectRec ir;
+      if (coat > 0.) {
             coat_brdf = new GGX_BRDF(); // need to fill this in
-            coat_brdf_reflectance = coat_brdf->rho(81);
+            coat_brdf_reflectance = coat_brdf->rho(rhoSamples, &sg, ir);
         }
         if (metalness > 0.) {
             metal_brdf = new GGX_BRDF();
         }
         if (specular > 0.) {
             specular_brdf = new SpecularDielectric_BRDF(specular_color, 1.00029f, specular_IOR);
-            specular_brdf_reflectance = specular_brdf->rho(81);
+            specular_brdf_reflectance = specular_brdf->rho(rhoSamples, &sg, ir);
         }
         if (transmission >0.) {
             specular_btdf = new GGX_BRDF();
@@ -178,8 +185,8 @@ public:
         }
     }
     const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const;
-    const Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const;
-    const void sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const;
+    Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const;
+ 	void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const;
  
     const Color getEmission() const {return this->emission_color * this->emission;}
 
@@ -217,7 +224,7 @@ public:
     BxDF* specular_brdf = nullptr;
     BxDF* specular_btdf = nullptr;
     BxDF* diffuse_brdf = nullptr;
-
+  
 private:
 
 };

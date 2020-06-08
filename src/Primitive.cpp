@@ -148,12 +148,18 @@ const bool Box::intersect(const Ray& r, Real t0, Real t1, IntersectRec& ir) cons
     Side hitSide = r.sign[0] ? RIGHT : LEFT;
 
 	const Vec3 *bounds[2] = {&bbox.min, &bbox.max};
-
+    /*
 	tmin = ((*bounds[r.sign[0]])[0] - r.o[0]) * r.inv_d[0];
 	tmax = ((*bounds[1-r.sign[0]])[0] - r.o[0]) * r.inv_d[0];
 
 	tymin = ((*bounds[r.sign[1]])[1] - r.o[1]) * r.inv_d[1];
 	tymax = ((*bounds[1-r.sign[1]])[1] - r.o[1]) * r.inv_d[1];
+    */
+	tmin = ((*bounds[r.sign[0]])[0] - r.o[0]) / r.d[0];
+	tmax = ((*bounds[1-r.sign[0]])[0] - r.o[0]) / r.d[0];
+
+	tymin = ((*bounds[r.sign[1]])[1] - r.o[1]) / r.d[1];
+	tymax = ((*bounds[1-r.sign[1]])[1] - r.o[1]) / r.d[1];
 
 	if ( (tmin > tymax) || (tymin > tmax) )
 		return false;
@@ -165,9 +171,13 @@ const bool Box::intersect(const Ray& r, Real t0, Real t1, IntersectRec& ir) cons
 
 	if (tymax < tmax) 
 		tmax = tymax;
-
+    /*
 	tzmin = ((*bounds[r.sign[2]])[2] - r.o[2]) * r.inv_d[2];
 	tzmax = ((*bounds[1-r.sign[2]])[2] - r.o[2]) * r.inv_d[2];
+    */
+
+    tzmin = ((*bounds[r.sign[2]])[2] - r.o[2]) / r.d[2];
+	tzmax = ((*bounds[1-r.sign[2]])[2] - r.o[2]) / r.d[2];
 
 	if ( (tmin > tzmax) || (tzmin > tmax) )
 		return false;

@@ -4,13 +4,12 @@
 
 #include "Color.hpp"
 
-using namespace std;
-
 class Image {
 public:
     Image() =delete;
+    Image(const std::string& filename);
     Image(int w, int h) : width_ (w), height_ (h) {
-        data = vector <Color> (w*h);
+        data = std::vector <Color> (w*h);
     }
     bool writePNG(const std::string& filename);
 
@@ -23,5 +22,5 @@ public:
 
 private:
     int width_, height_;
-    vector <Color> data;
+    std::vector <Color> data;
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <string>
 #include <sstream>
@@ -15,8 +16,6 @@
 namespace utils {
     Real powerHeuristic(int nf, Real fPDF, int ng, Real gPDF);
     void uniformSampleTriangle(const Vec2& uv, Vec2& bg);
-    Real rand01();
-    Vec2 rand01vec2();
     Real avg(const Vec3& v);
     Color lerp(const Color& a, const Color& b, const Real t);
     std::string v2s(const Vec3& v);
@@ -24,4 +23,5 @@ namespace utils {
     Real clamp(const Real f, const Real min, const Real max);
     Vec3 sameSide(const Vec3& testVec, const Vec3& v);
   void winsorize(std::vector <Color>& v, Real amt);
+  std::string format_duration( std::chrono::milliseconds ms );
 }

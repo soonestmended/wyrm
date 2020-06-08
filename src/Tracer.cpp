@@ -1,8 +1,7 @@
 #include "Accelerator.hpp"
 #include "common.hpp"
+#include "SampleGenerator.hpp"
 #include "Tracer.hpp"
-
-#define MAX_DEPTH 1
 
 using namespace std;
 
@@ -28,12 +27,12 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
         }
         //cout << "pre accel->CI" << endl;
         hit = accel->closestIntersection(nextRay, EPSILON, POS_INF, ir);
-        /*
-        if (hit) {
-          cout << "hit";
-          return ((DiffuseMaterial*) ir.material.get())->lbrdf->color;
-        }
-        */
+        
+        //        if (hit) {
+          //  cout << "hit";
+          //return ((DiffuseMaterial*) ir.material.get())->lbrdf->color;
+        //}
+        
         //cout << "post accel->CI" << endl;
         if (debug) {
           if (hit) {
@@ -104,21 +103,20 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
             cout << "EDL at hit point: " << edl << endl;
         }
         ans += pathThroughput * edl;
-        //return ans;
         //cout << "post EDL" << endl;
         if (debug) {
           cout << "ans + EDL: " << ans << endl;
         }
         //cout << "pre material->sample_f" << endl;
-        ir.material->sample_f(wo_local, wi_local, &f, &pdf, &isSpecular);
+        ir.material->sample_f(wo_local, wi_local, ir, sg->next(), &f, &pdf, &isSpecular);
         //cout << "post material->sample_f" << endl;
         Vec3 dir = ir.onb.local2world(wi_local);
         //if (i == 0) cout << (Color) dir << endl;
         Ray oldRay = nextRay;
         nextRay = Ray{ir.isectPoint + (Real) EPSILON * dir, dir};
         //cout << "pre bounce throughput: " << pathThroughput << endl;
-                Color multiplier = f * ir.onb.absCosTheta(wi_local) / pdf;
-        //        Color multiplier = f * abs(glm::dot(dir, ir.shadingNormal)) / pdf;
+        Color multiplier = f * ir.onb.absCosTheta(wi_local) / pdf;
+                //        Color multiplier = f * abs(glm::dot(dir, ir.shadingNormal)) / pdf;
         if   (debug) cout << "~~~PRE multiplier PThroughput: " << pathThroughput << endl;
         pathThroughput *= multiplier;
         if   (debug) {
@@ -147,7 +145,7 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
         // possibly stop (Russian roulette)
         if (i > 3) {
             Real q = utils::avg(pathThroughput);
-            if (utils::rand01() < q) {
+            if (sg->next().x < q) {
                 break;
             }
             pathThroughput /= 1.0f - q;
@@ -187,7 +185,7 @@ const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Li
 
     
     // 1) pick direction based on light
-    Color l_contrib = l.sample(Vec2(rand(), rand()), ir, wi_world, &lightPdf, vt);
+    Color l_contrib = l.sample(sg->next(), ir, wi_world, &lightPdf, vt);
     //cout << "\tl_contrib: " << l_contrib << " pdf: " << lightPdf << endl;
     Vec3 wi_local = ir.onb.world2local(wi_world);
     Vec3 wo_local = ir.onb.world2local(wo_world);
@@ -244,7 +242,7 @@ const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Li
         if (debug) {
             cout << "\tlight part 2: " << endl;
         }
-        ir.material->sample_f(wo_local, wi_local, &f, &irPdf, &isSpecular);
+        ir.material->sample_f(wo_local, wi_local, ir, sg->next(), &f, &irPdf, &isSpecular);
         //f *= ir.onb.absCosTheta(wi_local);
         wi_world = ir.onb.local2world(wi_local);
         f *= abs(glm::dot(wi_world, ir.shadingNormal));

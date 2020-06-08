@@ -27,12 +27,12 @@ void BVH::makeCLNodes(clBVHNode *&vec) {
 }
 */	
 
-const void BVH::print() const {
+void BVH::print() const {
 	int node = 0;
 
 }
 
-const bool BVH::build() {
+bool BVH::build() {
 
 	primitives = scene.getPrimitives();
 	int numPrimitives = primitives.size();
@@ -95,8 +95,8 @@ Real surfaceArea(const BBox &bbox) {
 
 SP BVH::findSplitPlane(const BVHNode& node) {
 	// test N bins
-#define N 8
-
+  int N = 8;
+  
 	// find axis
 	int axis;
 
@@ -104,7 +104,7 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 	
 	// get bounding box of centroids for this node
 	BBox cb;
-	for (int i = 0; i < node.numPrimitives; i++) {
+	for (unsigned int i = 0; i < node.numPrimitives; i++) {
 		//cb.enclose(centroids[node->faces[i]]);
 		cb.enclose(centroids[primitiveIndices[node.ptr+i]]);
 	}
@@ -154,15 +154,19 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 	BBox leftBounds, rightBounds;
 	int numLeft[N-1];
 	Real SAleft[N-1];
-	
+
+    for (int i = 0; i < N; ++i) {
+      binBounds[i] = BBox();
+    }
+    
 		// compute bin IDs
-	for (int i = 0; i < node.numPrimitives; i++) {
-		int v0ei = primitiveIndices[node.ptr+i];
-		int v0eiBin = (int) (k1 * (centroids[v0ei][axis] - k0 ));
-		numIn[v0eiBin]++;
-		binBounds[v0eiBin].enclose(bboxes[v0ei]);
+	for (unsigned int i = 0; i < node.numPrimitives; i++) {
+      int v0ei = primitiveIndices[node.ptr+i];
+      int v0eiBin = (int) (k1 * (centroids[v0ei][axis] - k0 ));
+      numIn[v0eiBin]++;
+      binBounds[v0eiBin].enclose(bboxes[v0ei]);
 	}
-		
+   
 	numLeft[0] = numIn[0];
 	SAleft[0] = surfaceArea(binBounds[0]);
 	leftBounds.enclose(binBounds[0]);
@@ -170,11 +174,11 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 	// test each plane
 	for (int i = 1; i < N; i++) {
 		// bin i is the highest numbered bin to the left of plane i
-		numLeft[i] = numLeft[i-1] + numIn[i];
+      numLeft[i] = numLeft[i-1] + numIn[i];
 		leftBounds.enclose(binBounds[i]);
 		SAleft[i] = surfaceArea(leftBounds);
 	}
-	
+   
 	// compute costs
 	Real cost[N-1];
 	rightBounds.enclose(binBounds[N-1]);
@@ -295,7 +299,7 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 	leftChild.ptr = nodePrimitives; // leftChild is a leaf and has faces on the left side of this node's faces
 	leftChild.numPrimitives = lp-nodePrimitives;
 	leftChild.setLeaf();
-	for (int i = leftChild.ptr; i < leftChild.ptr+leftChild.numPrimitives; i++) {
+	for (uint i = leftChild.ptr; i < leftChild.ptr+leftChild.numPrimitives; i++) {
 		leftChild.bbox.enclose(bboxes[primitiveIndices[i]]);
 	}
 	
@@ -311,7 +315,7 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 	rightChild.ptr = lp;
 	rightChild.numPrimitives = re - lp + 1; 
 	rightChild.setLeaf();
-	for (int i = rightChild.ptr; i < rightChild.ptr+rightChild.numPrimitives; i++) {
+	for (uint i = rightChild.ptr; i < rightChild.ptr+rightChild.numPrimitives; i++) {
 		rightChild.bbox.enclose(bboxes[primitiveIndices[i]]);
 	}
 	buildBelow(rightChild, depth+1);
@@ -320,14 +324,14 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 	}
 }
 
-const bool BVH::closestIntersection(const Ray& ray, const Real tmin, const Real tmax, IntersectRec &ans) const {
+bool BVH::closestIntersection(const Ray& ray, const Real tmin, const Real tmax, IntersectRec &ans) const {
 	// in BVH internal node, left child is node+1, right child is node.ptr
 	// in BVH leaf, right child is node + 1, primitives start at node.ptr
 
 	ans.t = POS_INF; // ans->u = -1.0f;
 	bool hit = false;
 	IntersectRec tempIr;
-	int curPos = 0;
+	uint curPos = 0;
 	while (curPos < nextAllocedNode) {
 
 		//if (rayIntersectsBBox(ray, nodes[curPos].v0, nodes[curPos].v1)) {
@@ -381,9 +385,7 @@ const bool BVH::closestIntersection(const Ray& ray, const Real tmin, const Real 
 	return hit;
 }
     
-	
-	
-const bool BVH::intersectionYN(const Ray& ray, const Real tmin, const Real tmax) const {
+bool BVH::intersectionYN(const Ray& ray, const Real tmin, const Real tmax) const {
 	int curPos = 0;
 	while (curPos < nextAllocedNode) {
 		
@@ -396,7 +398,7 @@ const bool BVH::intersectionYN(const Ray& ray, const Real tmin, const Real tmax)
 				uint ind;
 				Real p, q, r;
 				
-				for (int i = 0; i < nodes[curPos].numPrimitives; ++i) {
+				for (uint i = 0; i < nodes[curPos].numPrimitives; ++i) {
 				//for (int i = 0; i < settings->numIndices/3; i++) {
 					/*
 					ind = vload3(((nodes[curPos].ptr.w)+i), indices);

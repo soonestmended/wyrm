@@ -92,7 +92,7 @@ public:
     }
   }
   static std::shared_ptr <Material> makeMaterial(const Statement& s);
-
+  static bool parsePLY(const std::string& fileName, std::vector <Vec4> &vertices, std::vector <Vec3> &normals, std::vector <Vec3> &texCoords, std::vector <Tri> &tris);
   
   HDEC(AreaLightSource);
   HDEC(AttributeBegin);
@@ -101,9 +101,11 @@ public:
   HDEC(Film);
   HDEC(Identity);
   HDEC(Integrator);
+  HDEC(LightSource);
   HDEC(LookAt);
   HDEC(MakeCamera);
   HDEC(MakeNamedMaterial);
+  HDEC(MakeTexture);
   HDEC(MaterialStatement);
   HDEC(NamedMaterial);
   HDEC(PixelFilter);
@@ -129,7 +131,7 @@ public:
   static bool currentReverseOrientation;
 
   static std::map <std::string, std::shared_ptr <Material>> namedMaterialMap;
-
+  static std::map <std::string, std::shared_ptr <Texture>> namedTextureMap;
   // vectors from which to make Scene
   static std::vector <std::shared_ptr <Light>> lights;
   static std::vector <std::shared_ptr <Material>> materials;

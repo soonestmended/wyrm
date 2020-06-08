@@ -45,7 +45,20 @@ private:
     Real power;
 };
 
-class DirectionalLight;
+class DirectionalLight : public Light {
+public:
+  DirectionalLight(const Vec3 _dir, const Color _color) : dir (_dir), color (_color) {}
+  const Color getColor() const {return color;}
+  const Real getPower() const {return 1;} // not yet implemented
+  const bool isDeltaLight() const {return true;} // no chance of choosing the direction to the light
+
+  const Color sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi, Real* pdf, VisibilityTester& vt) const;
+  //const Real pdf(const IntersectRec& ir, const Vec3& wi_local) const;
+  const Color LInf(const Ray& r) const {return Color::Black();} // this is for infinite lights to contribute to rays leaving scene
+  
+  Vec3 dir;
+  Color color;
+};
 class SpotLight;
 class GeometricLight : public Light {
 public: 

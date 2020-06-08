@@ -2,6 +2,7 @@
 #include "Image.hpp"
 #include "Material.hpp"
 
+#include <cctype>
 #include <filesystem>
 #include <functional>
 #include <map>
@@ -21,6 +22,7 @@ std::map <std::string, std::function <void(const Statement&, Options&)>> PBRTPar
    {"Film", PBRTParser::Film},
    {"Identity", PBRTParser::Identity},
    {"Integrator", PBRTParser::Integrator},
+   {"LightSource", PBRTParser::LightSource}, 
    {"LookAt", PBRTParser::LookAt},
    {"Camera", PBRTParser::MakeCamera},
    {"MakeNamedMaterial", PBRTParser::MakeNamedMaterial},
@@ -31,6 +33,7 @@ std::map <std::string, std::function <void(const Statement&, Options&)>> PBRTPar
    {"Sampler", PBRTParser::Sampler}, 
    {"Scale", PBRTParser::Scale},
    {"Shape", PBRTParser::Shape},
+   {"Texture", PBRTParser::MakeTexture},
    {"Transform", PBRTParser::Transform},
    {"Translate", PBRTParser::Translate},
    {"WorldBegin", PBRTParser::WorldBegin},
@@ -47,6 +50,7 @@ stack <shared_ptr<Material>> PBRTParser::materialStack = {};
 stack <shared_ptr<Material>> PBRTParser::areaLightMaterialStack = {};
 stack <bool> PBRTParser::reverseOrientationStack = {};
 map <string, shared_ptr <Material>> PBRTParser::namedMaterialMap = {};
+map <string, shared_ptr <Texture>> PBRTParser::namedTextureMap = {};
 
 vector <shared_ptr <Light>> PBRTParser::lights = {};
 vector <shared_ptr <Material>> PBRTParser::materials = {};
@@ -130,6 +134,41 @@ HDEF(Integrator) {
   o.rrThreshold = rrt[0];
 }
 
+HDEF(LightSource) {
+  auto vScale = getParamVec <Color> (s.params, "scale");
+  if (s.type == "distant") {
+    auto vL = getParamVec <Color> (s.params, "L");
+    Color L = vL[0];
+    if (vScale.size() == 1) {
+      L *= vScale[0];
+    }
+    Vec3 from, to;
+    auto vFrom = getParamVec <Vec3> (s.params, "from");
+    if (vFrom.size() == 1) {
+      from = vFrom[0];
+    }
+    else {
+      from = Vec3(0);
+    }
+    auto vTo = getParamVec <Vec3> (s.params, "to");
+    if (vTo.size() == 1) {
+      to = vTo[0];
+    }
+    else {
+      to = Vec3(0, 0, 1);
+    }
+    Vec3 dir = Vec3(currentTransform * Vec4(to - from, 0));
+    lights.push_back(make_shared <DirectionalLight> (dir, L));
+    // cout << "Created distant light" << endl;
+  }
+  else if (s.type == "point") {
+  }
+  else {
+    cout << "Error: " << s.type << " light not supported yet." << endl;
+    return;
+  }
+}
+
 //void PBRTParser::LookAt(const Statement& s, shared_ptr <Camera>& c, shared_ptr <Options>& o) {
 HDEF(LookAt) {
   auto v = getParamVec <Real> (s.params, "anon");
@@ -148,8 +187,8 @@ HDEF(LookAt) {
     currentTransform = currentTransform * glm::inverse(la);
   }
   else
-    cerr << "Error: LookAt: supplied vec has size " << v.size() << endl;
-  cout << "Post LookAt currentTransform: " << endl << currentTransform << endl;
+    cout << "Error: LookAt: supplied vec has size " << v.size() << endl;
+  // cout << "Post LookAt currentTransform: " << endl << currentTransform << endl;
 }
 
 HDEF(MakeCamera) {
@@ -165,10 +204,10 @@ HDEF(MakeCamera) {
   o.frameAspectRatio = far[0];
   o.screenWindow = sw[0];
   o.fov = fov[0];
-  cout << "right: " << Vec3(currentTransform[0]) << endl;
-  cout << "up: " << Vec3(currentTransform[1]) << endl;
-  cout << "look: " << Vec3(currentTransform[2]) << endl;
-  cout << "eye: " << o.camera2world * Vec4(0, 0, 0, 1) << endl;
+  // cout << "right: " << Vec3(currentTransform[0]) << endl;
+  // cout << "up: " << Vec3(currentTransform[1]) << endl;
+  // cout << "look: " << Vec3(currentTransform[2]) << endl;
+  // cout << "eye: " << o.camera2world * Vec4(0, 0, 0, 1) << endl;
 
 }
 
@@ -192,16 +231,38 @@ shared_ptr <Material> PBRTParser::makeMaterial(const Statement& s) {
     ans = make_shared <GlassMaterial> (nameV[0], KrV[0], KtV[0], etaV[0]);
   }
 
+// TODO: Recognize if parameters are given as textures and handle appropriately
+
   else if (s.type.compare("matte") == 0) {
     auto sigmaV = getParamVec <Real> (s.params, "sigma");
     if (sigmaV.size() == 0) sigmaV.push_back(0);
-    auto KdV = getParamVec <Color> (s.params, "Kd");
-    if (KdV.size() == 0) KdV.push_back(Color(0.5));
     if (sigmaV[0] > 0) {
-      cerr << "Error: Oren-Nayar model not yet implemented." << endl;
-      exit(0);
+      cerr << "Error: Oren-Nayar model not yet implemented. Ignoring roughness." << endl;
     }
-    ans = make_shared <DiffuseMaterial> (nameV[0], KdV[0]);
+
+    auto KdVit = s.params.find("Kd");
+    if (KdVit == s.params.end()) {
+    	cout << "Error: no diffuse color specified. Using medium grey." << endl;
+		ans = make_shared <DiffuseMaterial> (nameV[0], Color::Grey());    	
+    }
+    else {
+		auto KdV = KdVit->second; // ParamVec
+		if (holds_alternative <vector <string>> (KdV)) {
+			string texName = get <vector <string>> (KdV)[0];
+			auto texIt = namedTextureMap.find(texName);
+			if (texIt != namedTextureMap.end()) {
+				ans = make_shared <DiffuseMaterial> (nameV[0], texIt->second);
+			} else {
+				cout << "Error: texture " << texName << " not found. Using grey." << endl;
+				ans = make_shared <DiffuseMaterial> (nameV[0], Color::Grey());
+			}
+		}
+		else if (holds_alternative <vector <Color>> (KdV)) {
+			vector <Color> KdCv = get <vector <Color>> (KdV);
+		    if (KdCv.size() == 0) KdCv.push_back(Color(0.5));
+			ans = make_shared <DiffuseMaterial> (nameV[0], KdCv[0]);
+		}
+  	}
   }
 
   else {
@@ -225,6 +286,30 @@ HDEF(MakeNamedMaterial) {
   namedMaterialMap.insert({matName, mat});
 }
 
+HDEF(MakeTexture) {
+	auto texInfo = getParamVec <string> (s.params, "texInfo");
+	if (texInfo.size() != 3) {
+		cout << "Error: invalid Texture statement. Parsed: " << endl;
+		for (auto s : texInfo)
+			cout << "[" << s << "]"<< endl;
+		return;
+	}
+	string texName = texInfo[0];
+	string texType = texInfo[1];
+	string texClass = texInfo[2];
+	if (texType != "spectrum" && texType != "color") {
+		cout << "Error: texture type " << texType << " not yet supported." << endl;
+		return;
+	}
+
+	if (texClass == "imagemap") {
+		auto fnv = getParamVec <string> (s.params, "filename");
+		shared_ptr <ImageTexture> texPtr = make_shared <ImageTexture> (fnv[0]);
+		namedTextureMap.insert({texName, texPtr});
+		return;
+	}
+}
+
 HDEF(MaterialStatement) {
   currentMaterial = makeMaterial(s);
 }
@@ -235,9 +320,9 @@ HDEF(NamedMaterial) {
     cerr << "Error: namedMaterial " << s.type << " not found." << endl;
     exit(0);
   }
-  cout << "Called namedMaterial: " << s.type << endl;
+  //cout << "Called namedMaterial: " << s.type << endl;
   currentMaterial = it->second;
-  cout << "Set material to: " << ((DiffuseMaterial*)currentMaterial.get())->lbrdf->color << endl;
+  //cout << "Set material to: " << ((DiffuseMaterial*)currentMaterial.get())->lbrdf->color << endl;
 }
 
 //void PBRTParser::Rotate(const Statement& s, shared_ptr <Camera>& c, shared_ptr <Options>& o) {
@@ -308,8 +393,8 @@ HDEF(Scale) {
   if (v.size() == 3)
     currentTransform = glm::scale(currentTransform, Vec3(v[0], v[1], v[2]));
   else
-    cerr << "Error: Scale: supplied vec has size " << v.size() << endl;
-  cout << "Post scale transform: " << endl << currentTransform << endl;
+    cout << "Error: Scale: supplied vec has size " << v.size() << endl;
+  // cout << "Post scale transform: " << endl << currentTransform << endl;
 }
 
 HDEF(Shape) {
@@ -322,10 +407,10 @@ HDEF(Shape) {
     auto rV = getParamVec <Real> (s.params, "radius");
     if (rV.size() == 0) rV.push_back(1);
     if (currentAreaLightMaterial != nullptr) {
-      primitives.push_back(make_shared <Sphere> (rV[0], currentAreaLightMaterial));
+      primitives.push_back(make_shared <TransformedPrimitive>(currentTransform, make_shared <Sphere> (rV[0], currentAreaLightMaterial)));
     }
     else {
-      primitives.push_back(make_shared <Sphere> (rV[0], currentMaterial));
+      primitives.push_back(make_shared <TransformedPrimitive>(currentTransform, make_shared <Sphere> (rV[0], currentMaterial)));
     }      
   }
   else if (s.type == "trianglemesh") {
@@ -374,18 +459,18 @@ HDEF(Shape) {
         
     }
 
-    cout << "Normals size: " << nV.size() << endl;
+    // cout << "Normals size: " << nV.size() << endl;
     
     if (!xn) {
       for (auto& t : tris) {
         Vec3 e1 = vV[t.v[1]] - vV[t.v[0]];
         Vec3 e2 = vV[t.v[2]] - vV[t.v[1]];
         nV.push_back(glm::normalize(glm::cross(e1, e2)));
-        cout << "e1: " << e1 << "\te2: " << e2 << "\tN: " << glm::normalize(glm::cross(e1, e2)) << endl;
+        // cout << "e1: " << e1 << "\te2: " << e2 << "\tN: " << glm::normalize(glm::cross(e1, e2)) << endl;
         t.vn[0] = t.vn[1] = t.vn[2] = nV.size() - 1;
       }
     }
-    cout << "Normals size: " << nV.size() << endl;
+    // cout << "Normals size: " << nV.size() << endl;
 
     vector <shared_ptr <Material>> foo;
     foo.push_back(currentMaterial);
@@ -398,8 +483,45 @@ HDEF(Shape) {
       miptr = make_shared <MeshInstance> (mptr, currentTransform, currentMaterial);
     }
     vector <shared_ptr <Primitive>> meshPrims = miptr->toPrimitives();
-    for (auto p : meshPrims)
-      cout << *(p.get());
+    // for (auto p : meshPrims)
+      // cout << *(p.get());
+    primitives.insert(primitives.end(), meshPrims.begin(), meshPrims.end());
+    
+  }
+  else if (s.type == "plymesh") {
+    auto fn = getParamVec <string> (s.params, "filename");
+    vector <Vec4> vertices;
+    vector <Vec3> normals;
+    vector <Vec3> texCoords;
+    vector <Tri> tris;
+    if (!parsePLY(fn[0], vertices, normals, texCoords, tris)) {
+      cout << "Fatal error parsing PLY file. " << endl;
+      exit(0);
+    }
+
+    if (normals.size() == 0) {
+      for (auto& t : tris) {
+        Vec3 e1 = vertices[t.v[1]] - vertices[t.v[0]];
+        Vec3 e2 = vertices[t.v[2]] - vertices[t.v[1]];
+        normals.push_back(glm::normalize(glm::cross(e1, e2)));
+        //        cout << "e1: " << e1 << "\te2: " << e2 << "\tN: " << glm::normalize(glm::cross(e1, e2)) << endl;
+        t.vn[0] = t.vn[1] = t.vn[2] = normals.size() - 1;
+      }
+    }
+
+    vector <shared_ptr <Material>> foo;
+    foo.push_back(currentMaterial);
+    shared_ptr <Mesh> mptr = make_shared <Mesh> (move(vertices), move(texCoords), move(normals), move(foo), move(tris));
+    shared_ptr <MeshInstance> miptr;
+    if (currentAreaLightMaterial != nullptr) {
+      miptr = make_shared <MeshInstance> (mptr, currentTransform, currentAreaLightMaterial);
+    }
+    else {
+      miptr = make_shared <MeshInstance> (mptr, currentTransform, currentMaterial);
+    }
+    vector <shared_ptr <Primitive>> meshPrims = miptr->toPrimitives();
+    //    for (auto p : meshPrims)
+    //  cout << *(p.get());
     primitives.insert(primitives.end(), meshPrims.begin(), meshPrims.end());
     
   }
@@ -440,7 +562,7 @@ HDEF(WorldBegin) {
 
 //void PBRTParser::WorldEnd(const Statement& s, shared_ptr <Camera>& c, shared_ptr <Options>& o) {
 HDEF(WorldEnd) {
-  cout << "Hello from handleWorldEnd" << endl;
+  // cout << "Hello from handleWorldEnd" << endl;
 }
 
 
@@ -479,15 +601,16 @@ std::ostream& operator<<(std::ostream& os, const Statement& s) {
 
 
 bool skipToNext(istringstream& iss) {
-  
+  //  cout << "Skipping: ";
   while (iss.good()) {
     char c = iss.get();
-    //    cout << "STN got " << (char) c << " ";
-    if (c != ' ' && c != '\n') {
+    cout << (int) c << " ";
+    if (!isspace(c)) { // }c != ' ' && c != '\n' && c != '\t') {
+      //cout << "Stopped skipping at: " << (int) c << endl;
       iss.unget();
       return true;
     }
-    //cout << "Skipped: " << (char) c << "\t";
+    // cout << "Skipped: " << (char) c << "\t";
   }
   return false;
 }
@@ -534,7 +657,7 @@ ParamVec tokenizeParamData(string& paramType, string& paramData) {
   //  for (auto t : tokens)
   //   cout << t << ", ";
   //  cout << endl;
-  if (paramType.compare("string") == 0) {
+  if (paramType == "string" || paramType =="texture") {
     vector <string> tmp;
     tmp.reserve(tokens.size());
     for (auto t : tokens)
@@ -631,6 +754,353 @@ ParamVec tokenizeParamData(string& paramType, string& paramData) {
   }  
 }
 
+void reverseBuffer(char* buffer, int size) {
+  for (int i = 0; i < size/2; i++) {
+    char tmp = buffer[i];
+    buffer[i] = buffer[size-i-1];
+    buffer[size-i-1] = tmp;
+  }  
+}
+
+double bufferToDouble(char* buffer, bool littleEndian) {
+  // always compiling on little endian architecture
+  if (!littleEndian) {
+    reverseBuffer(buffer, 8);
+  }
+  double ans;
+  memcpy(&ans, buffer, sizeof(double));
+  return ans;
+}
+
+float bufferToFloat(char* buffer, bool littleEndian) {
+  if (!littleEndian) {
+    reverseBuffer(buffer, 4);
+  }
+  float ans;
+  memcpy(&ans, buffer, sizeof(float));
+  return ans;
+}
+
+int bufferToInt(char* buffer, int size, bool littleEndian) {
+  if (!littleEndian && size > 1) {
+    reverseBuffer(buffer, size);
+  }
+  if (size == 1) {
+    return int((unsigned char)buffer[0]);
+  }
+  else if (size == 2) {
+    return int((unsigned char) buffer[1] << 8 |
+               (unsigned char) buffer[0]);
+  }
+  else if (size == 4) {
+    return int((unsigned char) buffer[3] << 24 |
+               (unsigned char) buffer[2] << 16 |
+               (unsigned char) buffer[1] << 8  |
+               (unsigned char) buffer[0]);
+  }
+  else return -1;
+}
+
+bool PBRTParser::parsePLY(const std::string& fileName, std::vector <Vec4> &vertices, std::vector <Vec3> &normals, std::vector <Vec3> &texCoords, std::vector <Tri> &tris) {
+  // read file
+  string contents, line;
+  if (!readFile(fs::path(fileName), contents)) {
+    cout << "Error: unable to open ply file: " << fileName << endl;
+    return false;
+  }
+  istringstream iss{contents};
+  iss >> line;
+  if (line != "ply") {
+    cout << "Error: not a .ply file." << endl;
+    return false;
+  }
+  else {
+    cout << "Parsing PLY file..." << endl;
+  }
+  vector <string> tokens;
+  int numVertices = 0, numFaces = 0;
+  int nOffset = 0, tcOffset = 0;
+  bool hasNormals = false, hasTexCoords = false, binaryMode = true, littleEndian = true;
+  string vType = string("none"), nType = string("none"), tcType = string("none");
+  string fSizeType, fIndexType;
+  while (iss.good()) {
+    getline(iss, line);
+    tokens = tokenize(line);
+    if (tokens.size() == 0) continue;
+    
+    if (tokens[0] == "comment") continue;
+    else if (tokens[0] == "format") {
+      if (tokens[1] == "ascii") {
+        binaryMode = false;
+      }
+      else if (tokens[1] == "binary_little_endian") {
+        binaryMode = true;
+        littleEndian = true;
+      }
+      else if (tokens[1] == "binary_big_endian") {
+        binaryMode = true;
+        littleEndian = false;
+      }
+    }
+    else if (tokens[0] == "element") {
+      if (tokens[1] == "vertex") {
+        numVertices = stoi(tokens[2]);
+        vertices.reserve(numVertices);
+      }
+      else if (tokens[1] == "face") {
+        numFaces = stoi(tokens[2]);
+        tris.reserve(numFaces);
+      }
+    }
+    else if (tokens[0] == "property") {
+      string &pn = tokens[tokens.size()-1];
+      if (pn == "x") {
+        vType = tokens[1];
+      }
+      else if (pn == "nx") {
+        nType = tokens[1];
+        hasNormals = true;
+      }
+      else if (pn == "u") {
+        tcType = tokens[1];
+        hasTexCoords = true;
+      }
+      else if (pn == "vertex_index" || pn == "vertex_indices") {
+        if (tokens[1] != "list") {
+          cout << "Error reading PLY file." << endl;
+          return false;
+        }
+        fSizeType = tokens[2];
+        fIndexType = tokens[3];
+      }
+    }
+    else if (tokens[0] == "end_header") {
+      break;
+    }
+  }
+
+  // cout << "Vertices: " << numVertices << endl;
+  // cout << "Faces: " << numFaces << endl;
+  // cout << "Has normals? " << hasNormals << endl;
+  // cout << "Has texCoords? " << hasTexCoords << endl;
+  // cout << "Little endian? " << littleEndian << endl;
+  if (binaryMode) {
+    // calculate size of each vertex
+    int vertexSize;
+    if (vType == "char" || vType == "uchar" || vType == "int8" || vType == "uint8") {
+      vertexSize = 1 * 3;
+    }
+    else if (vType == "short" || vType == "ushort" || vType == "int16" || vType == "uint16") {
+      vertexSize = 2 * 3;      
+    }
+    else if (vType == "int" || vType == "uint" || vType == "float" || vType == "int32" || vType == "uint32" || vType == "float32") {
+      vertexSize = 4 * 3;
+    }
+    else {
+      vertexSize = 8 * 3;
+    }
+    nOffset = vertexSize;
+    if (hasNormals) {
+      if (nType == "char" || nType == "uchar" || nType == "int8" || nType == "uint8") {
+        vertexSize += 1 * 3;
+      }
+      else if (nType == "short" || nType == "ushort" || nType == "int16" || nType == "uint16") {
+        vertexSize += 2 * 3;
+      }
+      else if (nType == "int" || nType == "uint" || nType == "float" || nType == "int32" || nType == "uint32" || nType == "float32") {
+        vertexSize += 4 * 3;
+      }
+      else {
+        vertexSize += 8 * 3;
+      }
+    }
+    tcOffset = vertexSize;
+    if (hasTexCoords) {
+      if (tcType == "char" || tcType == "uchar" || tcType == "int8" || tcType == "uint8") {
+        vertexSize += 1 * 2;
+      }
+      else if (tcType == "short" || tcType == "ushort" || tcType == "int16" || tcType == "uint16") {
+        vertexSize += 2 * 2;
+      }
+      else if (tcType == "int" || tcType == "uint" || tcType == "float" || tcType == "int32" || tcType == "uint32" || tcType == "float32") {
+        vertexSize += 4 * 2;
+      }
+      else {
+        vertexSize += 8 * 2;
+      }
+    }
+      
+    int vertexDataSize = numVertices * vertexSize;
+    char vertexDataBuffer[vertexDataSize];
+    iss.read(vertexDataBuffer, vertexDataSize);
+    if (!iss) {
+      cout << "Error: only " << iss.gcount() << " bytes read." << endl;
+    }
+    else {
+      // cout << "Success. " << iss.gcount() << " of "<< vertexDataSize << " bytes read." << endl;
+    }
+
+    // now process vertices, normals, texCoords
+    
+    for (int i = 0; i < vertexDataSize; i+=vertexSize) {
+      if (vType == "double" || vType == "float64") {
+        double x, y, z;
+        x = bufferToDouble(vertexDataBuffer+i, littleEndian);
+        y = bufferToDouble(vertexDataBuffer+i+8, littleEndian);
+        z = bufferToDouble(vertexDataBuffer+i+16, littleEndian);
+        vertices.emplace_back(x, y, z, 1);
+      }
+      else if (vType == "float" || vType == "float32") {
+        float x, y, z;
+        x = bufferToFloat(vertexDataBuffer+i, littleEndian);
+        y = bufferToFloat(vertexDataBuffer+i+4, littleEndian);
+        z = bufferToFloat(vertexDataBuffer+i+8, littleEndian);
+        vertices.emplace_back(x, y, z, 1);
+      }
+      else {
+        cout << "Error: only float or double vertices allowed at this time." << endl;
+        return false;
+      }
+      if (hasNormals) {
+        if (nType == "double" || nType == "float64") {
+          double x, y, z;
+          x = bufferToDouble(vertexDataBuffer+i+nOffset, littleEndian);
+          y = bufferToDouble(vertexDataBuffer+i+nOffset+8, littleEndian);
+          z = bufferToDouble(vertexDataBuffer+i+nOffset+16, littleEndian);
+          normals.emplace_back(x, y, z);
+        }
+        else if (nType == "float" || nType == "float32") {
+          float x, y, z;
+          x = bufferToFloat(vertexDataBuffer+i+nOffset, littleEndian);
+          y = bufferToFloat(vertexDataBuffer+i+nOffset+4, littleEndian);
+          z = bufferToFloat(vertexDataBuffer+i+nOffset+8, littleEndian);
+          normals.emplace_back(x, y, z);
+        }
+      }
+      if (hasTexCoords) {
+        if (tcType == "double" || tcType == "float64") {
+          double u, v;
+          u = bufferToDouble(vertexDataBuffer+i+tcOffset, littleEndian);
+          v = bufferToDouble(vertexDataBuffer+i+tcOffset+8, littleEndian);
+          texCoords.emplace_back(u, v, 0);
+        }
+        else if (tcType == "float" || tcType == "float32") {
+          float u, v;
+          u = bufferToFloat(vertexDataBuffer+i+tcOffset, littleEndian);
+          v = bufferToFloat(vertexDataBuffer+i+tcOffset+4, littleEndian);
+          texCoords.emplace_back(u, v, 0);
+        }
+      }
+      
+    }
+
+    // cout << "Found " << vertices.size() << " vertices, " << normals.size() << "normals, and " << texCoords.size() << " texture coordinates." << endl;
+   
+    int fSizeTypeSize, fIndexTypeSize;
+    // account for size of type of number indicating number of verts in face
+    if (fSizeType == "char" || fSizeType == "uchar" || fSizeType == "int8" || fSizeType == "uint8") {
+      fSizeTypeSize = 1;
+    }
+    else if (fSizeType == "short" || fSizeType == "ushort" || fSizeType == "int16" || fSizeType == "uint16") {
+      fSizeTypeSize = 2;
+    }
+    else if (fSizeType == "int" || fSizeType == "uint" || fSizeType == "float" || fSizeType == "int32" || fSizeType == "uint32" || fSizeType == "float32") {
+      fSizeTypeSize = 4;
+    }
+    else {
+      fSizeTypeSize = 8;
+    }
+
+    // account for size of type of number 
+    if (fIndexType == "char" || fIndexType == "uchar" || fIndexType == "int8" || fIndexType == "uint8") {
+      fIndexTypeSize = 1;
+    }
+    else if (fIndexType == "short" || fIndexType == "ushort" || fIndexType == "int16" || fIndexType == "uint16") {
+      fIndexTypeSize = 2;
+    }
+    else if (fIndexType == "int" || fIndexType == "uint" || fIndexType == "int32" || fIndexType == "uint32") {
+      fIndexTypeSize = 4;
+    }
+    else {
+      fIndexTypeSize = 8;
+    }
+
+    // faces can have variable size, so need to be read one at a time. might as well process
+    // them at the same time!
+    
+    char faceBuffer[1024]; // plenty of space
+    char fSizeBuffer[8];
+    for(int i = 0; i < numFaces && iss.good(); i++) {
+      int faceStart = iss.tellg();
+      // faces are a <fSizeType> followed by that many <fIndexSizeType>s
+      iss.read(fSizeBuffer, fSizeTypeSize);
+      //      cout << "fSizeBuffer: " << (unsigned int)fSizeBuffer[0] << " fSizeTypeSize: " << fSizeTypeSize << endl;
+      int numFaceVerts = bufferToInt(fSizeBuffer, fSizeTypeSize, littleEndian);
+      if (numFaceVerts != 3) {
+        cout << "Error: found " << numFaceVerts << " polygon vertices. Only triangles supported in PLY files at this time." << endl;
+        return false;
+      }
+      //      iss.seekg(faceStart);
+      iss.read(faceBuffer, numFaceVerts * fIndexTypeSize);
+      int indices[numFaceVerts];
+      int ii = 0;
+      for (int i = 0; i < numFaceVerts*fIndexTypeSize; i+=fIndexTypeSize) {
+        indices[ii++] = bufferToInt(faceBuffer+i, fIndexTypeSize, littleEndian);
+      }
+      tris.push_back(
+                     Tri {
+                          {indices[0], indices[1], indices[2]},
+                          {indices[0], indices[1], indices[2]},
+                          {indices[0], indices[1], indices[2]},
+                          0,
+                          0,
+                          hasNormals
+                     });
+    }
+    // cout << "Found " << tris.size() << " triangles." << endl;
+  }
+  else {
+    // process ascii
+    for (int i = 0; i < numVertices; i++) {
+      double x, y, z, nx, ny, nz, u, v;
+      iss >> x >> y >> z;
+      vertices.emplace_back(x, y, z, 1);
+      if (hasNormals) {
+        iss >> nx >> ny >> nz;
+        normals.emplace_back(nx, ny, nz);
+      }
+      if (hasTexCoords) {
+        iss >> u >> v;
+        texCoords.emplace_back(u, v, 0);
+      }      
+    }
+
+    for (int i = 0; i < numFaces; i++) {
+      int numFaceVerts;
+      iss >> numFaceVerts;
+      if (numFaceVerts != 3) {
+        cout << "Error: only triangles supported at this time. " << endl;
+        return false;
+      }
+      int indices[numFaceVerts];
+      for (int j = 0; j < numFaceVerts; j++) {
+        iss >> indices[j];
+      }
+      tris.push_back(
+                     Tri {
+                          {indices[0], indices[1], indices[2]},
+                          {indices[0], indices[1], indices[2]},
+                          {indices[0], indices[1], indices[2]},
+                          0,
+                          0,
+                          hasNormals
+                     });
+    }
+  }
+  return true;
+}
+
+
 
 void PBRTParser::parseStatements(vector <Statement>& statements, Options& options) {
   for (auto& s : statements) {
@@ -657,7 +1127,7 @@ unique_ptr <Scene> PBRTParser::parse(string fileName, Options& options) {
       }
     }
   }
-  cout << contents << endl;
+  // cout << contents << endl;
   istringstream iss (contents);
   Statement statement;
   vector <Statement> statements;
@@ -685,13 +1155,26 @@ unique_ptr <Scene> PBRTParser::parse(string fileName, Options& options) {
 
     // Maybe we want to just replace all comments with spaces before starting this?
     skipToNext(iss);
-    //    cout << "Next iss char is: " << (char) iss.peek() << endl;
+    cout << "Next iss char is: " << (char) iss.peek() << endl;
     switch (state) {
     case EXPECT_IDENTIFIER:
       {
         // read string into statement.identifier
         iss >> statement.identifier;
-        //cout << "Got identifier: " << statement.identifier << endl;
+        cout << "Got identifier: " << statement.identifier << endl;
+
+        // Texture requires special handling, apparently
+        if (statement.identifier == "Texture") {
+			string textureName, textureType, textureClass;
+			iss >> quoted(textureName) >> quoted(textureType) >> quoted(textureClass);
+			vector <string> texInfo = {textureName, textureType, textureClass};
+			statement.params.insert({"texInfo", texInfo});
+			for (auto s : texInfo)
+				cout << "[" << s << "]" << endl;
+	//		cout << "[" << (char) iss.peek() << "]" << endl; 
+			state = EXPECT_PARAM;
+			break;
+        }
         auto it = fixedParamsMap.find(statement.identifier);
         if (it != fixedParamsMap.end()) {
           /*
@@ -771,7 +1254,7 @@ unique_ptr <Scene> PBRTParser::parse(string fileName, Options& options) {
         iss >> quoted(paramInfo);
         paramType = paramInfo.substr(0, paramInfo.find(" "));
         paramName = paramInfo.substr(paramInfo.rfind(' ')+1, string::npos);
-        //      cout << "From paramInfo: " << paramInfo << "\tgot paramName: " << paramName << "\tand paramType: " << paramType << endl;
+        cout << "From paramInfo: " << paramInfo << "\tgot paramName: " << paramName << "\tand paramType: " << paramType << endl;
 
         // get param data into a string
         paramData.reserve(4096);
@@ -783,10 +1266,10 @@ unique_ptr <Scene> PBRTParser::parse(string fileName, Options& options) {
         else {
           iss >> paramData;
         }
-        // cout << "paramData: " << paramData << endl;
+        cout << "paramData: " << paramData << endl;
       
         // now tokenize paramData and convert to the right type
-        statement.params.insert({paramName, tokenizeParamData(paramType, paramData)});
+    	statement.params.insert({paramName, tokenizeParamData(paramType, paramData)});
 
         
         // skip over spaces to see if we're getting another param or new identifier
@@ -805,11 +1288,11 @@ unique_ptr <Scene> PBRTParser::parse(string fileName, Options& options) {
       break;
     }
   }
-  cout << endl << endl;
-  cout << "Extracted statements:" << endl;
-  for (auto s : statements)
-    cout << s << endl;
-  cout << "Parsing... " << endl;
+  // cout << endl << endl;
+  // cout << "Extracted statements:" << endl;
+  // for (auto s : statements)
+    // cout << s << endl;
+  // cout << "Parsing... " << endl;
   parseStatements(statements, options);
   return make_unique <Scene> (move(lights), move(materials), move(primitives));
 }

@@ -21,7 +21,7 @@ const Color ADMaterial::brdf(const Vec3& wo_local, const Vec3& wi_local, const I
     Color coatPathWeight = pathWeight * coat;
     //cout << "\t\tcoatPathWeight: " << coatPathWeight << endl;
     if (!coatPathWeight.isBlack() && sameHemisphere) {
-        ans += coatPathWeight * coat_brdf->f(wo_local, wi_local, isSpecular);
+        ans += coatPathWeight * coat_brdf->f(wo_local, wi_local, ir, isSpecular);
     }
         //cout << "\t\taccumPathWeight: " << pathWeight << endl;
 
@@ -33,7 +33,7 @@ const Color ADMaterial::brdf(const Vec3& wo_local, const Vec3& wi_local, const I
     //cout << "\t\tmetalPathWeight: " << metalPathWeight << endl;
     //cout << "\t\taccumPathWeight: " << pathWeight << endl;
     if (!metalPathWeight.isBlack() && sameHemisphere)
-        ans += metalPathWeight * metal_brdf->f(wo_local, wi_local, isSpecular);
+        ans += metalPathWeight * metal_brdf->f(wo_local, wi_local, ir, isSpecular);
 
     pathWeight *= 1. - metalness;
     
@@ -41,7 +41,7 @@ const Color ADMaterial::brdf(const Vec3& wo_local, const Vec3& wi_local, const I
     //cout << "\t\tspecularPathWeight: " << specularPathWeight << endl;    
     //cout << "\t\taccumPathWeight: " << pathWeight << endl;
     if (!specularPathWeight.isBlack() && sameHemisphere)
-        ans += specularPathWeight * specular_brdf->f(wo_local, wi_local, isSpecular);
+        ans += specularPathWeight * specular_brdf->f(wo_local, wi_local, ir, isSpecular);
     
     pathWeight *= Color(1) - this->specular_color * this->specular * specular_brdf_reflectance;
     Color transPathWeight = pathWeight * transmission * transmission_color;
@@ -49,18 +49,18 @@ const Color ADMaterial::brdf(const Vec3& wo_local, const Vec3& wi_local, const I
     //cout << "\t\taccumPathWeight: " << pathWeight << endl;
     
     if (!transPathWeight.isBlack() && !sameHemisphere) 
-        ans += transPathWeight * specular_btdf->f(wo_local, wi_local, isSpecular);
+        ans += transPathWeight * specular_btdf->f(wo_local, wi_local, ir, isSpecular);
 
     pathWeight *= 1. - transmission;
     //cout << "\t\tdiffusePathWeight: " << pathWeight << endl;
 
     if (!pathWeight.isBlack() && sameHemisphere) 
-        ans += pathWeight * diffuse_brdf->f(wo_local, wi_local, isSpecular);
+        ans += pathWeight * diffuse_brdf->f(wo_local, wi_local, ir, isSpecular);
     
     return ans;
 }
 
-const Real ADMaterial::pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {
+Real ADMaterial::pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {
     // TODO: Compute pdf for having chosen given direction
     // weighted average of pdfs for individual lobes
 
@@ -70,46 +70,49 @@ const Real ADMaterial::pdf(const Vec3& wo_local, const Vec3& wi_local, const Int
     Real coatProb = pathProb * coat;
     //cout << "coatProb: " << coatProb << endl;
     if (coatProb > 0)
-        ans += coatProb * coat_brdf->pdf(wo_local, wi_local);
+        ans += coatProb * coat_brdf->pdf(wo_local, wi_local, ir);
 
     pathProb *= 1. - coat;
     Real metalProb = pathProb * metalness;
     //cout << "metalProb: " << metalProb << endl;
 
     if (metalProb > 0) 
-        ans += metalProb * metal_brdf->pdf(wo_local, wi_local);
+        ans += metalProb * metal_brdf->pdf(wo_local, wi_local, ir);
 
     pathProb *= 1. - metalness;
     Real specularProb = pathProb * specular;
     //cout << "specProb: " << specularProb << endl;
 
     if (specularProb > 0) 
-        ans += specularProb * specular_brdf->pdf(wo_local, wi_local);
+        ans += specularProb * specular_brdf->pdf(wo_local, wi_local, ir);
     
     pathProb *= 1. - specular;
     Real transmissionProb = pathProb * transmission;
     //cout << "transProb: " << transmissionProb << endl;
 
     if (transmissionProb > 0)
-        ans += transmissionProb * specular_btdf->pdf(wo_local, wi_local);
+        ans += transmissionProb * specular_btdf->pdf(wo_local, wi_local, ir);
     
     pathProb *= 1. - transmission;
     //cout << "pathProb: " << pathProb << endl;
-    ans += pathProb * diffuse_brdf->pdf(wo_local, wi_local);
+    ans += pathProb * diffuse_brdf->pdf(wo_local, wi_local, ir);
     return ans;
 
 }
 
-const void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsdf, Real* pdf, bool* isSpecular) const {
+void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const {
     // Run through the Autodesk shader code. Take each path with probability (1 - [accumulated edge weights])
     // OR
     // calculate each lobe of the material and weight appropriately. This would spawn multiple additional rays. I 
     // suppose these should be separate functions.
     Color pathWeight = Color::White(); // accumulated color of path
-    Real r = rand01();
+    //Real r = rand01();
+    SampleGenerator sg(Vec2(0), Vec2(1), 5);
+    sg.generate();
+    Vec2 rs = sg.next();
     Real q = avg(this->opacity); 
     Real pathProb = q; // accumulated probability of path
-    if (r > q) { // follow path for transmission
+    if (rs.x > q) { // follow path for transmission
         *pdf = 1.0f - q;
         *bsdf = Color::White();
         wi_local = -wo_local;
@@ -123,17 +126,15 @@ const void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsd
     // coat_layer = coat * coat_brdf(...) + lerp(white, coat_color * (1 - reflectance(coat_brdf)), coat) * emission_specular_mixture
     // choose to be reflected by coat with probability m->coat
 
-    r = rand01();
     q = this->coat;
 
-    if (r < q) {
+    if (rs.y < q) {
         pathProb *= q;
-        coat_brdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
+        coat_brdf->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
         *pdf *= pathProb;
         *bsdf *= this->coat * pathWeight;
         return;
     }
-
     pathProb *= 1.0f - q;
     pathWeight *= lerp(Color::White(), this->coat_color * (Color(1) - coat_brdf_reflectance), this->coat);
 
@@ -153,11 +154,12 @@ const void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsd
     pathProb *= 1.0f - q;
 */
 // specular_mixture = metalness * metal_brdf(...) + (1 - metalness) * specular_reflection_layer
-    r = rand01();
+    //r = rand01();
     q = this->metalness;
-    if (r < q) {
+    rs = sg.next();
+    if (rs.x < q) {
         pathProb *= q;
-        metal_brdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
+        metal_brdf->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
         *pdf *= pathProb;
         *bsdf *= this->metalness * pathWeight;
         return;
@@ -168,11 +170,10 @@ const void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsd
 
 // specular_reflection_layer = specular * specular_color * specular_brdf(...) + 
 // (1 - specular_color * specular * reflectance(specular_brdf)) * transmission_sheen_mix
-    r = rand01();
     q = this->specular;
-    if (r < q) {
+    if (rs.y < q) {
         pathProb *= q;
-        specular_brdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
+        specular_brdf->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
         *pdf *= pathProb;
         *bsdf *= pathWeight * this->specular;
         cout << "pdf: " << *pdf << endl;
@@ -186,11 +187,11 @@ const void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsd
     pathWeight *= Color(1) - this->specular_color * this->specular * specular_brdf_reflectance;
 
     // transmission_sheen_mix = transmission * transm_color * specular_btdf(...) + (1 - transmission) * sheen_layer
-    r = rand01();
+    rs = sg.next();
     q = this->transmission;
-    if (r < q) {
+    if (rs.x < q) {
         pathProb *= q;
-        specular_btdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
+        specular_btdf->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
         *pdf *= pathProb;
         *bsdf *= this->transmission * this->transmission_color; // depth presumed to be 0
         return;
@@ -201,7 +202,7 @@ const void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, Color* bsd
 
 // skipping sheen for now
 // base_mix = (1 - subsurface) * base * base_color * diffuse_brdf(...) + subsurface * subsurface_mix
-    diffuse_brdf->sample_f(wo_local, wi_local, bsdf, pdf, isSpecular);
+    diffuse_brdf->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
     *pdf *= pathProb;
     *bsdf *= this->base;
     return;

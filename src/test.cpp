@@ -56,12 +56,8 @@ int main (int argc, char ** argv) {
     }
 
     Options o;
-    //    unique_ptr <Scene> s = Parser::parseX3D(vm["input_file"].as<string>().c_str(), c);
     PBRTParser pbrtp;
     unique_ptr <Scene> s = pbrtp.parse(vm["input_file"].as<string>().c_str(), o);
-//    unique_ptr <Scene> s = Scene::emptyScene();
-
-    //s->addMesh(Scene::parseObj(vm["input_file"].as<string>()));
 
     if (s != nullptr) {
       cout << "Parse successful." << endl;
@@ -113,6 +109,7 @@ int main (int argc, char ** argv) {
     // for now just implement quick render
     //    shared_ptr <Camera> c = make_shared <Camera> (Vec3(0, 0, -10), Vec3(0, 0, 1), Vec3(0, 1, 0), Vec3(1, 0, 0), 1);
 
+    cout << "Size of BVH Node: " << sizeof(BVHNode) << endl;
+    cout << "Size of Ray: " << sizeof(Ray) << endl;
     RenderPackage::go(o, *s);
-    
 }

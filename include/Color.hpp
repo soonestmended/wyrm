@@ -18,6 +18,7 @@ public:
     static Color Black() {return Color(0.0, 0.0, 0.0);}
 	static Color Blue() {return Color(0.0, 0.0, 1.0);}
 	static Color Green() {return Color(0.0, 1.0, 0.0);}
+	static Color Grey() {return Color(0.5, 0.5, 0.5);}
 	static Color Red() {return Color(1.0, 0.0, 0.0);}
 	static Color White() {return Color(1.0, 1.0, 1.0);}
 

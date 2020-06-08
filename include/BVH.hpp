@@ -62,7 +62,7 @@ public:
 		flags = 1;
 	}
 	
-	const bool isLeaf() const {
+	bool isLeaf() const {
 		return flags == 1;
 	}
 	
@@ -79,12 +79,19 @@ public:
 	BVH(const Scene &_s) : Accelerator (_s) {
 		built = false;
 		nextAllocedNode = 1;
+        if (!build()) {
+          std::cout << "Error building BVH." << std::endl;
+          exit(1);
+        }
+        else {
+          std::cout << "BVH build complete." << std::endl;
+        }
 	}
-
-	const bool build();
-	const bool closestIntersection(const Ray& ray, const Real tmin, const Real tmax, IntersectRec& ans) const;
-    const bool intersectionYN(const Ray& ray, const Real tmin, const Real tmax) const;
-	const void print() const;
+  
+  bool build();
+  bool closestIntersection(const Ray& ray, const Real tmin, const Real tmax, IntersectRec& ans) const;
+  bool intersectionYN(const Ray& ray, const Real tmin, const Real tmax) const;
+  void print() const;
     
 private:
 	uint nextNewNode();

@@ -26,14 +26,22 @@ bool BBox::intersect(const Ray &r, Real &a, Real &b) const {
 	Real tymin, tymax, tzmin, tzmax;
 	
 	const Vec3 *bounds[2] = {&min, &max};
-
+    /*
 	a = ((*bounds[r.sign[0]])[0] - r.o[0]) * r.inv_d[0];
 	b = ((*bounds[1-r.sign[0]])[0] - r.o[0]) * r.inv_d[0];
 
 	tymin = ((*bounds[r.sign[1]])[1] - r.o[1]) * r.inv_d[1];
 	tymax = ((*bounds[1-r.sign[1]])[1] - r.o[1]) * r.inv_d[1];
+    */
 
-	if ( (a > tymax) || (tymin > b) )
+    a = ((*bounds[r.sign[0]])[0] - r.o[0]) / r.d[0];
+	b = ((*bounds[1-r.sign[0]])[0] - r.o[0]) / r.d[0];
+
+	tymin = ((*bounds[r.sign[1]])[1] - r.o[1]) / r.d[1];
+	tymax = ((*bounds[1-r.sign[1]])[1] - r.o[1]) / r.d[1];
+
+
+    if ( (a > tymax) || (tymin > b) )
 		return false;
 
 	if (tymin > a)
@@ -41,11 +49,16 @@ bool BBox::intersect(const Ray &r, Real &a, Real &b) const {
 
 	if (tymax < b) 
 		b = tymax;
-
+    /*
 	tzmin = ((*bounds[r.sign[2]])[2] - r.o[2]) * r.inv_d[2];
 	tzmax = ((*bounds[1-r.sign[2]])[2] - r.o[2]) * r.inv_d[2];
+    */
 
-	if ( (a > tzmax) || (tzmin > b) )
+    tzmin = ((*bounds[r.sign[2]])[2] - r.o[2]) / r.d[2];
+	tzmax = ((*bounds[1-r.sign[2]])[2] - r.o[2]) / r.d[2];
+
+
+    if ( (a > tzmax) || (tzmin > b) )
 		return false;
 
 	if (tzmin > a)
@@ -62,14 +75,21 @@ bool BBox::intersectYN(const Ray &r, Real t0, Real t1) const {
 	Real tmin, tmax, tymin, tymax, tzmin, tzmax;
 	
 	const Vec3 *bounds[2] = {&min, &max};
-
+    /*
 	tmin = ((*bounds[r.sign[0]])[0] - r.o[0]) * r.inv_d[0];
 	tmax = ((*bounds[1-r.sign[0]])[0] - r.o[0]) * r.inv_d[0];
 
 	tymin = ((*bounds[r.sign[1]])[1] - r.o[1]) * r.inv_d[1];
 	tymax = ((*bounds[1-r.sign[1]])[1] - r.o[1]) * r.inv_d[1];
+    */
+	tmin = ((*bounds[r.sign[0]])[0] - r.o[0]) / r.d[0];
+	tmax = ((*bounds[1-r.sign[0]])[0] - r.o[0]) / r.d[0];
 
-	if ( (tmin > tymax) || (tymin > tmax) )
+	tymin = ((*bounds[r.sign[1]])[1] - r.o[1]) / r.d[1];
+	tymax = ((*bounds[1-r.sign[1]])[1] - r.o[1]) / r.d[1];
+
+
+    if ( (tmin > tymax) || (tymin > tmax) )
 		return false;
 
 	if (tymin > tmin)
@@ -77,11 +97,16 @@ bool BBox::intersectYN(const Ray &r, Real t0, Real t1) const {
 
 	if (tymax < tmax) 
 		tmax = tymax;
-
+    /*
 	tzmin = ((*bounds[r.sign[2]])[2] - r.o[2]) * r.inv_d[2];
 	tzmax = ((*bounds[1-r.sign[2]])[2] - r.o[2]) * r.inv_d[2];
+    */
 
-	if ( (tmin > tzmax) || (tzmin > tmax) )
+    tzmin = ((*bounds[r.sign[2]])[2] - r.o[2]) / r.d[2];
+	tzmax = ((*bounds[1-r.sign[2]])[2] - r.o[2]) / r.d[2];
+
+
+    if ( (tmin > tzmax) || (tzmin > tmax) )
 		return false;
 
 	if (tzmin > tmin)

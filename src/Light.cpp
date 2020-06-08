@@ -20,9 +20,17 @@ const Color PointLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi,
     return this->color / distSquared;
 }
 
+const Color DirectionalLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi, Real* pdf, VisibilityTester& vt) const {
+  vt = VisibilityTester(ir.isectPoint, ir.isectPoint + 999999. * (-dir));
+  wi = -dir;
+  *pdf = 1;
+  return this->color;
+}
+
+
 const Color GeometricLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi_world, Real* pdf, VisibilityTester& vt) const {
     Vec3 pointOnLight, directionFromLight;
-    prim->getRandomPointAndDirection(Vec2(utils::rand01(), utils::rand01()), pointOnLight, directionFromLight, pdf);
+    prim->getRandomPointAndDirection(uv, pointOnLight, directionFromLight, pdf);
     //cout << (Color) pointOnLight << " pdf: " << *pdf << endl;
 
     vt = VisibilityTester(ir.isectPoint, pointOnLight);

@@ -67,7 +67,7 @@ protected:
   void threadFunc();
   void renderPane(const ImagePane& ip);
   int numThreads;
-  std::atomic <int> nextJob = 0, threadsRemaining;
+  std::atomic <int> nextJob = 0, count = 0, threadsRemaining;
   std::vector <ImagePane> panes;
   std::condition_variable cv;
   std::mutex cv_m;
