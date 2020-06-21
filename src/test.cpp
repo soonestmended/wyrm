@@ -1,14 +1,16 @@
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
 #include <thread>
 #include <vector>
 
-#include <boost/program_options.hpp>
+// #include <boost/program_options.hpp>
 
 #include "Accelerator.hpp"
 #include "BVH.hpp"
 #include "Camera.hpp"
+#include "Distribution.hpp"
 #include "Image.hpp"
 #include "Material.hpp"
 #include "Parser.hpp"
@@ -20,9 +22,30 @@
 #include "Tracer.hpp"
 
 using namespace std;
-namespace po = boost::program_options;
+// namespace po = boost::program_options;
+
+map <string, string> parseCommandLine(int argc, char** argv) {
+  map <string, string> ans;
+  for (int i = 1; i < argc; ++i) {
+    string opt{argv[i]};
+    if (opt[0] == '-') { // this is an option
+      if (i+1 < argc && argv[i+1][0] != '-') { // this is an option with an argument
+        ans.insert({opt, string{argv[i+1]}});
+        i++;
+      }
+      else {
+        ans.insert({opt, ""});
+      }
+    }
+    else {
+      ans.insert({"-i", opt});
+    }
+  }
+  return ans;
+}
 
 int main (int argc, char ** argv) {
+/*
     // named options
     po::options_description desc("Options"); 
     desc.add_options() 
@@ -45,71 +68,77 @@ int main (int argc, char ** argv) {
             .positional(positionalOptions).run(), 
           vm); 
     po::notify(vm); 
-
-    if (vm.count("help")) {
-        cout << desc << "\n";
-        return 1;
-    }
-    if (!vm.count("input_file")) {
-        cout << "Error: No input file provided." << endl;
-        return 0;
-    }
-
-    Options o;
-    PBRTParser pbrtp;
-    unique_ptr <Scene> s = pbrtp.parse(vm["input_file"].as<string>().c_str(), o);
-
-    if (s != nullptr) {
-      cout << "Parse successful." << endl;
-    }
-    else {
-      cout << "Parse failed." << endl;
-      exit(0);
-    }
-    s->printInfo();
-
-    if (vm.count("output_file")) {
-      o.imageFilename = vm["output_file"].as<string>();
-    }
-
-
-    if (vm.count("width")) {
-      o.imageWidth = vm["width"].as<int>();
-    }
-    
-    if (vm.count("height")) {
-      o.imageHeight = vm["height"].as<int>();
-    }
-    
-    if (vm.count("spp")) {
-      o.spp = vm["spp"].as<int>();
-    }
-    
-    if (vm.count("threads")) {
-      o.nt = vm["threads"].as<int>();
-    }
-    else {
-      o.nt = 0;
-    }
-    
-    if (o.nt == 0) {
-      o.nt = std::thread::hardware_concurrency();
-    }
-
-    //BBox wrapper(Vec3(2.0, -2.0, -2.0), Vec3(6.0, 2.0, 2.0));
-    //s->addMeshInstance(Parser::parseObj("bunny.obj"), wrapper, Vec3(0, 1, 0), 180);
- 
-/*
-    shared_ptr <Light> l = make_shared <PointLight> (Vec3(0.0, 0.0, -10.0), Color::White(), 200.0);
-    vector <shared_ptr<Light>> bar;
-    bar.push_back(l);
-    bar.push_back(make_shared <PointLight> (Vec3(0.0, 10.0, -2.0), Color::White(), 200.0));
-    s->addLights(bar);
 */
-    // for now just implement quick render
-    //    shared_ptr <Camera> c = make_shared <Camera> (Vec3(0, 0, -10), Vec3(0, 0, 1), Vec3(0, 1, 0), Vec3(1, 0, 0), 1);
+  
+  string desc = "Usage: " + string{argv[0]} + " [-w width] [-h height] [-s samples_per_pixel] [-j num_threads] [-o output_filename] input_file";
+  
+  Options o;
 
-    cout << "Size of BVH Node: " << sizeof(BVHNode) << endl;
-    cout << "Size of Ray: " << sizeof(Ray) << endl;
-    RenderPackage::go(o, *s);
+  map <string, string> clo = parseCommandLine(argc, argv);
+
+  if (clo.find("-help") != clo.end() || clo.find("--help") != clo.end()) {
+    cout << desc << "\n";
+    return 1;
+  }
+
+  auto it = clo.find("-i");
+  if (it == clo.end()) {
+    cout << "Error: No input file provided." << endl;
+    return 0;
+  }
+
+  PBRTParser pbrtp;
+  unique_ptr <Scene> s = pbrtp.parse(it->second, o);
+
+  if (s != nullptr) {
+    cout << "Parse successful." << endl;
+  }
+  else {
+    cout << "Parse failed." << endl;
+    exit(0);
+  }
+  s->printInfo();
+
+  it = clo.find("-o");
+  if (it != clo.end()) {
+    o.imageFilename = it->second;
+  }
+
+  it = clo.find("-w");
+  if (it != clo.end()) {
+    o.imageWidth = stoi(it->second);
+  }
+
+  it = clo.find("-h");
+  if (it != clo.end()) {
+    o.imageHeight = stoi(it->second);
+  }
+
+  it = clo.find("-s");
+  if (it != clo.end()) {
+    o.spp = stoi(it->second);
+  }
+
+  it = clo.find("-j");
+  if (it != clo.end()) {
+    o.nt = stoi(it->second);
+  } else {
+    o.nt = 0;
+  }
+
+  if (o.nt == 0) {
+    o.nt = std::thread::hardware_concurrency();
+  } 
+
+  
+  //RenderPackage::go(o, *s);
+  vector <Real> testInput = {.05, .7, .08, .02, 0.07, .08};
+  Distribution1D d1d(testInput);
+  int N = 100;
+  Real pdf;
+  for (int i = 0; i < N; i++) {
+    Real u = (Real) rand() / (Real) RAND_MAX;
+    cout << d1d.sampleContinuous(u, &pdf) << " (" << d1d.sampleDiscrete(u, &pdf) << ")" << endl;
+  }
+  
 }

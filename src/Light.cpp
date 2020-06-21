@@ -10,6 +10,52 @@
 
 using namespace std;
 
+InfiniteLight::InfiniteLight(const std::shared_ptr <ImageTexture> _texPtr, const Mat4& _worldToLight = Mat4{1}, const Color& _scaleColor = Color{1}) :
+    texPtr (_texPtr), worldToLight (_worldToLight), scaleColor (_scaleColor), lumImage (texPtr->image.width(), texPtr->image.height()), d2d (lumImage) {
+    // first scale texture image by scaleColor
+    for (int row = 0; row < texPtr->image.height(); ++row) {
+        for (int col = 0; col < texPtr ->image.width(); ++col) {
+            texPtr->image(col, row) *= scaleColor;
+            lumImage(col, row) = texPtr->image(col, row).luminance();
+        }
+    }
+
+}
+
+const Color InfiniteLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi, Real* pdf, VisibilityTester& vt) const {
+  // (importance) sample point on ImageTexture
+  Vec2 phiTheta = Vec2{2*M_PI, M_PI} * d2d.sampleContinuous(uv, pdf);
+
+  // transform pdf
+  *pdf /= 2 * M_PI * M_PI * std::sin(phiTheta[1]); // convert to solid angle using Jacobian
+
+  // create Vec3 to that point
+  Vec3 dir = worldToLight.inverseTransformVector(ONB::sphericalToCartesian(phiTheta));
+  vt = VisibilityTester(ir.isectPoint, ir.isectPoint + 999999. * (dir));
+  wi = dir;
+
+  return this->texPtr->eval(phiTheta[0], phiTheta[1]);
+  
+}
+
+Real InfiniteLight::pdf(const IntersectRec& ir, const Vec3& wi_local) const {
+  // intersect wi_local with ImageTexture and return pdf of having chosen that point?
+
+}
+
+const Color InfiniteLight::LInf(const Ray& r) const {
+  // convert ray to spherical coordinates and return value from ImageTexture
+
+  // transform ray direction by infinite light transformation matrix
+  Vec3 dir = glm::normalize(worldToLight.transformVector(r.d));
+
+  // convert to spherical coordinates
+  Vec2 phiTheta = ONB::cartesianToSpherical(dir);
+
+  // sample texture
+  return texPtr->eval(phiTheta[0], phiTheta[1]);
+}
+
 const Color PointLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi, Real* pdf, VisibilityTester& vt) const {
     vt = VisibilityTester(ir.isectPoint, this->P);
     wi = this->P - ir.isectPoint;

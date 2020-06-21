@@ -27,14 +27,21 @@ std::vector <std::shared_ptr<Primitive>> MeshInstance::toPrimitives() const {
         if (this->materials.size() == 1) 
             mPtr = this->materials[0];
         //        cout << "tri.vn[0]: " << tri.vn[0] << "\ttri.vn[1]: " << tri.vn[1] << "\ttri.vn[2]: " << tri.vn[2] << endl;
+
+        Vec3 tc0{0}, tc1{0}, tc2{0};
+        if (meshPtr->texCoords.size() > 0) {
+          tc0 = meshPtr->texCoords[tri.vt[0]];
+          tc1 = meshPtr->texCoords[tri.vt[1]];
+          tc2 = meshPtr->texCoords[tri.vt[2]];
+        }
         
         if (tri.vn[0] == tri.vn[1] && tri.vn[0] == tri.vn[2]) {
-            ans.push_back(make_shared<Triangle> (v0, v1, v2, n0, mPtr));
+          ans.push_back(make_shared<Triangle> (v0, v1, v2, n0, tc0, tc1, tc2, mPtr));
         }
         else {
             Vec3 n1 = glm::normalize(inv_xform_T_3x3 * meshPtr->normals[tri.vn[1]]);
             Vec3 n2 = glm::normalize(inv_xform_T_3x3 * meshPtr->normals[tri.vn[2]]);
-            ans.push_back(make_shared<TriangleWarp> (v0, v1, v2, n0, n1, n2, mPtr));
+            ans.push_back(make_shared<TriangleWarp> (v0, v1, v2, n0, n1, n2, tc0, tc1, tc2, mPtr));
         }
     }
     return ans;
@@ -73,13 +80,20 @@ vector <shared_ptr<Primitive>> Mesh::toPrimitives() const {
         const Vec3& n0 = this->normals[tri.vn[0]];
         const shared_ptr <Material> mPtr = this->materials[tri.m];
 
+        Vec3 tc0{0}, tc1{0}, tc2{0};
+        if (texCoords.size() > 0) {
+          tc0 = texCoords[tri.vt[0]];
+          tc1 = texCoords[tri.vt[1]];
+          tc2 = texCoords[tri.vt[2]];
+        }
+        
         if (tri.vn[0] == tri.vn[1] && tri.vn[0] == tri.vn[2]) {
-            ans.push_back(make_shared<Triangle> (v0, v1, v2, n0, mPtr));
+          ans.push_back(make_shared<Triangle> (v0, v1, v2, n0, tc0, tc1, tc2, mPtr));
         }
         else {
             const Vec3& n1 = this->normals[tri.vn[1]];
             const Vec3& n2 = this->normals[tri.vn[2]];
-            ans.push_back(make_shared<TriangleWarp> (v0, v1, v2, n0, n1, n2, mPtr));
+            ans.push_back(make_shared<TriangleWarp> (v0, v1, v2, n0, n1, n2, tc0, tc1, tc2, mPtr));
         }
     }
     return ans;

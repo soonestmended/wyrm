@@ -3,8 +3,10 @@
 #include "Material.hpp"
 
 #include <cctype>
+#include <cstring>
 #include <filesystem>
 #include <functional>
+#include <iterator>
 #include <map>
 #include <stack>
 
@@ -163,6 +165,17 @@ HDEF(LightSource) {
   }
   else if (s.type == "point") {
   }
+  else if (s.type == "infinite") {
+    auto vMapname = getParamVec <string> (s.params, "mapname");
+    fs::path texPath = fs::path(vMapname[0]);
+    texPath = fs::absolute(texPath);
+    // cout << "texPath: " << texPath.string() << endl;
+    // get color scale
+    // get wrapping
+    //
+    shared_ptr <ImageTexture> texPtr = make_shared <ImageTexture> (texPath.c_str());
+	
+  }
   else {
     cout << "Error: " << s.type << " light not supported yet." << endl;
     return;
@@ -304,7 +317,11 @@ HDEF(MakeTexture) {
 
 	if (texClass == "imagemap") {
 		auto fnv = getParamVec <string> (s.params, "filename");
-		shared_ptr <ImageTexture> texPtr = make_shared <ImageTexture> (fnv[0]);
+        // cout << "s.params filename: " << fnv[0] << endl;
+        fs::path texPath = fs::path(fnv[0]);
+        texPath = fs::absolute(texPath);
+        // cout << "texPath: " << texPath.string() << endl;
+		shared_ptr <ImageTexture> texPtr = make_shared <ImageTexture> (texPath.c_str());
 		namedTextureMap.insert({texName, texPtr});
 		return;
 	}
@@ -645,6 +662,9 @@ vector <string> tokenize(string& input) {
   istringstream iss(input);
   vector<string> tokens{istream_iterator<string>{iss},
                         istream_iterator<string>{}};
+  for (auto& t : tokens) 
+    t.erase(remove(t.begin(), t.end(), '\"'), t.end());
+
   return tokens;
 }
 

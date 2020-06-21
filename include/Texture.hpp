@@ -11,7 +11,7 @@ enum TextureWrapSetting {CLAMP, REPEAT};
 class Texture {
 public:
 	Texture() : wrap (CLAMP) {}
-	virtual Color eval(Real u, Real v, Real w) = 0;
+	virtual Color eval(Real u, Real v, Real w = 0) = 0;
 
 	void setWrapClamp() {wrap = CLAMP;}
 	void setWrapRepeat() {wrap = REPEAT;}
@@ -21,7 +21,7 @@ public:
 class ImageTexture : public Texture {
 public:	
 	ImageTexture(const std::string& filename);
-	Color eval(Real u, Real v, Real w) {
+	Color eval(Real u, Real v, Real w = 0) {
 		if (wrap == CLAMP) {
 			u = utils::clamp(u, 0, 1);
 			v = utils::clamp(v, 0, 1);

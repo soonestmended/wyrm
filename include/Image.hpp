@@ -13,8 +13,8 @@ public:
     }
     bool writePNG(const std::string& filename);
 
-    int width() {return width_;}
-    int height() {return height_;}
+    int width() const {return width_;}
+    int height() const {return height_;}
     
     Color& operator()(int x, int y) { return data[y*width_+x]; }
     const Color& operator()(int x, int y) const { return data[y*width_+x]; }

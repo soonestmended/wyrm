@@ -7,6 +7,7 @@
 #include <math.h>
 #include <cmath>
 
+#include "Utils.hpp"
 #include "common.hpp"
 
 class ONB {
@@ -104,8 +105,7 @@ public:
 	static Real uniformSampleHemispherePDF() {
         return 1. / (2. * M_PI);
     }
-
-
+  
 	static void uniformSampleDisk(Real u1, Real u2, Real *x, Real *y);
 
     static bool sameHemisphere(const Vec3& wi, const Vec3& wo) {
@@ -116,4 +116,18 @@ public:
         return std::abs(w[2]);
     }
 
+  static Vec2 cartesianToSpherical(const Vec3& v) { // returns (phi, theta)
+    Real theta = std::acos(utils::clamp(v.z, -1, 1));
+    Real phi = std::atan(v.y / v.x);
+    if (phi < 0) phi += 2 * M_PI;
+    return Vec2{phi, theta};
+  }
+
+  static Vec3 sphericalToCartesian(const Vec2& phiTheta) {
+    Real sinTheta = std::sin(phiTheta[1]);
+    Real z = std::cos(phiTheta[1]);
+    Real x = sinTheta * std::cos(phiTheta[0]);
+    Real y = sinTheta * std::sin(phiTheta[0]);
+    return Vec3{x, y, z};
+  }
 };

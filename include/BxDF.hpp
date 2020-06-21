@@ -69,7 +69,7 @@ class TexturedLambertian_BRDF : public Lambertian_BRDF {
 public:
 	TexturedLambertian_BRDF(const std::shared_ptr <Texture>& _texture) : Lambertian_BRDF(Color::White()), texture (_texture) {}
 	Color R(const IntersectRec& ir) const {
-		return texture->eval(ir.uvw[0], ir.uvw[1], ir.uvw[2]);
+      return texture->eval(ir.tc[0], ir.tc[1], ir.tc[2]);
 	}
 	std::shared_ptr <Texture> texture;
 };

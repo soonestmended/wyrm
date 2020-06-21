@@ -1,5 +1,6 @@
 #include "common.hpp"
 
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -7,8 +8,6 @@
 #include <stack>
 #include <string>
 #include <unordered_map>
-
-#include <boost/algorithm/string.hpp>
 
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -27,6 +26,15 @@ using namespace glm;
 
 void parseError(const string& line) {
     cout << "Parse error: " << line << endl;
+}
+
+vector <string> trimAndTokenize(string& input) {
+    input.erase(remove(input.begin(), input.end(), '\r'), input.end());
+    input.erase(remove(input.begin(), input.end(), ' '), input.end());
+    istringstream iss(input);
+    vector<string> tokens{istream_iterator<string>{iss},
+                          istream_iterator<string>{}};
+    return tokens;
 }
 
 /* Construct vec3 from tokens. If there aren't enough tokens, defaultValue is substituted. */
@@ -61,7 +69,6 @@ const Vec4 Parser::readVec4(const vector <string> &tokens, const Real defaultVal
     return Vec4(xyz, w);
 }
 
-
 vector <MTLMat> Parser::parseMtl(string fileName) {
     vector <MTLMat> ans;
 
@@ -75,9 +82,10 @@ vector <MTLMat> Parser::parseMtl(string fileName) {
     bool firstPass = true;
     while (getline(file, line)) {
         
-        vector <string> tokens;
-        boost::trim_if(line, boost::is_any_of(" \r"));
-        boost::split(tokens, line, [](char c) {return c == ' ';}, boost::token_compress_on);
+        vector <string> tokens = trimAndTokenize(line);
+
+//        boost::trim_if(line, boost::is_any_of(" \r"));
+//        boost::split(tokens, line, [](char c) {return c == ' ';}, boost::token_compress_on);
         int numTokens = tokens.size();
         if (tokens[0].compare("#") == 0 || tokens[0].compare("") == 0) {
             continue;
@@ -166,9 +174,9 @@ shared_ptr <Mesh> Parser::parseObj(string fileName) {
         return nullptr;
     }
     while (getline(file, line)) {
-        vector <string> tokens;
-        boost::trim_if(line, boost::is_any_of(" \r"));
-        boost::split(tokens, line, [](char c) {return c == ' ';}, boost::token_compress_on);
+        vector <string> tokens = trimAndTokenize(line);
+        // boost::trim_if(line, boost::is_any_of(" \r"));
+        // boost::split(tokens, line, [](char c) {return c == ' ';}, boost::token_compress_on);
         int numTokens = tokens.size();
         if (tokens[0].compare("#") == 0 || tokens[0].compare("") == 0) {
             continue;
@@ -219,8 +227,12 @@ shared_ptr <Mesh> Parser::parseObj(string fileName) {
                 }
                 int i = 0;
                 for (auto t : tokens) {
-                    vector <string> faceData;
-                    boost::split(faceData, t, [](char c) {return c == '/';});
+                    // replace forward slash with spaces
+                    for (char& c : t)
+                        if (c == '/') c = ' ';
+                    vector <string> faceData = trimAndTokenize(t);
+
+                    // boost::split(faceData, t, [](char c) {return c == '/';});
                     tri.v[i] = stoi(faceData[0]);
                     if (tri.v[i] < 0) {
                         tri.v[i] += vertices.size(); // negative indices are offsets from end of current vertex array
@@ -463,9 +475,9 @@ shared_ptr <Material> defaultMaterial = ADMaterial::makeDiffuse("defaultMaterial
 stack <Mat4> transformStack;
 
 Vec3 stringToVec3(string s) {
-    vector <string> tokens;
-    boost::trim_if(s, boost::is_any_of(" \r"));
-    boost::split(tokens, s, [](char c) {return c == ' ';}, boost::token_compress_on);
+    vector <string> tokens = trimAndTokenize(s);
+    // boost::trim_if(s, boost::is_any_of(" \r"));
+    // boost::split(tokens, s, [](char c) {return c == ' ';}, boost::token_compress_on);
     if (tokens.size() != 3) {
         cout << "ERROR: Attempt to read Vec3 from string failed: " << s << endl;
         return Vec3(0.0);
@@ -474,9 +486,9 @@ Vec3 stringToVec3(string s) {
 }
 
 Vec4 stringToVec4(string s) {
-    vector <string> tokens;
-    boost::trim_if(s, boost::is_any_of(" \r"));
-    boost::split(tokens, s, [](char c) {return c == ' ';}, boost::token_compress_on);
+    vector <string> tokens = trimAndTokenize(s);
+    // boost::trim_if(s, boost::is_any_of(" \r"));
+    // boost::split(tokens, s, [](char c) {return c == ' ';}, boost::token_compress_on);
     if (tokens.size() != 4) {
         cout << "ERROR: Attempt to read Vec4 from string failed: " << s << endl;
         return Vec4(0.0);

@@ -13,7 +13,8 @@ public:
 	IntersectRec() {}
 	Vec3 isectPoint;
 	Vec3 normal, shadingNormal;
-	Vec3 uvw; // parameters at intersection point
+	Vec3 uvw; // parameters at intersection point; used in finishIntersection to compute smooth normals / tex coords
+  Vec3 tc;
 	Real t;
 	ONB onb;
 	Primitive* primitive;

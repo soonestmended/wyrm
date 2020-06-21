@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-#include <boost/algorithm/string.hpp>
+// #include <boost/algorithm/string.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
