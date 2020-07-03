@@ -147,7 +147,7 @@ void MultiThreadRenderer::renderPane(const ImagePane& ip) {
         for (int i = ip.x0; i < ip.x0+ip.w; ++i) {
           
           pixelColor = Color::Black();
-          pixelCenter = Vec2{(Real)i/(Real)target.width()-.5, (Real)j/(Real)target.height()-.5};
+          pixelCenter = Vec2{(Real)i/(Real)target.width()-.5, (Real)(target.height()-j-1)/(Real)target.height()-.5};
           StratifiedSampleGenerator ssg{pixelCenter - .5*pixelSize, pixelCenter + .5*pixelSize, spp};
           ssg.generate();
           //          vector <Color> samples;

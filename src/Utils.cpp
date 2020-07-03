@@ -37,6 +37,11 @@ namespace utils {
         if (f > max) return max;
         return f;
     }
+    int clamp(const int i, const int min, const int max) {
+        if (i < min) return min;
+        if (i > max) return max;
+        return i;
+    }
     Vec3 sameSide(const Vec3& testVec, const Vec3& v) {
         if (glm::dot(testVec, v) < 0)
             return -testVec;

@@ -63,9 +63,9 @@ public:
 
 class InfiniteLight : public Light {
 public:
-  InfiniteLight(const std::shared_ptr <ImageTexture> _texPtr, const Mat4& _worldToLight, const Color& _scaleColor);
-  virtual const Color getColor() const = 0;
-  virtual Real getPower() const = 0;
+  InfiniteLight(const std::shared_ptr <ImageTexture> _texPtr, const Mat4& _lightToWorld, const Color& _scaleColor);
+    virtual const Color getColor() const {return Color{.5};}
+    virtual Real getPower() const {return 1.;}
   //virtual void getRandomPoint(const Vec2& uv, Vec3& p) const = 0;
   //virtual void getRandomPointAndDirection(const Vec2& uv, Vec3& p, Vec3& d) const = 0;
   
@@ -75,7 +75,7 @@ public:
   
   std::shared_ptr <ImageTexture> texPtr;
   Image lumImage; // This image holds luminance values for corresponding pixels in texPtr
-  XForm worldToLight;
+  XForm lightToWorld;
   Color scaleColor;
   Distribution2D d2d;
 };

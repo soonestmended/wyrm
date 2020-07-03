@@ -10,5 +10,5 @@ public:
     Vec3 p, q;
     VisibilityTester() {p = q = Vec3(0.0);}
     VisibilityTester(const Vec3& _p, const Vec3& _q) : p(_p), q(_q) {}
-    bool testVisibile(const Accelerator& a) const;
+    bool testVisible(const Accelerator& a) const;
 };

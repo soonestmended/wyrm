@@ -10,9 +10,21 @@
 
 using namespace std;
 
-InfiniteLight::InfiniteLight(const std::shared_ptr <ImageTexture> _texPtr, const Mat4& _worldToLight = Mat4{1}, const Color& _scaleColor = Color{1}) :
-    texPtr (_texPtr), worldToLight (_worldToLight), scaleColor (_scaleColor), lumImage (texPtr->image.width(), texPtr->image.height()), d2d (lumImage) {
-    // first scale texture image by scaleColor
+// For texture coordinates: (0, 0) is at upper left corner of image.
+// Same for theta (0 at top, 1 at bottom)
+
+Vec2 sphericalToTexcoords(Vec2& phiTheta) {
+  return Vec2{phiTheta[0] / (2. * M_PI), phiTheta[1] / M_PI};
+}
+
+Vec2 texcoordsToSpherical(Vec2& tc) {
+  return Vec2{tc[0] * 2 * M_PI, tc[1] * M_PI};
+}
+
+InfiniteLight::InfiniteLight(const std::shared_ptr <ImageTexture> _texPtr, const Mat4& _lightToWorld = Mat4{1}, const Color& _scaleColor = Color{1}) :
+    texPtr (_texPtr), lightToWorld (_lightToWorld), scaleColor (_scaleColor), lumImage (texPtr->image.width(), texPtr->image.height()) {
+  texPtr->image.boxBlur(3, 1);
+  // first scale texture image by scaleColor
     for (int row = 0; row < texPtr->image.height(); ++row) {
         for (int col = 0; col < texPtr ->image.width(); ++col) {
             texPtr->image(col, row) *= scaleColor;
@@ -20,26 +32,49 @@ InfiniteLight::InfiniteLight(const std::shared_ptr <ImageTexture> _texPtr, const
         }
     }
 
+    // blur lum image
+    //lumImage.blur(3, 1.0);
+    for (int row = 0; row < texPtr->image.height(); ++row)
+        for (int col = 0; col < texPtr ->image.width(); ++col)
+            lumImage(col, row) *= sin(M_PI * (((Real) row + .5) / (Real) lumImage.height()));
+    this->d2d = Distribution2D(lumImage);
 }
 
-const Color InfiniteLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi, Real* pdf, VisibilityTester& vt) const {
+const Color InfiniteLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi_world, Real* pdf, VisibilityTester& vt) const {
   // (importance) sample point on ImageTexture
-  Vec2 phiTheta = Vec2{2*M_PI, M_PI} * d2d.sampleContinuous(uv, pdf);
-
+  Vec2 tc = d2d.sampleContinuous(uv, pdf);
+  //cout << "Sampled tc: " << tc << endl;
+  Vec2 phiTheta = texcoordsToSpherical(tc); // {tc[0] * 2 * M_PI, (1-tc[1]) * M_PI};
   // transform pdf
-  *pdf /= 2 * M_PI * M_PI * std::sin(phiTheta[1]); // convert to solid angle using Jacobian
-
+  Real sinTheta = sin(phiTheta[1]);
+  if (sinTheta == 0) *pdf = 0;
+  else *pdf /= 2 * M_PI * M_PI * sinTheta; // convert to solid angle using Jacobian
   // create Vec3 to that point
-  Vec3 dir = worldToLight.inverseTransformVector(ONB::sphericalToCartesian(phiTheta));
-  vt = VisibilityTester(ir.isectPoint, ir.isectPoint + 999999. * (dir));
-  wi = dir;
+  Vec3 dir = glm::normalize(lightToWorld.transformVector(ONB::sphericalToCartesian(phiTheta)));
+  //cout << "Dir pre-transform: " << dir << endl;
+  // dir = glm::normalize(lightToWorld.transformVector(dir));
+  //cout << "Dir: " << dir << endl;
+ //Vec3 dir = Vec3{sinTheta*cosPhi, sinTheta*sinPhi, cosTheta};
+ //dir.z = -dir.z;
+  vt = VisibilityTester(ir.isectPoint, ir.isectPoint + 9999. * (dir));
+  wi_world = dir;
+  Color ans = this->texPtr->eval(Vec2{tc[0], tc[1]});
+  int ix = utils::clamp(tc[0] * this->texPtr->image.width(), 0, this->texPtr->image.width() - 1);
+  int iy = utils::clamp(tc[1] * this->texPtr->image.height(), 0, this->texPtr->image.height() - 1);
+  //cout << "Sampled color at (" << ix << ", " << iy << "): " << ans;
+  //cout << "\tpdf: " << *pdf << endl;
 
-  return this->texPtr->eval(phiTheta[0], phiTheta[1]);
-  
+  return ans;
 }
 
 Real InfiniteLight::pdf(const IntersectRec& ir, const Vec3& wi_local) const {
   // intersect wi_local with ImageTexture and return pdf of having chosen that point?
+  Vec3 dir = glm::normalize(lightToWorld.inverseTransformVector(ir.onb.local2world(wi_local)));
+  //Vec3 dir = glm::normalize(ir.onb.local2world(wi_local));
+  Vec2 phiTheta = ONB::cartesianToSpherical(dir);
+  Real sinTheta = sin(phiTheta[1]);
+  if (sinTheta == 0) return 0;
+  return d2d.continuousPdf(sphericalToTexcoords(phiTheta)) / (2 * M_PI * M_PI * sinTheta);
 
 }
 
@@ -47,21 +82,22 @@ const Color InfiniteLight::LInf(const Ray& r) const {
   // convert ray to spherical coordinates and return value from ImageTexture
 
   // transform ray direction by infinite light transformation matrix
-  Vec3 dir = glm::normalize(worldToLight.transformVector(r.d));
+  Vec3 dir = glm::normalize(lightToWorld.inverseTransformVector(r.d));
 
   // convert to spherical coordinates
   Vec2 phiTheta = ONB::cartesianToSpherical(dir);
 
   // sample texture
-  return texPtr->eval(phiTheta[0], phiTheta[1]);
+  Vec2 tc = sphericalToTexcoords(phiTheta);
+  return texPtr->eval(tc);
 }
 
-const Color PointLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi, Real* pdf, VisibilityTester& vt) const {
+const Color PointLight::sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi_world, Real* pdf, VisibilityTester& vt) const {
     vt = VisibilityTester(ir.isectPoint, this->P);
-    wi = this->P - ir.isectPoint;
-    Real distSquared = glm::length2(wi);
+    wi_world = this->P - ir.isectPoint;
+    Real distSquared = glm::length2(wi_world);
     Real dist = sqrtf(distSquared);
-    wi /= dist;
+    wi_world /= dist;
     *pdf = 1;
     return this->color / distSquared;
 }

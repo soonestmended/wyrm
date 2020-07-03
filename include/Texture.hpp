@@ -30,10 +30,14 @@ public:
 			u = fmod(u, 1.0);
 			v = fmod(v, 1.0);
 		}
-		int x = u * image.width();
-		int y = v * image.height();
+		int x = utils::clamp(u * image.width(), 0, image.width() - 1);
+		int y = utils::clamp(v * image.height(), 0, image.height() - 1);
 		return image(x, y);
 	}
+
+		Color eval(const Vec2& uv) {
+			return eval(uv[0], uv[1]);
+		}
 
 	Image image;
 };

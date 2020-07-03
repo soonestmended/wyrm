@@ -130,8 +130,9 @@ int main (int argc, char ** argv) {
     o.nt = std::thread::hardware_concurrency();
   } 
 
-  
+
   //RenderPackage::go(o, *s);
+/*
   vector <Real> testInput = {.05, .7, .08, .02, 0.07, .08};
   Distribution1D d1d(testInput);
   int N = 100;
@@ -140,5 +141,39 @@ int main (int argc, char ** argv) {
     Real u = (Real) rand() / (Real) RAND_MAX;
     cout << d1d.sampleContinuous(u, &pdf) << " (" << d1d.sampleDiscrete(u, &pdf) << ")" << endl;
   }
-  
+*/
+//  Image ss{"imageTexture.png"};
+//  Distribution2D d2d{ss};
+
+//  int N = 100;
+//  Real pdf;
+//  for (int i = 0; i < N; i++) {
+//    Vec2 uv = Vec2{(Real) rand() / (Real) RAND_MAX, (Real) rand() / (Real) RAND_MAX};
+//    cout << "uv: " << uv << "\t\t";
+//    cout << d2d.sampleContinuous(uv, &pdf) << " [" << pdf << "]\t" << d2d.sampleDiscrete(uv, &pdf) << " [" << pdf << "]" << endl;
+//  }
+  //Image foo{"cb.png"};
+  //foo.boxBlur(5, 100);
+  //foo.writePNG("cb_blur.png");
+  RenderPackage::go(o, *s);
+/*
+  Image foo{10, 10};
+  for (int j = 0; j < 10; j++) {
+    for (int i = 0; i < 10; i++) {
+      if (i > 3 && i < 6 && j > 3 && j < 6) foo(i, j) = Color{10};
+      else foo(i, j) = Color{.01};
+    }
+  }
+  Distribution2D d2d{foo};
+  Real pdf;
+  for (int i = 0; i < 200; i++) {
+    Vec2 uv{(Real) rand() / (Real) RAND_MAX, (Real) rand() / (Real) RAND_MAX};
+    Vec2 xy = d2d.sampleContinuous(uv, &pdf);
+    int ix = utils::clamp(xy[0] * foo.width(), 0, foo.width() - 1);
+    int iy = utils::clamp(xy[1] * foo.height(), 0, foo.height() - 1);
+    //int ix = xy[0] * (foo.width() - 1);
+    //int iy = xy[1] * (foo.height() - 1);
+    cout << xy << "\tpdf: " << pdf << "\t(ix, iy): (" << ix << ", " << iy << ")\tcolor: " << foo(ix, iy) << endl;
+  }
+*/
 }

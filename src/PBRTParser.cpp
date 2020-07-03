@@ -171,10 +171,12 @@ HDEF(LightSource) {
     texPath = fs::absolute(texPath);
     // cout << "texPath: " << texPath.string() << endl;
     // get color scale
-    // get wrapping
-    //
     shared_ptr <ImageTexture> texPtr = make_shared <ImageTexture> (texPath.c_str());
-	
+    auto vScaleColor = getParamVec <Color> (s.params, "L");
+    if (vScaleColor.size() == 0)
+      vScaleColor.push_back(Color{1});
+
+    lights.push_back(make_shared <InfiniteLight> (texPtr, currentTransform, vScaleColor[0]));
   }
   else {
     cout << "Error: " << s.type << " light not supported yet." << endl;
@@ -345,11 +347,13 @@ HDEF(NamedMaterial) {
 //void PBRTParser::Rotate(const Statement& s, shared_ptr <Camera>& c, shared_ptr <Options>& o) {
 HDEF(Rotate) {
   auto v = getParamVec <Real> (s.params, "anon");
-  if (v.size() == 4) 
-    currentTransform = glm::rotate(currentTransform, v[0], Vec3(v[1], v[2], v[3]));
-  else
+  if (v.size() == 4) {
+    //currentTransform = glm::rotate(currentTransform, v[0] * M_PI / 180., Vec3(v[1], v[2], v[3]));
+    currentTransform = currentTransform * glm::rotate(Mat4{1}, v[0] * M_PI / 180., Vec3(v[1], v[2], v[3]));
+  }
+  else {
     cerr << "Error: Rotate: supplied vec has size " << v.size() << endl;
-
+  }
 }
 
 HDEF(PixelFilter) {
@@ -771,7 +775,7 @@ ParamVec tokenizeParamData(string& paramType, string& paramData) {
     cout << endl;
     */
     return tmp;
-  }  
+  }
 }
 
 void reverseBuffer(char* buffer, int size) {

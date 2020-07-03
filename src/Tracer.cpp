@@ -5,6 +5,8 @@
 
 using namespace std;
 
+// TODO note all but EDL turned off right now
+
 const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
     //cout << "lightAlongRay entry" << endl;
     IntersectRec ir;
@@ -76,7 +78,7 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
                 // ray escaped scene
               if (debug) cout << "Ray escaped scene." << endl;
                 for (const auto& l : scene->getLights()) {
-                    ans += pathThroughput * l->LInf(nextRay);
+                    ans += pathThroughput * l->LInf (nextRay);
                 }
             }
             //cout << "post isSpecular block" << endl;
@@ -153,6 +155,7 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
 
     }
     //return utils::clamp(ans, 0, 1);
+    // cout << "\t" << ans << endl;
     return ans;
 }
 
@@ -197,7 +200,7 @@ const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Li
         cout << "\tl_contrib: " << l_contrib << endl;
         cout << "\tlightPdf: " << lightPdf << endl;
     }
-    
+    //cout << "light contrib: " << l_contrib << "\tlightPdf: " << lightPdf << endl;
     if (lightPdf > 0 && !l_contrib.isBlack()) {
         if (debug) cout << "pre f" << endl;
         f = ir.material->brdf(wo_local, wi_local, ir, &isSpecular) * abs(glm::dot(wi_world, ir.shadingNormal));
@@ -208,7 +211,7 @@ const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Li
             cout << "\tlight part 1: " << endl;
             cout << "\tf: " << f << endl;
         }
-        if (!f.isBlack() && vt.testVisibile(*this->accel)) {
+        if (!f.isBlack() && vt.testVisible(*this->accel)) {
             if (debug) cout << "\tpassed vt" << endl;
             if (l.isDeltaLight()) {
                 ans += f * l_contrib / lightPdf;

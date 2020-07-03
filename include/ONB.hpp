@@ -118,7 +118,7 @@ public:
 
   static Vec2 cartesianToSpherical(const Vec3& v) { // returns (phi, theta)
     Real theta = std::acos(utils::clamp(v.z, -1, 1));
-    Real phi = std::atan(v.y / v.x);
+    Real phi = std::atan2(v.y, v.x);
     if (phi < 0) phi += 2 * M_PI;
     return Vec2{phi, theta};
   }
