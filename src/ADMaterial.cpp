@@ -15,7 +15,7 @@ const Color ADMaterial::brdf(const Vec3& wo_local, const Vec3& wi_local, const I
     bool sameHemisphere = ir.onb.sameHemisphere(wo_local, wi_local);
     //cout << "\t\topacity: " << opacity << endl;
 
-    Color pathWeight = opacity;
+    Color pathWeight = opacity->eval(ir.tc);
     //cout << "\t\taccumPathWeight: " << pathWeight << endl;
 
     Color coatPathWeight = pathWeight * coat;
@@ -25,7 +25,7 @@ const Color ADMaterial::brdf(const Vec3& wo_local, const Vec3& wi_local, const I
     }
         //cout << "\t\taccumPathWeight: " << pathWeight << endl;
 
-    pathWeight *= lerp(Color::White(), this->coat_color * (Color(1) - coat_brdf_reflectance), this->coat);
+    pathWeight *= lerp(Color::White(), this->coat_color->eval(ir.tc) * (Color(1) - coat_brdf_reflectance), this->coat);
     //cout << "\t\taccumPathWeight: " << pathWeight << endl;
 
     Color metalPathWeight = pathWeight * metalness; 
@@ -43,8 +43,8 @@ const Color ADMaterial::brdf(const Vec3& wo_local, const Vec3& wi_local, const I
     if (!specularPathWeight.isBlack() && sameHemisphere)
         ans += specularPathWeight * specular_brdf->f(wo_local, wi_local, ir, isSpecular);
     
-    pathWeight *= Color(1) - this->specular_color * this->specular * specular_brdf_reflectance;
-    Color transPathWeight = pathWeight * transmission * transmission_color;
+    pathWeight *= Color(1) - this->specular_color->eval(ir.tc) * this->specular * specular_brdf_reflectance;
+    Color transPathWeight = pathWeight * transmission * transmission_color->eval(ir.tc);
     //cout << "\t\ttransPathWeight: " << transPathWeight << endl;
     //cout << "\t\taccumPathWeight: " << pathWeight << endl;
     
@@ -66,7 +66,7 @@ Real ADMaterial::pdf(const Vec3& wo_local, const Vec3& wi_local, const Intersect
 
     // chance of choosing straight through tranmission direction is zero
     Real ans = 0.0f;
-    Real pathProb = avg(opacity);
+    Real pathProb = avg(opacity->eval(ir.tc));
     Real coatProb = pathProb * coat;
     //cout << "coatProb: " << coatProb << endl;
     if (coatProb > 0)
@@ -110,7 +110,7 @@ void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectR
     SampleGenerator sg(Vec2(0), Vec2(1), 5);
     sg.generate();
     Vec2 rs = sg.next();
-    Real q = avg(this->opacity); 
+    Real q = avg(this->opacity->eval(ir.tc));
     Real pathProb = q; // accumulated probability of path
     if (rs.x > q) { // follow path for transmission
         *pdf = 1.0f - q;
@@ -120,7 +120,7 @@ void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectR
         return;
     }
 
-    pathWeight *= this->opacity;
+    pathWeight *= this->opacity->eval(ir.tc);
 
     // Next is coat layer.
     // coat_layer = coat * coat_brdf(...) + lerp(white, coat_color * (1 - reflectance(coat_brdf)), coat) * emission_specular_mixture
@@ -136,7 +136,7 @@ void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectR
         return;
     }
     pathProb *= 1.0f - q;
-    pathWeight *= lerp(Color::White(), this->coat_color * (Color(1) - coat_brdf_reflectance), this->coat);
+    pathWeight *= lerp(Color::White(), this->coat_color->eval(ir.tc) * (Color(1) - coat_brdf_reflectance), this->coat);
 
 /*
 // emission_specular_mixture = emission * emission_color * emission() + specular_mixture
@@ -184,7 +184,7 @@ void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectR
     }
 
     pathProb *= 1.0f - q;
-    pathWeight *= Color(1) - this->specular_color * this->specular * specular_brdf_reflectance;
+    pathWeight *= Color(1) - this->specular_color->eval(ir.tc) * this->specular * specular_brdf_reflectance;
 
     // transmission_sheen_mix = transmission * transm_color * specular_btdf(...) + (1 - transmission) * sheen_layer
     rs = sg.next();
@@ -193,7 +193,7 @@ void ADMaterial::sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectR
         pathProb *= q;
         specular_btdf->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
         *pdf *= pathProb;
-        *bsdf *= this->transmission * this->transmission_color; // depth presumed to be 0
+        *bsdf *= this->transmission * this->transmission_color->eval(ir.tc); // depth presumed to be 0
         return;
     }
 

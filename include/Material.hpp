@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/vec3.hpp>
+#include <memory>
 #include <string>
 
 #include "common.hpp"
@@ -8,6 +9,9 @@
 #include "Color.hpp"
 #include "IntersectRec.hpp"
 #include "SampleGenerator.hpp"
+#include "Texture.hpp"
+
+
 struct MTLMat {
     std::string name;    
     Vec3 Ka;        // ambient
@@ -46,69 +50,112 @@ public:
     static int currentID;  
 };
 
+using TPTR = std::shared_ptr <Texture <Color>>;
+
 class DiffuseMaterial : public Material {
-public:
-	DiffuseMaterial(const std::string& name, Color color) : Material (name), emissionColor (Color::Black()) {
-	  lbrdf = new Lambertian_BRDF(color);
-	}
+    public:
+        DiffuseMaterial(const std::string& name, const TPTR& texKd, Color emit) : Material (name), emissionColor (emit) {
+            lbrdf = new Lambertian_BRDF(texKd);
+        }
 
-	DiffuseMaterial(const std::string& name, Color color, Color emit) : Material (name), emissionColor (emit) {
-	  lbrdf = new Lambertian_BRDF(color);
-	}
+        DiffuseMaterial(const std::string& name, const TPTR& texKd) : Material (name), emissionColor (Color::Black()) {
+            lbrdf = new Lambertian_BRDF(texKd);
+        }
 
-	DiffuseMaterial(const std::string& name, const std::shared_ptr <Texture>& texture) : Material (name), emissionColor (Color::Black()) {
-		lbrdf = new TexturedLambertian_BRDF(texture);
-	}
+        DiffuseMaterial(const std::string& name, const Color& Kd) : Material (name) {
+            TPTR texKd = std::make_shared <ConstantTexture <Color>> (Kd);
+            lbrdf = new Lambertian_BRDF(texKd);
+        }
 
-	~DiffuseMaterial() {
-	  if (lbrdf) delete(lbrdf);
-	}
+        DiffuseMaterial(const std::string& name, const Color& Kd, Color emit) : Material (name), emissionColor (emit) {
+            TPTR texKd = std::make_shared <ConstantTexture <Color>> (Kd);
+            lbrdf = new Lambertian_BRDF(texKd);
+        }
 
-	const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
-	  return lbrdf->f(wo_local, wi_local, ir, isSpecular);
-	}
-  	Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {
-    	return lbrdf->pdf(wo_local, wi_local, ir);
-	}
-  void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const {
-    lbrdf->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
-    *isSpecular = false;
-  }
+        ~DiffuseMaterial() {
+            if (lbrdf) delete(lbrdf);
+        }
 
-  const Color getEmission() const {return emissionColor;}
+        const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
+            return lbrdf->f(wo_local, wi_local, ir, isSpecular);
+        }
+        Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {
+            return lbrdf->pdf(wo_local, wi_local, ir);
+        }
+        void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const {
+            lbrdf->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
+            *isSpecular = false;
+        }
+
+        const Color getEmission() const {return emissionColor;}
   
-  Color emissionColor;
-  Lambertian_BRDF* lbrdf;
+        Color emissionColor;
+        Lambertian_BRDF* lbrdf;
 };
 
 class GlassMaterial : public Material {
-public:
-    GlassMaterial() =delete;
-	GlassMaterial(const std::string& name, const Color& _R, const Color& _T, Real IOR) : Material(name) {
-    dBSDF = new Dielectric_BSDF(_R, _T, 1.00029, IOR);
-    }
-    ~GlassMaterial() {
-        if (dBSDF) delete (dBSDF);
-    }
-    const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
-        *isSpecular = true;
-        return Color::Black();
-    }
-    Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {return 0;}
-	void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const {
-	    dBSDF->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
-    }
+    public:
+        GlassMaterial() =delete;
+        GlassMaterial(const std::string& name, const TPTR& texR, const TPTR& texT, Real IOR) : Material(name) {
+            dBSDF = new Dielectric_BSDF(texR, texT, 1.00029, IOR);
+        }
+        GlassMaterial(const std::string& name, const Color& R, const Color& T, Real IOR) : Material(name) {
+            TPTR texR = std::make_shared <ConstantTexture <Color>> (R),
+                texT = std::make_shared <ConstantTexture <Color>> (T);
+            dBSDF = new Dielectric_BSDF(texR, texT, 1.00029, IOR);
+        }
 
-    Dielectric_BSDF* dBSDF = nullptr;
+        ~GlassMaterial() {
+            if (dBSDF) delete (dBSDF);
+        }
+        const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
+            *isSpecular = true;
+            return Color::Black();
+        }
+        Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {return 0;}
+        void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const {
+            dBSDF->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
+        }
+
+        Dielectric_BSDF* dBSDF = nullptr;
+};
+
+class MetalMaterial : public Material {
+    public:
+        MetalMaterial() =delete;
+//        MetalMaterial(const std::string& name, const TPTR& texColor, const std::shared_ptr <Texture<Real>>& texAlpha, const std::shared_ptr <Texture <Color>>& texEta) : Material(name) {
+//            mfBRDF = new Microfacet_BRDF(texColor, "schlick", "GGX", texAlpha, texEta);
+//        }
+        MetalMaterial(const std::string& name, const TPTR& R0, const std::shared_ptr <Texture<Real>>& texAlpha) : Material(name) {
+            mfBRDF = new Microfacet_BRDF(R0, "schlick", "GGX", texAlpha);
+        }
+       
+        MetalMaterial(const std::string& name, const TPTR& texEta, const TPTR& texK, const std::shared_ptr <Texture <Real>>& texAlpha) : Material (name) {
+            mfBRDF = new Microfacet_BRDF(texEta, texK, "schlick", "GGX", texAlpha);
+        }
+
+       ~MetalMaterial() {
+            if (mfBRDF) delete (mfBRDF);
+        }
+        const Color brdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool *isSpecular) const {
+            *isSpecular = false;
+            return mfBRDF->f(wo_local, wi_local, ir, isSpecular);
+        }
+        Real pdf(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {return 0;}
+        void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const {
+            mfBRDF->sample_f(wo_local, wi_local, ir, uv, bsdf, pdf, isSpecular);
+        }
+
+        Microfacet_BRDF* mfBRDF;
 };
 
 class ADMaterial : public Material {
 public:
     ADMaterial() =delete;
     ADMaterial( const std::string& name,
-                const Color& _opacity, 
+                const TPTR& _opacity,
                 const Real _coat,
-                const Color& _coat_color,
+                const TPTR& _coat_color,
                 const Real _coat_roughness,
                 const Real _coat_IOR,
                 const Vec3& _coat_normal,
@@ -116,14 +163,14 @@ public:
                 const Color& _emission_color,
                 const Real _metalness,
                 const Real _base,
-                const Color& _base_color,
+                const TPTR& _base_color,
                 const Real _specular,
-                const Color& _specular_color,
+                const TPTR& _specular_color,
                 const Real _specular_roughness,
                 const Real _specular_IOR,
                 const Real _diffuse_roughness,
                 const Real _transmission,
-                const Color& _transmission_color) :
+                const TPTR& _transmission_color) :
                 Material(name),
                 opacity(_opacity),
                 coat (_coat),
@@ -147,7 +194,11 @@ public:
                 }
 
   ADMaterial(const MTLMat& mat) : Material (mat.name), 
-                                  opacity (Color(mat.d)), base_color (mat.Kd), specular_color (mat.Ks), emission_color (mat.Ke), diffuse_roughness (mat.Pr), specular_roughness (mat.Pr) {
+                                  opacity (std::make_shared <ConstantTexture <Color>> (mat.d)),
+                                  base_color (std::make_shared <ConstantTexture <Color>> (mat.Kd)),
+                                  specular_color (std::make_shared <ConstantTexture <Color>> (mat.Ks)),
+                                  emission_color (mat.Ke),
+                                  diffuse_roughness (mat.Pr), specular_roughness (mat.Pr) {
         init();
     }  
 
@@ -164,18 +215,18 @@ public:
       SampleGenerator sg(Vec2(0), Vec2(1), rhoSamples*2);
       IntersectRec ir;
       if (coat > 0.) {
-            coat_brdf = new GGX_BRDF(); // need to fill this in
+            coat_brdf = new Microfacet_BRDF(coat_color, "fresnel_dielectric_schlick", "GGX", std::make_shared <ConstantTexture <Real>> (coat_roughness*coat_roughness)); // need to fill this in
             coat_brdf_reflectance = coat_brdf->rho(rhoSamples, &sg, ir);
         }
         if (metalness > 0.) {
-            metal_brdf = new GGX_BRDF();
+            metal_brdf = new Microfacet_BRDF(base_color, "fresnel_conductor_schlick", "GGX", std::make_shared <ConstantTexture <Real>> (specular_roughness*specular_roughness)); // need to fill this in
         }
         if (specular > 0.) {
-            specular_brdf = new SpecularDielectric_BRDF(specular_color, 1.00029f, specular_IOR);
+            specular_brdf = new Microfacet_BRDF(specular_color, "fresnel_dielectric_schlick", "GGX", std::make_shared <ConstantTexture <Real>> (specular_roughness*specular_roughness));
             specular_brdf_reflectance = specular_brdf->rho(rhoSamples, &sg, ir);
         }
         if (transmission >0.) {
-            specular_btdf = new GGX_BRDF();
+            specular_btdf = new Microfacet_BTDF(specular_color, "fresnel_dielectric_schlick", "GGX", std::make_shared <ConstantTexture <Real>> (specular_roughness*specular_roughness), std::make_shared <ConstantTexture <Real>> (specular_IOR));
         }
         if (diffuse_roughness > 0.) {
             diffuse_brdf = new OrenNayar_BRDF();
@@ -191,15 +242,16 @@ public:
     const Color getEmission() const {return this->emission_color * this->emission;}
 
     static std::shared_ptr <ADMaterial> makeDiffuse(const std::string& name, const Color& Kd, const Real roughness) {
-        Color w = Color::White();
+        TPTR w = std::make_shared <ConstantTexture <Color>> (Color::White());
+        TPTR texKd = std::make_shared <ConstantTexture <Color>> (Kd);
         return std::make_shared <ADMaterial> (name, w, 0, w, 0, 0, Vec3(0), 0, 
-            w, 0, 1.0, Kd, 0, w, 0, 0, roughness, 0, w);
+            Color::White(), 0, 1.0, texKd, 0, w, 0, 0, roughness, 0, w);
     }
 
     // member variables
-    const Color opacity = Color::White();
+    const TPTR opacity = std::make_shared <ConstantTexture <Color>> (Color::White());
     const Real coat = 0.0f;
-    const Color coat_color = Color::White();
+    const TPTR coat_color = std::make_shared <ConstantTexture <Color>> (Color::White());
     const Real coat_roughness = 0.1f;
     const Real coat_IOR = 1.5f;
     const Vec3 coat_normal = Vec3(0.0);
@@ -207,14 +259,14 @@ public:
     const Color emission_color = Color::White();
     const Real metalness = 0.0f;
     const Real base = 0.8f;
-    const Color base_color = Color::White();
+    const TPTR base_color = std::make_shared <ConstantTexture <Color>> (Color::White());
     const Real specular = 0.0f;
-    const Color specular_color = Color::White();
+    const TPTR specular_color = std::make_shared <ConstantTexture <Color>> (Color::White());
     const Real specular_roughness = 0.2f;
     const Real specular_IOR = 1.5f; 
     const Real diffuse_roughness = 0.0f;
     const Real transmission = 0.0f;
-    const Color transmission_color = Color::White();
+    const TPTR transmission_color = std::make_shared <ConstantTexture <Color>> (Color::White());
 
     Color coat_brdf_reflectance;
     Color specular_brdf_reflectance;

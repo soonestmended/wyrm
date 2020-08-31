@@ -23,12 +23,18 @@ public:
     Scene() =delete;
     Scene(std::vector <std::shared_ptr <Light>> &&lights_, std::vector <std::shared_ptr<Material>> &&materials_, std::vector <std::shared_ptr <Primitive>> &&primitives_) :
     lights (std::move(lights_)), materials (std::move(materials_)), primitives (std::move(primitives_)) {
+        std::cout << "Start scene constructor" << std::endl;
+        std::cout << "Primitives size: " << primitives.size() << std::endl;
         for (auto& prim : primitives) {
+            //std::cout << "." << std::flush;
             bbox.enclose(prim->getBBox());
+            //std::cout << " post bbox" << std::flush;
             if (!prim->getMaterial()->getEmission().isBlack()) {
                 lights.push_back(std::make_shared <GeometricLight> (prim));
             }
+            //std::cout << " post emission check" << std::flush;
         }
+        //std::cout << std::endl;
     }
 
     void printInfo() const;

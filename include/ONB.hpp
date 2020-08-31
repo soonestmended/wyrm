@@ -130,4 +130,8 @@ public:
     Real y = sinTheta * std::sin(phiTheta[0]);
     return Vec3{x, y, z};
   }
+
+        static Vec3 halfVector(const Vec3& v1, const Vec3& v2) {
+            return glm::normalize(v1 + v2);
+        }
 };

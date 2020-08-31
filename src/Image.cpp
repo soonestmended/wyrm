@@ -108,6 +108,7 @@ Image::Image(const string& filename) {
       }
       stbi_image_free(uchar_data);
     }
+    cout << "Image loaded successfully." << endl;
 }
 
 vector <Real> createGaussian(int kernelWidth, Real sigma) {

@@ -88,8 +88,9 @@ int main (int argc, char ** argv) {
   }
 
   PBRTParser pbrtp;
+  cout << "pre 91" << endl;
   unique_ptr <Scene> s = pbrtp.parse(it->second, o);
-
+  cout << "post 91" << endl;
   if (s != nullptr) {
     cout << "Parse successful." << endl;
   }
@@ -155,6 +156,7 @@ int main (int argc, char ** argv) {
   //Image foo{"cb.png"};
   //foo.boxBlur(5, 100);
   //foo.writePNG("cb_blur.png");
+
   RenderPackage::go(o, *s);
 /*
   Image foo{10, 10};

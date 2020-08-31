@@ -17,7 +17,7 @@
 #define HIGH_PRECISION
 
 #ifdef HIGH_PRECISION
-#define EPSILON .0001
+#define EPSILON .0000001
 typedef double Real;
 typedef glm::dvec4 Vec4;
 typedef glm::dvec3 Vec3;

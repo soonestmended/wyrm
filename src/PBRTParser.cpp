@@ -43,7 +43,7 @@ std::map <std::string, std::function <void(const Statement&, Options&)>> PBRTPar
   };
 
 Mat4 PBRTParser::currentTransform = Mat4(1.0);
-shared_ptr <Material> PBRTParser::currentMaterial = make_shared <DiffuseMaterial> ("defaultMaterial", Color::Blue());
+shared_ptr <Material> PBRTParser::currentMaterial = make_shared <DiffuseMaterial> ("defaultMaterial", make_shared <ConstantTexture <Color>> (Color::Blue()));
 shared_ptr <Material> PBRTParser::currentAreaLightMaterial = nullptr;
 bool PBRTParser::currentReverseOrientation = false;
 
@@ -52,7 +52,7 @@ stack <shared_ptr<Material>> PBRTParser::materialStack = {};
 stack <shared_ptr<Material>> PBRTParser::areaLightMaterialStack = {};
 stack <bool> PBRTParser::reverseOrientationStack = {};
 map <string, shared_ptr <Material>> PBRTParser::namedMaterialMap = {};
-map <string, shared_ptr <Texture>> PBRTParser::namedTextureMap = {};
+map <string, shared_ptr <Texture <Color>>> PBRTParser::namedTextureMap = {};
 
 vector <shared_ptr <Light>> PBRTParser::lights = {};
 vector <shared_ptr <Material>> PBRTParser::materials = {};
@@ -62,9 +62,9 @@ HDEF(AreaLightSource) {
   // for now ignores bool twoSided and integer samples
   auto v = getParamVec <Color> (s.params, "L");
   if (v.size() > 0)
-    currentAreaLightMaterial = make_shared <DiffuseMaterial>("anon", Color::Black(), v[0]);
+    currentAreaLightMaterial = make_shared <DiffuseMaterial>("anon", make_shared <ConstantTexture <Color>> (Color::Black()), v[0]);
   else
-    currentAreaLightMaterial = make_shared <DiffuseMaterial>("anon", Color::Black(), Color::White());
+    currentAreaLightMaterial = make_shared <DiffuseMaterial>("anon", make_shared <ConstantTexture <Color>> (Color::Black()), Color::White());
     
 }
 
@@ -140,6 +140,10 @@ HDEF(LightSource) {
   auto vScale = getParamVec <Color> (s.params, "scale");
   if (s.type == "distant") {
     auto vL = getParamVec <Color> (s.params, "L");
+    if (vL.size() == 0) {
+      cout << "Error: no color specified for distant light source. Using white." << endl;
+      vL.emplace_back(1, 1, 1);
+    }
     Color L = vL[0];
     if (vScale.size() == 1) {
       L *= vScale[0];
@@ -164,6 +168,24 @@ HDEF(LightSource) {
     // cout << "Created distant light" << endl;
   }
   else if (s.type == "point") {
+    Color I;
+    Vec3 from;
+    auto vI = getParamVec <Color> (s.params, "I");
+    if (vI.size() == 0) {
+      cout << "Error: no intensity specified for point light. Using <100, 100, 100>." << endl;
+      vI.emplace_back(100, 100, 100);
+    }
+    I = vI[0];
+
+    auto vFrom = getParamVec <Vec3> (s.params, "from");
+    if (vFrom.size() == 1) {
+      from = vFrom[0];
+    }
+    else {
+      cout << "Error: no location specified for point light. Using <100, 100, 100>." << endl;
+      from = Vec3{100};
+    }
+    lights.push_back(make_shared <PointLight> (from, I));
   }
   else if (s.type == "infinite") {
     auto vMapname = getParamVec <string> (s.params, "mapname");
@@ -226,15 +248,50 @@ HDEF(MakeCamera) {
 
 }
 
+shared_ptr <Texture <Color>> PBRTParser::getNamedTexture(string name) {
+  // TODO lookup name in named texture map, return texture shared pointer if it exist. Otherwise nullptr
+  auto it = namedTextureMap.find(name);
+  if (it == namedTextureMap.end()) {
+    return nullptr;
+  }
+  return it->second;
+}
+
+shared_ptr <Texture <Color>> PBRTParser::getColorOrTexture(map<string, ParamVec> m, string name) {
+  shared_ptr <Texture <Color>> tex;
+  try {
+    auto pvv = m.at(name); // ParamVecVariant
+    if (holds_alternative<vector <Color>> (pvv)) {
+      // pv is a single color
+      auto pv = std::get <vector <Color>> (pvv); // pv for ParamVec (variant state removed)
+      tex = make_shared <ConstantTexture <Color>> (pv[0]);
+    }
+    else if (holds_alternative<vector <string>> (pvv)) {
+      // pv is a named texture
+      auto pv = std::get <vector <string>> (pvv);
+      tex = getNamedTexture(pv[0]);
+      if (tex == nullptr) {
+        cout << "Error: texture " << pv[0] << " not found. Using grey..." << endl;
+        tex = make_shared <ConstantTexture<Color>> (Color::Grey());
+      }
+    }
+  } catch (const std::out_of_range& oor) {
+    // no Kr in paramvec
+    cout << "Error: parameter " << name << " not found. Using grey..." << endl;
+    tex = make_shared <ConstantTexture <Color>> (Color::Grey());
+  }
+  return tex;
+}
+
 shared_ptr <Material> PBRTParser::makeMaterial(const Statement& s) {
   shared_ptr <Material> ans = nullptr;
   auto nameV = getParamVec <string> (s.params, "name");
   if (nameV.size() == 0) nameV.push_back("unnamed_" + s.type);
   if (s.type.compare("glass") == 0) { // GlassMaterial
-    auto KrV = getParamVec <Real> (s.params, "Kr");
-    if (KrV.size() == 0) KrV.push_back(1);
-    auto KtV = getParamVec <Real> (s.params, "Kt");
-    if (KtV.size() == 0) KtV.push_back(1);
+    shared_ptr <Texture <Color>> texR, texT;
+    texR = getColorOrTexture(s.params, "Kr");
+    texT = getColorOrTexture(s.params, "Kt");
+
     auto etaV = getParamVec <Real> (s.params, "eta");
     if (etaV.size() == 0) etaV.push_back(1.5);
     
@@ -243,7 +300,7 @@ shared_ptr <Material> PBRTParser::makeMaterial(const Statement& s) {
     // remaproughness
     //    Color Kr = KrV[0];
     //    Color Kt = KtV[0];
-    ans = make_shared <GlassMaterial> (nameV[0], KrV[0], KtV[0], etaV[0]);
+    ans = make_shared <GlassMaterial> (nameV[0], texR, texT, etaV[0]);
   }
 
 // TODO: Recognize if parameters are given as textures and handle appropriately
@@ -255,29 +312,22 @@ shared_ptr <Material> PBRTParser::makeMaterial(const Statement& s) {
       cerr << "Error: Oren-Nayar model not yet implemented. Ignoring roughness." << endl;
     }
 
-    auto KdVit = s.params.find("Kd");
-    if (KdVit == s.params.end()) {
-    	cout << "Error: no diffuse color specified. Using medium grey." << endl;
-		ans = make_shared <DiffuseMaterial> (nameV[0], Color::Grey());    	
+    shared_ptr <Texture <Color>> tex = getColorOrTexture(s.params, "Kd");
+    ans = make_shared <DiffuseMaterial> (nameV[0], tex);
+  }
+
+  else if (s.type == "metal") {
+    auto roughnessV = getParamVec <Real> (s.params, "roughness");
+    if (roughnessV.size() == 0) roughnessV.push_back(.01);
+    if (s.params.find("R0") != s.params.end()) {
+      shared_ptr <Texture <Color>> R0 = getColorOrTexture(s.params, "R0");
+      ans = make_shared <MetalMaterial> (nameV[0], R0, make_shared <ConstantTexture <Real>> (roughnessV[0]));
     }
     else {
-		auto KdV = KdVit->second; // ParamVec
-		if (holds_alternative <vector <string>> (KdV)) {
-			string texName = get <vector <string>> (KdV)[0];
-			auto texIt = namedTextureMap.find(texName);
-			if (texIt != namedTextureMap.end()) {
-				ans = make_shared <DiffuseMaterial> (nameV[0], texIt->second);
-			} else {
-				cout << "Error: texture " << texName << " not found. Using grey." << endl;
-				ans = make_shared <DiffuseMaterial> (nameV[0], Color::Grey());
-			}
-		}
-		else if (holds_alternative <vector <Color>> (KdV)) {
-			vector <Color> KdCv = get <vector <Color>> (KdV);
-		    if (KdCv.size() == 0) KdCv.push_back(Color(0.5));
-			ans = make_shared <DiffuseMaterial> (nameV[0], KdCv[0]);
-		}
-  	}
+      shared_ptr <Texture <Color>> texEta = getColorOrTexture(s.params, "eta");
+      shared_ptr <Texture <Color>> texK = getColorOrTexture(s.params, "k");
+      ans = make_shared <MetalMaterial> (nameV[0], texEta, texK, make_shared <ConstantTexture <Real>> (roughnessV[0]));
+    }
   }
 
   else {
@@ -776,6 +826,10 @@ ParamVec tokenizeParamData(string& paramType, string& paramData) {
     */
     return tmp;
   }
+  else {
+    cout << "Error: Bad param type: " << paramType << endl;
+    return ParamVec{};
+  }
 }
 
 void reverseBuffer(char* buffer, int size) {
@@ -980,6 +1034,7 @@ bool PBRTParser::parsePLY(const std::string& fileName, std::vector <Vec4> &verti
         y = bufferToFloat(vertexDataBuffer+i+4, littleEndian);
         z = bufferToFloat(vertexDataBuffer+i+8, littleEndian);
         vertices.emplace_back(x, y, z, 1);
+        // cout << "x: " << x << "  y: " << y << "  z:" << z << endl;
       }
       else {
         cout << "Error: only float or double vertices allowed at this time." << endl;
@@ -1128,6 +1183,7 @@ bool PBRTParser::parsePLY(const std::string& fileName, std::vector <Vec4> &verti
 
 void PBRTParser::parseStatements(vector <Statement>& statements, Options& options) {
   for (auto& s : statements) {
+    //cout << "Parsing statement: " << s << endl;
     auto h = handlers.find(s.identifier);
     if (h != handlers.end())
       h->second(s, options);      

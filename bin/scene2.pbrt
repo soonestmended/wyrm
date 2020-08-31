@@ -6,8 +6,8 @@ LookAt -0.2779999521691323 -0.800000037997961 0.2730000129668042 # position
 Camera "perspective"
   "float fov" [ 39.14625166082039 ]
 Film "image"
-  "integer xresolution" [ 500 ]
-  "integer yresolution" [ 500 ]
+  "integer xresolution" [ 1000 ]
+  "integer yresolution" [ 1000 ]
 Sampler "sobol" "integer pixelsamples" [64]
 Integrator "path" "integer maxdepth" [10]
 WorldBegin
@@ -27,8 +27,8 @@ WorldBegin
   # cbox_red
   MakeNamedMaterial "cbox_red"
     "string type" [ "matte" ]
-#    "color Kd" [ 0.5 0.0 0.0 ]
-	"texture Kd" "imageTexture"
+    "color Kd" [ 0.5 0.0 0.0 ]
+#	"texture Kd" "imageTexture"
   # Emitter
   MakeNamedMaterial "Emitter"
     "string type" [ "matte" ]
@@ -65,7 +65,7 @@ WorldBegin
       157.59164428710938 48.88637161254883 -7.2123789323086385e-06 0.0
       -0.36800004799664165 0.3510000166716054 0.06500003835465904 1.0
     ]
-    NamedMaterial "box_Material"
+    Material "matte" "rgb Kd" [0 .059 .537]
     Shape "sphere" "float radius" [.0005]
 AttributeEnd
   # sphere 2

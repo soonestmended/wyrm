@@ -300,7 +300,8 @@ const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Li
         cout << "l_contrib: " << l_contrib << endl;
         cout << "absCosTheta: " << absCosTheta << endl;
         cout << "lightPdf: " << lightPdf << endl;
-    }*/
+        }*/
+    //cout << ans << endl;
     return ans;
     //return Color::White();
 }

@@ -28,22 +28,17 @@ public:
 
 class PointLight : public Light {
 public:
-    PointLight(const Vec3& p, const Color& c, const Real power_) : P (p), color (c), power (power_) {};
+    PointLight(const Vec3& p, const Color& c) : P (p), color (c) {};
 
     const Color getColor() const {return color;}
-    Real getPower() const {return power;}
+    Real getPower() const {return utils::avg(color);}
     bool isDeltaLight() const {return true;}
 
-    //void getRandomPoint(const Vec2& uv, Vec3& p) const {p = P;}
-    //void getRandomPointAndDirection(const Vec2& uv, Vec3& p, Vec3& d) const {
-    //    p = P;
-    //};
     const Color sample(const Vec2& uv, const IntersectRec& ir, Vec3& wi, Real* pdf, VisibilityTester& vt) const;
 
 private:
     Vec3 P;
     Color color;
-    Real power;
 };
 
 class DirectionalLight : public Light {

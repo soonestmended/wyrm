@@ -1,0 +1,3 @@
+/home/dave/code/wyrm/debug/CMakeFiles/rebuild_cache.dir
+/home/dave/code/wyrm/debug/CMakeFiles/edit_cache.dir
+/home/dave/code/wyrm/debug/CMakeFiles/wyrm.dir

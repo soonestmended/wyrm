@@ -92,7 +92,10 @@ public:
   }
   static std::shared_ptr <Material> makeMaterial(const Statement& s);
   static bool parsePLY(const std::string& fileName, std::vector <Vec4> &vertices, std::vector <Vec3> &normals, std::vector <Vec3> &texCoords, std::vector <Tri> &tris);
-  
+    static std::shared_ptr <Texture <Color>> getNamedTexture(std::string name);
+    static std::shared_ptr <Texture <Color>> getColorOrTexture(std::map<std::string, ParamVec> m, std::string name);
+
+
   HDEC(AreaLightSource);
   HDEC(AttributeBegin);
   HDEC(AttributeEnd);
@@ -130,7 +133,7 @@ public:
   static bool currentReverseOrientation;
 
   static std::map <std::string, std::shared_ptr <Material>> namedMaterialMap;
-  static std::map <std::string, std::shared_ptr <Texture>> namedTextureMap;
+  static std::map <std::string, std::shared_ptr <Texture <Color>>> namedTextureMap;
   // vectors from which to make Scene
   static std::vector <std::shared_ptr <Light>> lights;
   static std::vector <std::shared_ptr <Material>> materials;

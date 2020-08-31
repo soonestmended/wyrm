@@ -532,6 +532,8 @@ shared_ptr <Camera> processCamera(const pugi::xml_node& node) {
     return make_shared <Camera> (location, look, up, right, s);
 }
 
+using TPTR = std::shared_ptr <Texture <Color>>;
+
 shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shared_ptr<Light>> &lights, vector <shared_ptr<Material>> &materials, vector <shared_ptr<Primitive>> &primitives) {
     pugi::xml_node c = node.child("ADMaterial");
     if (c) {
@@ -541,9 +543,9 @@ shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shar
         std::stringstream ss;
         ss << c.hash_value();
         string name = c.attribute("name").as_string(ss.str().c_str());
-        Color opacity = stringToVec3(c.attribute("opacity").as_string("1 1 1"));
+        TPTR opacity = make_shared <ConstantTexture <Color>> (stringToVec3(c.attribute("opacity").as_string("1 1 1")));
         Real coat = stof(c.attribute("coat").as_string("0"));
-        Color coat_color = stringToVec3(c.attribute("coat_color").as_string("1 1 1"));
+        TPTR coat_color = make_shared <ConstantTexture <Color>> (stringToVec3(c.attribute("coat_color").as_string("1 1 1")));
         Real coat_roughness = stof(c.attribute("coat_roughness").as_string("0.1"));
         Real coat_IOR = stof(c.attribute("coat_IOR").as_string("1.5"));
         Vec3 coat_normal = stringToVec3(c.attribute("coat_normal").as_string("0 0 0"));
@@ -551,14 +553,14 @@ shared_ptr <Material> processAppearance(const pugi::xml_node &node, vector <shar
         Color emission_color = stringToVec3(c.attribute("emission_color").as_string("1 1 1"));
         Real metalness = stof(c.attribute("metalness").as_string("0"));
         Real base = stof(c.attribute("base").as_string("0.8"));
-        Color base_color = stringToVec3(c.attribute("base_color").as_string("1 1 1"));
+        TPTR base_color = make_shared <ConstantTexture <Color>> (stringToVec3(c.attribute("base_color").as_string("1 1 1")));
         Real specular = stof(c.attribute("specular").as_string("0"));
-        Color specular_color = stringToVec3(c.attribute("specular_color").as_string("1 1 1"));
+        TPTR specular_color = make_shared <ConstantTexture <Color>> (stringToVec3(c.attribute("specular_color").as_string("1 1 1")));
         Real specular_roughness = stof(c.attribute("specular_roughness").as_string("0.2"));
         Real specular_IOR = stof(c.attribute("specular_IOR").as_string("1.5"));
         Real diffuse_roughness = stof(c.attribute("diffuse_roughness").as_string("0"));
         Real transmission = stof(c.attribute("transmission").as_string("0"));
-        Color transmission_color = stringToVec3(c.attribute("specular_color").as_string("1 1 1"));
+        TPTR transmission_color = make_shared <ConstantTexture <Color>> (stringToVec3(c.attribute("specular_color").as_string("1 1 1")));
         return std::make_shared <ADMaterial> (name, opacity, coat, coat_color, coat_roughness, coat_IOR, coat_normal, emission, emission_color, 
             metalness, base, base_color, specular, specular_color, specular_roughness, specular_IOR, diffuse_roughness,
             transmission, transmission_color);
@@ -840,7 +842,7 @@ void processPointLight(const pugi::xml_node &node, vector <shared_ptr<Light>> &l
     Vec3 P = stringToVec3(node.attribute("Location").as_string("0 1000 0"));
     Real power = stof(node.attribute("Power").as_string("100"));
     P = Vec3(transformStack.top() * Vec4(P, 1.0));
-    lights.push_back(make_shared <PointLight> (P, color, power));
+    lights.push_back(make_shared <PointLight> (P, color * power));
 }
 
 

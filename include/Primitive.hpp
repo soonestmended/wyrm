@@ -208,7 +208,16 @@ public:
   
   //const bool intersect(const Ray& ray, const Real tmin, const Real tmax, IntersectRec& ir) const;
   void finishIntersection(IntersectRec& ir) const {
-    ir.shadingNormal = ir.uvw[0] * N + ir.uvw[1] * N1 + ir.uvw[2] * N2;
+    ir.shadingNormal = glm::normalize(ir.uvw[0] * N + ir.uvw[1] * N1 + ir.uvw[2] * N2);
+/*
+    if (glm::length(ir.shadingNormal) < .3) {
+      std::cout << "Error: small normal: " << ir.shadingNormal << ", length: " << glm::length(ir.shadingNormal) << std::endl;
+      std::cout << "N: " << N << ", length: " << glm::length(N) << std::endl;
+      std::cout << "N1: " << N1 << ", length: " << glm::length(N1) << std::endl;
+      std::cout << "N2: " << N2 << ", length: " << glm::length(N2) << std::endl;
+      std::cout << "ir.uvw: " << ir.uvw << ", sum: " << ir.uvw[0]+ir.uvw[1]+ir.uvw[2] << std::endl;
+    }
+    */
     ir.tc = ir.uvw[0] * tc[0] + ir.uvw[1] * tc[1] + ir.uvw[2] * tc[2];
     ir.onb.init(ir.shadingNormal); 
   }

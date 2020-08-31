@@ -156,12 +156,7 @@ void MultiThreadRenderer::renderPane(const ImagePane& ip) {
             r = camera.getRay(ssg.next());
             
             Color pc;
-            if (i == 640 && j == 359) {
-              pc = tracer.lightAlongRay(r, true);
-            }
-            else {
-              pc = tracer.lightAlongRay(r, false);
-            }
+            pc = tracer.lightAlongRay(r, false);
             pixelColor += utils::clamp(pc, 0, 13);
             //Color pc = Color::Blue();
             //samples.push_back(pc);

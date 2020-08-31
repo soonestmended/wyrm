@@ -12,6 +12,7 @@ void RenderPackage::go(const Options& o, const Scene& s) {
   // Accelerator
   //  shared_ptr <const Accelerator> accel = make_shared <BVH> (s);
   const BVH bvh{s};
+  // Accelerator a{s};
   // Tracer
   if (o.tracerType != "path") {
     cerr << "Error: only path tracer supported at this time." << endl;
