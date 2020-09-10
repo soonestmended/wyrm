@@ -48,7 +48,8 @@ void MultisampleRenderer::render() {
             Vec2 pixelCenter {(Real)i/(Real)w, (Real)j/(Real)h};
             StratifiedSampleGenerator ssg(pixelCenter - pixelSize, pixelCenter + pixelSize, spp);
             ssg.generate();
-            Color samples[spp];
+            vector <Color> samples;
+            samples.reserve(spp);
 
             for (int k = 0; k < spp; ++k) {
               r = camera.getRay(ssg.next());
@@ -59,7 +60,6 @@ void MultisampleRenderer::render() {
             
             // remove outliers -- calculate stdev
             target(i, j) = utils::clamp(pixelColor / (Real) spp, 0, 1);
-
         }
         printf("\b\b\b\b\b\b\b\b\b");
     }
@@ -92,6 +92,7 @@ void MultiThreadRenderer::render() {
     threads.push_back(std::thread(&MultiThreadRenderer::threadFunc, this));
     // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
     // only CPU i as set.
+    /*
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(i, &cpuset);
@@ -100,6 +101,7 @@ void MultiThreadRenderer::render() {
     if (rc != 0) {
       std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
     }
+    */
     threads[i].detach();
   }
 

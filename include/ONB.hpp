@@ -1,10 +1,9 @@
 #pragma once
-
 #include <algorithm>
 #include <glm/geometric.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
-#include <math.h>
+
 #include <cmath>
 
 #include "Utils.hpp"

@@ -82,7 +82,7 @@ bool BVH::build() {
 	return true;
 }
 
-uint BVH::nextNewNode() {
+unsigned int BVH::nextNewNode() {
 	return nextAllocedNode++;
 }
 
@@ -95,7 +95,7 @@ Real surfaceArea(const BBox &bbox) {
 
 SP BVH::findSplitPlane(const BVHNode& node) {
 	// test N bins
-  int N = 8;
+	#define N 8
   
 	// find axis
 	int axis;
@@ -266,7 +266,7 @@ void BVH::buildBelow(BVHNode &node, int depth) {
     while (bboxes[primitiveIndices[lp]].getCentroid()[sp.axis] <= sp.pos && lp!=rp) lp++;
     while (bboxes[primitiveIndices[rp]].getCentroid()[sp.axis] >= sp.pos && lp!=rp) rp--;
     if (lp!=rp) {
-			uint tmp = primitiveIndices[lp];
+			unsigned int tmp = primitiveIndices[lp];
 			primitiveIndices[lp] = primitiveIndices[rp];
 			primitiveIndices[rp] = tmp;
 		}    
@@ -299,7 +299,7 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 	leftChild.ptr = nodePrimitives; // leftChild is a leaf and has faces on the left side of this node's faces
 	leftChild.numPrimitives = lp-nodePrimitives;
 	leftChild.setLeaf();
-	for (uint i = leftChild.ptr; i < leftChild.ptr+leftChild.numPrimitives; i++) {
+	for (unsigned int i = leftChild.ptr; i < leftChild.ptr+leftChild.numPrimitives; i++) {
 		leftChild.bbox.enclose(bboxes[primitiveIndices[i]]);
 	}
 	
@@ -315,7 +315,7 @@ void BVH::buildBelow(BVHNode &node, int depth) {
 	rightChild.ptr = lp;
 	rightChild.numPrimitives = re - lp + 1; 
 	rightChild.setLeaf();
-	for (uint i = rightChild.ptr; i < rightChild.ptr+rightChild.numPrimitives; i++) {
+	for (unsigned int i = rightChild.ptr; i < rightChild.ptr+rightChild.numPrimitives; i++) {
 		rightChild.bbox.enclose(bboxes[primitiveIndices[i]]);
 	}
 	buildBelow(rightChild, depth+1);
@@ -331,7 +331,7 @@ bool BVH::closestIntersection(const Ray& ray, const Real tmin, const Real tmax, 
 	ans.t = POS_INF; // ans->u = -1.0f;
 	bool hit = false;
 	IntersectRec tempIr;
-	uint curPos = 0;
+	unsigned int curPos = 0;
 	while (curPos < nextAllocedNode) {
 
 		//if (rayIntersectsBBox(ray, nodes[curPos].v0, nodes[curPos].v1)) {
@@ -340,7 +340,7 @@ bool BVH::closestIntersection(const Ray& ray, const Real tmin, const Real tmax, 
 			//if (nodes[curPos].numFaces.w >> 31 == 1) {
 			if (nodes[curPos].isLeaf()) {
 				//return true;
-				uint ind;
+				unsigned int ind;
 				Real p, q, r;
 				
 				for (int i = 0; i < nodes[curPos].numPrimitives; ++i) {
@@ -395,10 +395,10 @@ bool BVH::intersectionYN(const Ray& ray, const Real tmin, const Real tmax) const
 			//if (nodes[curPos].numFaces.w >> 31 == 1) {
 			if (nodes[curPos].isLeaf()) {
 				//return true;
-				uint ind;
+				unsigned int ind;
 				Real p, q, r;
 				
-				for (uint i = 0; i < nodes[curPos].numPrimitives; ++i) {
+				for (unsigned int i = 0; i < nodes[curPos].numPrimitives; ++i) {
 				//for (int i = 0; i < settings->numIndices/3; i++) {
 					/*
 					ind = vload3(((nodes[curPos].ptr.w)+i), indices);

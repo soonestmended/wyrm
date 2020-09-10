@@ -6,3 +6,6 @@ bin/wyrm
 .vscode/tasks.json
 bin/3]
 bin/bar.png
+/out/build
+/.vs/wyrm/v16
+/include/glm

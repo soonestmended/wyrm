@@ -193,7 +193,7 @@ HDEF(LightSource) {
     texPath = fs::absolute(texPath);
     // cout << "texPath: " << texPath.string() << endl;
     // get color scale
-    shared_ptr <ImageTexture> texPtr = make_shared <ImageTexture> (texPath.c_str());
+    shared_ptr <ImageTexture> texPtr = make_shared <ImageTexture> (texPath.string());
     auto vScaleColor = getParamVec <Color> (s.params, "L");
     if (vScaleColor.size() == 0)
       vScaleColor.push_back(Color{1});
@@ -373,7 +373,7 @@ HDEF(MakeTexture) {
         fs::path texPath = fs::path(fnv[0]);
         texPath = fs::absolute(texPath);
         // cout << "texPath: " << texPath.string() << endl;
-		shared_ptr <ImageTexture> texPtr = make_shared <ImageTexture> (texPath.c_str());
+		shared_ptr <ImageTexture> texPtr = make_shared <ImageTexture> (texPath.string());
 		namedTextureMap.insert({texName, texPtr});
 		return;
 	}
@@ -1009,7 +1009,7 @@ bool PBRTParser::parsePLY(const std::string& fileName, std::vector <Vec4> &verti
     }
       
     int vertexDataSize = numVertices * vertexSize;
-    char vertexDataBuffer[vertexDataSize];
+    char* vertexDataBuffer = new char[vertexDataSize];
     iss.read(vertexDataBuffer, vertexDataSize);
     if (!iss) {
       cout << "Error: only " << iss.gcount() << " bytes read." << endl;
@@ -1073,6 +1073,8 @@ bool PBRTParser::parsePLY(const std::string& fileName, std::vector <Vec4> &verti
       
     }
 
+    delete[] vertexDataBuffer;
+
     // cout << "Found " << vertices.size() << " vertices, " << normals.size() << "normals, and " << texCoords.size() << " texture coordinates." << endl;
    
     int fSizeTypeSize, fIndexTypeSize;
@@ -1121,7 +1123,7 @@ bool PBRTParser::parsePLY(const std::string& fileName, std::vector <Vec4> &verti
       }
       //      iss.seekg(faceStart);
       iss.read(faceBuffer, numFaceVerts * fIndexTypeSize);
-      int indices[numFaceVerts];
+      int indices[3]; 
       int ii = 0;
       for (int i = 0; i < numFaceVerts*fIndexTypeSize; i+=fIndexTypeSize) {
         indices[ii++] = bufferToInt(faceBuffer+i, fIndexTypeSize, littleEndian);
@@ -1161,7 +1163,7 @@ bool PBRTParser::parsePLY(const std::string& fileName, std::vector <Vec4> &verti
         cout << "Error: only triangles supported at this time. " << endl;
         return false;
       }
-      int indices[numFaceVerts];
+      int indices[3];
       for (int j = 0; j < numFaceVerts; j++) {
         iss >> indices[j];
       }

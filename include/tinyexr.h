@@ -11193,9 +11193,9 @@ static int DecodeChunk(EXRImage *exr_image, const EXRHeader *exr_header,
                 tinyexr_int64 lno =
                     static_cast<tinyexr_int64>(line_no) -
                     static_cast<tinyexr_int64>(exr_header->data_window[1]);
-                if (lno > std::numeric_limits<int>::max()) {
+                if (lno > (std::numeric_limits<int>::max)()) {
                   line_no = -1;  // invalid
-                } else if (lno < -std::numeric_limits<int>::max()) {
+                } else if (lno < -(std::numeric_limits<int>::max)()) {
                   line_no = -1;  // invalid
                 } else {
                   line_no -= exr_header->data_window[1];
@@ -11314,7 +11314,7 @@ static int DecodeEXRImage(EXRImage *exr_image, const EXRHeader *exr_header,
   }
 
   int data_width = exr_header->data_window[2] - exr_header->data_window[0];
-  if (data_width >= std::numeric_limits<int>::max()) {
+  if (data_width >= (std::numeric_limits<int>::max)()) {
     // Issue 63
     tinyexr::SetErrorMessage("Invalid data width value", err);
     return TINYEXR_ERROR_INVALID_DATA;
@@ -11322,7 +11322,7 @@ static int DecodeEXRImage(EXRImage *exr_image, const EXRHeader *exr_header,
   data_width++;
 
   int data_height = exr_header->data_window[3] - exr_header->data_window[1];
-  if (data_height >= std::numeric_limits<int>::max()) {
+  if (data_height >= (std::numeric_limits<int>::max)()) {
     tinyexr::SetErrorMessage("Invalid data height value", err);
     return TINYEXR_ERROR_INVALID_DATA;
   }

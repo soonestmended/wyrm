@@ -12,6 +12,22 @@
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
+#ifndef M_PI 
+#define M_PI 3.14159265359
+#endif
+
+#ifndef M_1_PI
+#define M_1_PI 0.31830988618
+#endif
+
+#ifndef M_PI_2
+#define M_PI_2 1.57079632679
+#endif
+
+#ifndef M_PI_4
+#define M_PI_4 0.78539816339
+#endif
+
 #define POS_INF 9999999999.0
 //#define DEBUG
 #define HIGH_PRECISION

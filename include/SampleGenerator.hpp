@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common.hpp"
-
+#include <ctime>
 #include <random>
 #include <vector>
 #include <glm/vec2.hpp>

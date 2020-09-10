@@ -67,7 +67,7 @@ public:
 	}
 	
 	BBox bbox;
-	uint ptr; // or index array offset
+	unsigned int ptr; // or index array offset
 	unsigned int flags;
 	unsigned int numPrimitives;
 
@@ -94,7 +94,7 @@ public:
   void print() const;
     
 private:
-	uint nextNewNode();
+	unsigned int nextNewNode();
 	Vec3 getCentroid(const unsigned int face);
 	SP findSplitPlane(const BVHNode &node);
 	void buildBelow(BVHNode &node, int depth);
@@ -103,7 +103,7 @@ private:
 	std::vector<BVHNode> nodes;
 	std::vector <std::shared_ptr<Primitive>> primitives;
 	std::vector <int> primitiveIndices;
-	uint nextAllocedNode;
+	unsigned int nextAllocedNode;
 	std::vector <BBox> bboxes;
 	std::vector <Vec3> centroids;
 	BBox bboxOfCentroids;

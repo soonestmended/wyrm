@@ -1,0 +1,13 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "wyrm.exe (C:\\Users\\David Fussell\\source\\repos\\wyrm\\out\\build\\debug\\wyrm.exe)",
+      "name": "wyrm.exe (C:\\Users\\David Fussell\\source\\repos\\wyrm\\out\\build\\debug\\wyrm.exe)",
+      "args": ["../../../debug/sky_test.pbrt"]
+    }
+  ]
+}
