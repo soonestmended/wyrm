@@ -45,7 +45,7 @@ Real BxDF::Schlick(Real cosThetaI, Real etaI, Real etaT) {
     return R0 + (1. - R0) * omc * omc * omc * omc * omc;
 }
 
-Color SchlickFunction::eval(Real cosThetaI, const Color& R0, const Real etaI, const Real etaT) const {
+Color SchlickFunction::eval(Real cosThetaI, const IntersectRec& ir) const {
     cosThetaI = utils::clamp(cosThetaI, -1, 1);
 //    bool entering = cosThetaI > 0;
 //    if (!entering) {
@@ -54,6 +54,7 @@ Color SchlickFunction::eval(Real cosThetaI, const Color& R0, const Real etaI, co
 //    }
     Real omc = 1. - cosThetaI;
 //    Real R0 = (etaI - etaT) / (etaI + etaT);
+    Color R0 = this->mf->R0->eval(ir.tc);
     return R0 * R0 + (Color{1.} - R0) * omc * omc * omc * omc * omc;
 }
 
@@ -136,6 +137,16 @@ Real GGXDistribution::D(const Vec3& m_local, const IntersectRec& ir) const {
     Real denominator = M_PI * cosThetaM * cosThetaM * cosThetaM * cosThetaM * parens * parens;
     return aSq / denominator;
 }
+
+void GGXDistribution::sample_D(Vec3& m_local, const IntersectRec& ir, const Vec2& uv) const {
+    Real thetaM = atan(texAlpha->eval(ir.tc) * sqrt(uv[0]) / sqrt(1. - uv[0]));
+    Real phiM = 2. * M_PI * uv[1];
+    m_local = ONB::sphericalToCartesian(phiM, thetaM);
+    //cout << "alpha: " << texAlpha->eval(ir.tc) << endl;
+    //cout << "uv: " << uv << endl;
+    //cout << "thetaM: " << thetaM << "\tm_local: " << m_local << endl;
+    //cout << "\tm_local dot N: " << ONB::cosTheta(m_local) << endl;
+}
     //void sample_D(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, Real* pdf) const;
 
 Real GGXDistribution::G(const Vec3& m_local, const Vec3& v_local, const IntersectRec& ir) const {
@@ -145,9 +156,9 @@ Real GGXDistribution::G(const Vec3& m_local, const Vec3& v_local, const Intersec
     return 2 / (1 + sqrt(1 + alpha*alpha*tanThetaV*tanThetaV));
 }
 
-void Microfacet_BRDF::init(const string& fresnel_name, const string& dist_name) {
+void Microfacet_BSDF::init(const string& fresnel_name, const string& dist_name) {
     if (fresnel_name == "schlick") {
-        fresnel = make_shared <SchlickFunction> ();
+        fresnel = make_shared <SchlickFunction> (this);
     }
 
     if (dist_name == "beckmann") {
@@ -162,14 +173,15 @@ void Microfacet_BRDF::init(const string& fresnel_name, const string& dist_name) 
 }
 
 Microfacet_BRDF::Microfacet_BRDF(const std::shared_ptr <Texture <Color>>& _R0, const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _alpha) :
-    R0 (_R0), texAlpha (_alpha) {
-    init(fresnel_name, dist_name);
+    Microfacet_BSDF(fresnel_name, dist_name, _alpha) {
+    R0 = _R0;
 }
 
 Microfacet_BRDF::Microfacet_BRDF(const std::shared_ptr <Texture <Color>>& _texEta, const std::shared_ptr <Texture <Color>>& _texK, const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _alpha) :
-    texEta (_texEta), texK (_texK), texAlpha (_alpha) {
-    Texture <Color>* te = texEta.get();
-    Texture <Color>* tk = texK.get();
+    Microfacet_BSDF(fresnel_name, dist_name, _alpha) {
+    
+    Texture <Color>* te = _texEta.get();
+    Texture <Color>* tk = _texK.get();
     ConstantTexture <Color>* cte = dynamic_cast <ConstantTexture<Color>*> (te);
     ConstantTexture <Color>* ctk = dynamic_cast <ConstantTexture<Color>*> (tk);
 
@@ -185,7 +197,11 @@ Microfacet_BRDF::Microfacet_BRDF(const std::shared_ptr <Texture <Color>>& _texEt
         R0 = make_shared <ConstantTexture <Color>> (num / denom);
         texEta = texK = nullptr;
     }
-    init(fresnel_name, dist_name);
+    else {
+        texEta = _texEta;
+        texK = _texK;
+        R0 = nullptr; // redundant but, to be clear, we won't be using R0 in the given fresnel equation
+    }
 }
 
 //Microfacet_BRDF(const std::string& metal_name, const std::string& texture_name);
@@ -209,7 +225,6 @@ Microfacet_BRDF::Microfacet_BRDF(const std::shared_ptr <Texture <Color>>& _texCo
 }
 */
 
-
 const Color Microfacet_BRDF::f(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool* isSpecular) const {
     // NOTE : need to deal with how metal reflectances are specified.
     // I think the parser should take _either_ separate textures for eta and k OR a texture for R0 directly.
@@ -224,7 +239,7 @@ const Color Microfacet_BRDF::f(const Vec3& wo_local, const Vec3& wi_local, const
     Vec3 m_local = ONB::halfVector(wo_local, wi_local);
     //Color k = texColor->eval(ir.tc);
     //Color n =
-    Color F = fresnel->eval(cosThetaI, R0->eval(ir.tc), 1, 1); // ones are dummy arguments here, I guess??
+    Color F = fresnel->eval(cosThetaI, ir); // ones are dummy arguments here, I guess??
     Real D = mfd->D(m_local, ir);
     Real G = mfd->G(m_local, wi_local, ir) * mfd->G(m_local, wo_local, ir);
     Color ans = (F * D * G) / (4. * cosThetaI * cosThetaO);
@@ -242,36 +257,37 @@ const Color Microfacet_BRDF::f(const Vec3& wo_local, const Vec3& wi_local, const
     return ans;
 }
 
-/*
 Real Microfacet_BRDF::pdf(const Vec3& wo_local, const Vec3& wi_local,  const IntersectRec& ir) const {
-   
+    Vec3 m_local = ONB::halfVector(wo_local, wi_local);
+    return mfd->D(m_local, ir) * ONB::cosTheta(m_local) / (4.*glm::dot(wo_local, m_local));
 }
 
-void Microfacet_BRDF::sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, Color* bsdf, Real* pdf, bool* isSpecular) const {
+void Microfacet_BRDF::sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const {
+    // sample distribution to get m_local -- pdf largely cancels; what's left can be computed here.
+    Vec3 m_local;
+    mfd->sample_D(m_local, ir, uv);
+
+    // generate wi_local
+    wi_local = 2. * glm::dot(wo_local, m_local) * m_local - wo_local;
+
+    // BSDF is: F * G * (wo_local dot m_local) / ((wi_local dot n) * (m_local dot n))
+    Color F = fresnel->eval(ONB::cosTheta(wi_local), ir); 
+    Real G = mfd->G(m_local, wi_local, ir) * mfd->G(m_local, wo_local, ir);
+    *bsdf = F * G * glm::dot(wo_local, m_local) / (ONB::cosTheta(wi_local) * ONB::cosTheta(m_local) * ONB::cosTheta(wo_local));
+    *pdf = 1.;  // already accounted for in bsdf
 
 }
-*/
-Microfacet_BTDF::Microfacet_BTDF(const shared_ptr <Texture <Color>>& _R0, const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _texAlpha, const std::shared_ptr <Texture <Real>>& _texEta) :
-    R0 (_R0), texAlpha(_texAlpha),  texEta (_texEta) {
-    if (fresnel_name == "schlick") {
-        fresnel = make_shared <SchlickFunction> ();
-    }
-    if (dist_name == "beckmann") {
-        mfd = make_shared <BeckmannDistribution> (_texAlpha);
-    }
-    else if (dist_name == "phong") {
-        mfd = make_shared <PhongDistribution> (_texAlpha);
-    }
-    else {
-        mfd = make_shared <GGXDistribution> (_texAlpha);
-    }
 
+Microfacet_BTDF::Microfacet_BTDF(const shared_ptr <Texture <Color>>& _R0, const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _texAlpha, const std::shared_ptr <Texture <Color>>& _texEta) :
+    Microfacet_BSDF(fresnel_name, dist_name, _texAlpha) {
+    texEta = _texEta;
+    R0 = _R0;
 }
 
 const Color Microfacet_BTDF::f(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool* isSpecular) const {
     if (ONB::sameHemisphere(wo_local, wi_local)) return Color{0};
     bool entering = ONB::cosTheta(wo_local) > 0;
-    Real etaB = texEta->eval(ir.tc);
+    Real etaB = texEta->eval(ir.tc).r;
     Real etaI = entering ? etaA : etaB;
     Real etaO = entering ? etaB : etaA;
     Vec3 ht = -glm::normalize(etaI * wi_local + etaO * wo_local);
@@ -280,7 +296,7 @@ const Color Microfacet_BTDF::f(const Vec3& wo_local, const Vec3& wi_local, const
     Real oDotHt = glm::dot(wo_local, ht);
     Real oDotN = ONB::cosTheta(wo_local);
     Real term1 = abs((iDotHt * oDotHt) / (iDotN * oDotN));
-    Color F = fresnel->eval(iDotN, R0->eval(ir.tc), etaI, etaO);
+    Color F = fresnel->eval(iDotN, ir);
     Color numerator = etaO * etaO * (Color{1} - F) * mfd->G(ht, wi_local, ir) * mfd->D(ht, ir);
     Real denominator = etaI * iDotHt + etaO * oDotHt;
     denominator *= denominator;

@@ -226,7 +226,7 @@ public:
             specular_brdf_reflectance = specular_brdf->rho(rhoSamples, &sg, ir);
         }
         if (transmission >0.) {
-            specular_btdf = new Microfacet_BTDF(specular_color, "fresnel_dielectric_schlick", "GGX", std::make_shared <ConstantTexture <Real>> (specular_roughness*specular_roughness), std::make_shared <ConstantTexture <Real>> (specular_IOR));
+            specular_btdf = new Microfacet_BTDF(specular_color, "fresnel_dielectric_schlick", "GGX", std::make_shared <ConstantTexture <Real>> (specular_roughness*specular_roughness), std::make_shared <ConstantTexture <Color>> (specular_IOR));
         }
         if (diffuse_roughness > 0.) {
             diffuse_brdf = new OrenNayar_BRDF();

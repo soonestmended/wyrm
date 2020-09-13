@@ -8,7 +8,7 @@ PixelFilter "triangle" "float xwidth" [ 1.000000 ] "float ywidth" [ 1.000000 ]
 Film "image" "integer xresolution" [ 1280 ] "integer yresolution" [ 720 ] "string filename" [ "dragon.png" ] 
 Camera "perspective" "float fov" [ 45 ]
 WorldBegin
-	MakeNamedMaterial "SphereMat" "string type" [ "metal" ] "float roughness" [.8] "rgb eta" [0.7 1.18 1.25] "rgb k" [2.704 2.608 2.305]
+	MakeNamedMaterial "SphereMat" "string type" [ "metal" ] "float roughness" [.08] "rgb eta" [0.7 1.18 1.25] "rgb k" [2.704 2.608 2.305]
     NamedMaterial "SphereMat"
     Shape "sphere" "float radius" [ 5 ]
 	#LightSource "distant" "point from" [ -0.188620 0.692312 0.696510 ] "point to" [ 0.000000 0.000000 0.000000 ] "rgb L" [ 8.000000 8.000000 8.000000 ]

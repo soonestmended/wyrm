@@ -66,21 +66,13 @@ protected:
   const std::shared_ptr <Texture<Color>> texKd;
 };
 
-class FresnelFunction {
-  public:
-    virtual Color eval(Real cosThetaI, const Color& R0, const Real etaI, const Real etaT) const {return R0;}
-};
 
-class SchlickFunction : public FresnelFunction {
-  public:
-    Color eval(Real cosThetaI, const Color& R0, const Real etaI, const Real etaT) const;
-};
 
 class MicrofacetDistribution {
   public:
     MicrofacetDistribution(const std::shared_ptr <Texture <Real>>& _texAlpha) : texAlpha (_texAlpha) {}
     virtual Real D(const Vec3& m_local, const IntersectRec& ir) const {return 1;}
-    virtual void sample_D(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, Real* pdf) const {}
+    virtual void sample_D(Vec3& m_local, const IntersectRec& ir, const Vec2& uv) const {}
     virtual Real G(const Vec3& m_local, const Vec3& wi_local, const IntersectRec& ir) const {return 1;}
     virtual Real pdf_D(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const {return 1;}
 
@@ -99,6 +91,7 @@ class BeckmannDistribution : public MicrofacetDistribution {
 
 class PhongDistribution : public MicrofacetDistribution {
   public:
+
     PhongDistribution(const std::shared_ptr <Texture <Real>>& _alpha) : MicrofacetDistribution(_alpha) {}
     //Real D(const Vec3& m_local) const;
     //void sample_D(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, Real* pdf) const;
@@ -110,22 +103,21 @@ class GGXDistribution : public MicrofacetDistribution {
     public:
     GGXDistribution(const std::shared_ptr <Texture <Real>>& _alpha) : MicrofacetDistribution(_alpha) {}
     Real D(const Vec3& m_local, const IntersectRec& ir) const;
-    //void sample_D(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, Real* pdf) const;
-    Real G(const Vec3& m_local, const Vec3& wi_local, const IntersectRec& ir) const;
+    void sample_D(Vec3& m_local, const IntersectRec& ir, const Vec2& uv) const;
     //Real pdf_D(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir) const;
+    Real G(const Vec3& m_local, const Vec3& wi_local, const IntersectRec& ir) const;
+    
 };
 
-class Microfacet_BRDF : public BxDF {
-  public:
-    Microfacet_BRDF(const std::shared_ptr <Texture <Color>>& R0, const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _alpha);
-    Microfacet_BRDF(const std::shared_ptr <Texture <Color>>& texEta, const std::shared_ptr <Texture <Color>>& texK, const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _alpha);
-//    Microfacet_BRDF(const std::string& metal_name, const std::string& texture_name);
-    // add etas to constructor? Could compute R0 in constructor & pass to fast Schlick for use with microfacet dielectrics
-    const Color f(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool* isSpecular) const;
-//    Real pdf(const Vec3& wo_local, const Vec3& wi_local,  const IntersectRec& ir) const;
-//    void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, Color* bsdf, Real* pdf, bool* isSpecular) const;
+class FresnelFunction;
 
-  protected:
+class Microfacet_BSDF : public BxDF {
+public:
+    Microfacet_BSDF(const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _alpha) :
+        texAlpha(_alpha) {
+        init(fresnel_name, dist_name); // distribution only needs to know about alpha
+    }
+
     Real etaA = 1.00029;
     std::shared_ptr <Texture <Color>> R0 = nullptr;
     const std::shared_ptr <Texture <Real>> texAlpha = nullptr;
@@ -133,27 +125,45 @@ class Microfacet_BRDF : public BxDF {
     std::shared_ptr <Texture <Color>> texK = nullptr;
     std::shared_ptr <FresnelFunction> fresnel;
     std::shared_ptr <MicrofacetDistribution> mfd;
-    void init(const std::string& fresnel_name, const std::string& dist_name);
+    virtual void init(const std::string& fresnel_name, const std::string& dist_name);
 };
 
-class Microfacet_BTDF : public BxDF {
+class Microfacet_BRDF : public Microfacet_BSDF {
   public:
-    Microfacet_BTDF(const std::shared_ptr <Texture <Color>>& R0, const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _alpha, const std::shared_ptr <Texture <Real>>& _texEta = nullptr);
+    Microfacet_BRDF(const std::shared_ptr <Texture <Color>>& R0, const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _alpha);
+    Microfacet_BRDF(const std::shared_ptr <Texture <Color>>& texEta, const std::shared_ptr <Texture <Color>>& texK, const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _alpha);
+//    Microfacet_BRDF(const std::string& metal_name, const std::string& texture_name);
+    // add etas to constructor? Could compute R0 in constructor & pass to fast Schlick for use with microfacet dielectrics
+    const Color f(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool* isSpecular) const;
+    Real pdf(const Vec3& wo_local, const Vec3& wi_local,  const IntersectRec& ir) const;
+    void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const;
+
+};
+
+class Microfacet_BTDF : public Microfacet_BSDF {
+  public:
+    Microfacet_BTDF(const std::shared_ptr <Texture <Color>>& R0, const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _alpha, const std::shared_ptr <Texture <Color>>& _texEta = nullptr);
 
     // add etas to constructor? Could compute R0 in constructor & pass to fast Schlick for use with microfacet dielectrics
     const Color f(const Vec3& wo_local, const Vec3& wi_local, const IntersectRec& ir, bool* isSpecular) const;
     // Real pdf(const Vec3& wo_local, const Vec3& wi_local,  const IntersectRec& ir) const;
     // void sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, Color* bsdf, Real* pdf, bool* isSpecular) const;
 
-  protected:
-     Real etaA = 1.00029;
-    std::shared_ptr <Texture <Color>> R0;
-    std::shared_ptr <Texture <Real>> texAlpha;
-    std::shared_ptr <Texture <Real>> texEta;
-    // const std::shared_ptr <Texture <Color>> texK;
-    std::shared_ptr <FresnelFunction> fresnel;
-    std::shared_ptr <MicrofacetDistribution> mfd;
+};
 
+class FresnelFunction {
+public:
+    FresnelFunction(const Microfacet_BSDF* _mf) : mf(_mf) {}
+    virtual Color eval(Real cosThetaI, const IntersectRec& ir) const = 0;
+
+protected:
+    const Microfacet_BSDF* mf;
+};
+
+class SchlickFunction : public FresnelFunction {
+public:
+    SchlickFunction(const Microfacet_BSDF* _mf) : FresnelFunction(_mf) {}
+    Color eval(Real cosThetaI, const IntersectRec& ir) const;
 };
 
 class OrenNayar_BRDF : public BxDF {

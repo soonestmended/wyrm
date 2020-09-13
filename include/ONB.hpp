@@ -130,6 +130,14 @@ public:
     return Vec3{x, y, z};
   }
 
+  static Vec3 sphericalToCartesian(const Real phi, const Real theta) {
+      Real sinTheta = std::sin(theta);
+      Real z = std::cos(theta);
+      Real x = sinTheta * std::cos(phi);
+      Real y = sinTheta * std::sin(phi);
+      return Vec3{ x, y, z };
+  }
+
         static Vec3 halfVector(const Vec3& v1, const Vec3& v2) {
             return glm::normalize(v1 + v2);
         }
