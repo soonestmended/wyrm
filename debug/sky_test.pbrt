@@ -3,7 +3,7 @@ Integrator "path" "integer maxdepth" [ 12 ]
 LookAt 0 0 -40 0 0 0 0 1 0
 #Rotate 90 0 1 0
 #Rotate -90 1 0 0
-Sampler "sobol" "integer pixelsamples" [ 4 ]
+Sampler "sobol" "integer pixelsamples" [ 81 ]
 PixelFilter "triangle" "float xwidth" [ 1.000000 ] "float ywidth" [ 1.000000 ] 
 Film "image" "integer xresolution" [ 1280 ] "integer yresolution" [ 720 ] "string filename" [ "dragon.png" ] 
 Camera "perspective" "float fov" [ 45 ]
@@ -13,8 +13,12 @@ WorldBegin
     Shape "sphere" "float radius" [ 5 ]
 	#LightSource "distant" "point from" [ -0.188620 0.692312 0.696510 ] "point to" [ 0.000000 0.000000 0.000000 ] "rgb L" [ 8.000000 8.000000 8.000000 ]
     AttributeBegin
-	Material "matte" "rgb Kd" [.6 .6 .6]
-	Shape "trianglemesh" "integer indices" [0 1 2 1 3 2] "point P" [-2000 -5 -2000 -2000 -5 2000 2000 -5 -2000 2000 -5 2000]
+        Translate 10 0 0 
+        Shape "sphere" "float radius" [ 5 ]
+    AttributeEnd
+    AttributeBegin
+	    Material "matte" "rgb Kd" [.6 .6 .6]
+	    Shape "trianglemesh" "integer indices" [0 1 2 1 3 2] "point P" [-2000 -5 -2000 -2000 -5 2000 2000 -5 -2000 2000 -5 2000]
     AttributeEnd
     AttributeBegin
         Rotate -90 1 0 0

@@ -5,9 +5,12 @@
     {
       "type": "default",
       "project": "CMakeLists.txt",
-      "projectTarget": "wyrm.exe (C:\\Users\\David Fussell\\source\\repos\\wyrm\\out\\build\\debug\\wyrm.exe)",
-      "name": "wyrm.exe (C:\\Users\\David Fussell\\source\\repos\\wyrm\\out\\build\\debug\\wyrm.exe)",
-      "args": ["../../../debug/sky_test.pbrt"]
+      "projectTarget": "wyrm.exe",
+      "name": "wyrm.exe",
+      "args": [
+        "scenes/sky_test.pbrt -o spheres-wyrm.png -s 400"
+      ],
+      "currentDir": "${workspaceRoot}/bin"
     }
   ]
 }

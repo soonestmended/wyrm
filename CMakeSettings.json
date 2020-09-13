@@ -2,7 +2,7 @@
   "configurations": [
     {
       "name": "x64-Debug",
-      "generator": "Ninja",
+      "generator": "Visual Studio 16 2019 Win64",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${projectDir}\\out\\build\\${name}",
@@ -11,7 +11,28 @@
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "intelliSenseMode": "windows-msvc-x64",
-      "variables": []
+      "variables": [
+        {
+          "name": "CMAKE_EXE_LINKER_FLAGS_DEBUG",
+          "value": "/DEBUG:full /INCREMENTAL",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_MODULE_LINKER_FLAGS_DEBUG",
+          "value": "/DEBUG:full /INCREMENTAL",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_FLAGS_DEBUG",
+          "value": "/MDd /ZI /Ob0 /Od /RTC1",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_FLAGS",
+          "value": "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /ZI",
+          "type": "STRING"
+        }
+      ]
     },
     {
       "name": "x64-Release",
