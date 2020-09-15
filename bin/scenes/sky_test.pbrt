@@ -3,7 +3,7 @@ Integrator "path" "integer maxdepth" [ 12 ]
 LookAt 0 0 -40 0 0 0 0 1 0
 #Rotate 90 0 1 0
 #Rotate -90 1 0 0
-Sampler "sobol" "integer pixelsamples" [ 81 ]
+Sampler "sobol" "integer pixelsamples" [ 32 ]
 PixelFilter "triangle" "float xwidth" [ 1.000000 ] "float ywidth" [ 1.000000 ] 
 Film "image" "integer xresolution" [ 1280 ] "integer yresolution" [ 720 ] "string filename" [ "dragon.png" ] 
 Camera "perspective" "float fov" [ 45 ]

@@ -107,6 +107,7 @@ void MultiThreadRenderer::render() {
       std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
     }
     */
+    SampleGenerator::seedRNG(i);
     threads[i].detach();
   }
 
@@ -158,7 +159,7 @@ void MultiThreadRenderer::renderPane(const ImagePane& ip) {
           StratifiedSampleGenerator ssg{pixelCenter - .5*pixelSize, pixelCenter + .5*pixelSize, spp};
           ssg.generate();
 
-          SampleGenerator sg(Vec2(0), Vec2(1), spp);
+          SampleGenerator sg(Vec2(0), Vec2(1), 0);
           sg.generate();
           //          vector <Color> samples;
           //samples.reserve(spp);
