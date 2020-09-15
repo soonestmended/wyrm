@@ -258,8 +258,13 @@ const Color Microfacet_BRDF::f(const Vec3& wo_local, const Vec3& wi_local, const
 }
 
 Real Microfacet_BRDF::pdf(const Vec3& wo_local, const Vec3& wi_local,  const IntersectRec& ir) const {
+    if (!ONB::sameHemisphere(wo_local, wi_local)) return 0;
     Vec3 m_local = ONB::halfVector(wo_local, wi_local);
-    return mfd->D(m_local, ir) * ONB::cosTheta(m_local) / (4.*glm::dot(wo_local, m_local));
+    Real D = mfd->D(m_local, ir);
+    Real absCosThetaM = ONB::absCosTheta(m_local);
+    Real mDotWo = glm::dot(wo_local, m_local);
+    Real ans = D * absCosThetaM / (4. * mDotWo);
+    return ans; //  D* ONB::absCosTheta(m_local);
 }
 
 void Microfacet_BRDF::sample_f(const Vec3& wo_local, Vec3& wi_local, const IntersectRec& ir, const Vec2& uv, Color* bsdf, Real* pdf, bool* isSpecular) const {
@@ -267,16 +272,34 @@ void Microfacet_BRDF::sample_f(const Vec3& wo_local, Vec3& wi_local, const Inter
     Vec3 m_local;
     mfd->sample_D(m_local, ir, uv);
 
+    if (glm::dot(m_local, wo_local) < 0) {
+        *bsdf = 0;
+        return;
+    }
+
+
     // generate wi_local
     wi_local = 2. * glm::dot(wo_local, m_local) * m_local - wo_local;
 
-    // BSDF is: F * G * (wo_local dot m_local) / ((wi_local dot n) * (m_local dot n))
+    if (!ONB::sameHemisphere(wo_local, wi_local)) {
+        *bsdf = 0;
+        return;
+    }
+
+  // BSDF is: F * G * (wo_local dot m_local) / ((wi_local dot n) * (m_local dot n))
+
+    /*
     Color F = fresnel->eval(ONB::cosTheta(wi_local), ir); 
     Real G = mfd->G(m_local, wi_local, ir) * mfd->G(m_local, wo_local, ir);
     *bsdf = F * G * glm::dot(wo_local, m_local) / (ONB::cosTheta(wi_local) * ONB::cosTheta(m_local) * ONB::cosTheta(wo_local));
     *pdf = 1.;  // already accounted for in bsdf
-
-}
+    */
+    
+    bool dummy;
+    *bsdf = this->f(wo_local, wi_local, ir, &dummy);
+    *pdf = this->pdf(wo_local, wi_local, ir);
+    
+    }
 
 Microfacet_BTDF::Microfacet_BTDF(const shared_ptr <Texture <Color>>& _R0, const std::string& fresnel_name, const std::string& dist_name, const std::shared_ptr <Texture <Real>>& _texAlpha, const std::shared_ptr <Texture <Color>>& _texEta) :
     Microfacet_BSDF(fresnel_name, dist_name, _texAlpha) {

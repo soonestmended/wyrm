@@ -15,14 +15,15 @@ void QuickRenderer::render() {
     
     // one ray for each pixel in the result image
     // one sample along each ray
-
+    SampleGenerator sg{ Vec2(0), Vec2(1), w * h };
+    sg.generate();
     for (int j = 0; j < h; ++j) {
         printf("row: %4d", j);
         fflush(stdout);
         for (int i = 0; i < w; ++i) {
             Vec2 p((Real)i/(Real)w-.5, (Real)j/(Real)h-.5);
             Ray r = camera.getRay(p);
-            target(i, j) = utils::clamp(tracer.lightAlongRay(r), 0, 1);
+            target(i, j) = utils::clamp(tracer.lightAlongRay(r, &sg), 0, 1);
         }
         printf("\b\b\b\b\b\b\b\b\b");
     }
@@ -48,12 +49,16 @@ void MultisampleRenderer::render() {
             Vec2 pixelCenter {(Real)i/(Real)w, (Real)j/(Real)h};
             StratifiedSampleGenerator ssg(pixelCenter - pixelSize, pixelCenter + pixelSize, spp);
             ssg.generate();
+
+            SampleGenerator sg(Vec2(0), Vec2(1), spp*3);
+            sg.generate();
+
             vector <Color> samples;
             samples.reserve(spp);
 
             for (int k = 0; k < spp; ++k) {
               r = camera.getRay(ssg.next());
-              samples[k] = tracer.lightAlongRay(r, false);
+              samples[k] = tracer.lightAlongRay(r, &sg, false);
             }
             for (auto& c : samples)
               pixelColor += c;
@@ -152,13 +157,16 @@ void MultiThreadRenderer::renderPane(const ImagePane& ip) {
           pixelCenter = Vec2{(Real)i/(Real)target.width()-.5, (Real)(target.height()-j-1)/(Real)target.height()-.5};
           StratifiedSampleGenerator ssg{pixelCenter - .5*pixelSize, pixelCenter + .5*pixelSize, spp};
           ssg.generate();
+
+          SampleGenerator sg(Vec2(0), Vec2(1), spp);
+          sg.generate();
           //          vector <Color> samples;
           //samples.reserve(spp);
           for (int k = 0; k < spp; ++k) {
             r = camera.getRay(ssg.next());
             
             Color pc;
-            pc = tracer.lightAlongRay(r, false);
+            pc = tracer.lightAlongRay(r, &sg, false);
             pixelColor += utils::clamp(pc, 0, 13);
             //Color pc = Color::Blue();
             //samples.push_back(pc);
@@ -206,7 +214,9 @@ void DebugRenderer::render() {
     Vec2 pixelSize{1./(Real) w, 1./(Real)h};
     Vec2 p((Real)100/(Real)w, (Real)259/(Real)h); // center of pixel
     r = camera.getRay(p - Vec2(.5));
-    Color pixelColor = tracer.lightAlongRay(r, true);
+    SampleGenerator sg{ Vec2(0), Vec2(1), 10 };
+    sg.generate();
+    Color pixelColor = tracer.lightAlongRay(r, &sg, true);
     // 0.228245, 0.004493, 0.973594
     cout << "Pixel color: " << pixelColor << endl;
     //printf("\b\b\b\b\b\b\b\b\b");

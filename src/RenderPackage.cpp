@@ -19,9 +19,9 @@ void RenderPackage::go(const Options& o, const Scene& s) {
   }
  
   //PathTracer pt(&s, accel.get(), o.tracerMaxDepth);
-  SampleGenerator sg(Vec2(0), Vec2(1), o.tracerMaxDepth*20);
-  sg.generate();
-  PathTracer pt(&s, &bvh, &sg, o.tracerMaxDepth);
+  //SampleGenerator sg(Vec2(0), Vec2(1), o.tracerMaxDepth*20);
+  //sg.generate();
+  PathTracer pt(&s, &bvh, o.tracerMaxDepth);
   // Sample Generator
   //  if (o.samplerType == "stratified") {
     

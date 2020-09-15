@@ -7,7 +7,7 @@ using namespace std;
 
 // TODO note all but EDL turned off right now
 
-const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
+const Color PathTracer::lightAlongRay(const Ray& r, SampleGenerator* sg, const bool debug) const {
     //cout << "lightAlongRay entry" << endl;
     IntersectRec ir;
     Color pathThroughput = Color(1.0);
@@ -99,7 +99,7 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
         Vec3 wo_local = ir.onb.world2local(-nextRay.d);
         //cout << "pre EDL" << endl;
         if (debug) cout << "**************** BEGIN EDL *****************" << endl;
-        Color edl = estimateDirectLighting(-nextRay.d, ir, debug);
+        Color edl = estimateDirectLighting(-nextRay.d, ir, sg, debug);
         if (debug)cout << "**************** END EDL *******************" << endl;
         if (debug) {
             cout << "EDL at hit point: " << edl << endl;
@@ -160,7 +160,7 @@ const Color PathTracer::lightAlongRay(const Ray& r, const bool debug) const {
 }
 
 
-const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Light& l, const bool debug) const {
+const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Light& l, SampleGenerator* sg, const bool debug) const {
 
     // TODO need wo also
 
@@ -306,10 +306,10 @@ const Color Tracer::EDLOneLight(const Vec3& wo_world, IntersectRec& ir, const Li
     //return Color::White();
 }
 
-const Color Tracer::estimateDirectLighting(const Vec3& wo_world, IntersectRec& ir, const bool debug) const {
+const Color Tracer::estimateDirectLighting(const Vec3& wo_world, IntersectRec& ir, SampleGenerator* sg, const bool debug) const {
     Color ans{0.0};
     for (const auto& l : scene->getLights()) {
-        ans += EDLOneLight(wo_world, ir, *l, debug);
+        ans += EDLOneLight(wo_world, ir, *l, sg, debug);
     }
     return ans;
 }

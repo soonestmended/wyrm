@@ -318,7 +318,8 @@ shared_ptr <Material> PBRTParser::makeMaterial(const Statement& s) {
 
   else if (s.type == "metal") {
     auto roughnessV = getParamVec <Real> (s.params, "roughness");
-    if (roughnessV.size() == 0) roughnessV.push_back(.01);
+    if (roughnessV.size() == 0) roughnessV.push_back(.1);
+    roughnessV[0] = sqrt(roughnessV[0]);
     if (s.params.find("R0") != s.params.end()) {
       shared_ptr <Texture <Color>> R0 = getColorOrTexture(s.params, "R0");
       ans = make_shared <MetalMaterial> (nameV[0], R0, make_shared <ConstantTexture <Real>> (roughnessV[0]));

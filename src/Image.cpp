@@ -171,8 +171,7 @@ void Image::gaussianBlur(Real sigma = 1.0) {
 
 void Image::hBoxBlur(int w) {
   if (w % 2 == 0) w++; // make w odd
-  vector <Color> rowSums;
-  rowSums.reserve(width_ + w*2); // row plus padding
+  vector <Color> rowSums(width_ + w*2); // row plus padding
   for (int row = 0; row < height_; row++) {
     // build 1D prefix sums array -- rowSums[i] = sum of entries 0, 1, 2 ... i
     // sum of range [a -> b], is rowSums[b] - rowSums[a-1]
@@ -197,8 +196,7 @@ void Image::hBoxBlur(int w) {
 
 void Image::vBoxBlur(int w) {
   if (w % 2 == 0) w++; // make w odd
-  vector <Color> colSums;
-  colSums.reserve(height_ + w*2); // row plus padding
+  vector <Color> colSums(height_ + w*2); // row plus padding
   for (int col = 0; col < width_; col++) {
     // build 1D prefix sums array -- rowSums[i] = sum of entries 0, 1, 2 ... i
     // sum of range [a -> b], is rowSums[b] - rowSums[a-1]

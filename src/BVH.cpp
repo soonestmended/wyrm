@@ -57,7 +57,7 @@ bool BVH::build() {
 		bboxes[i].enclose(q);
 		bboxes[i].enclose(r);
 		*/
-		primitiveIndices[i] = i;
+		primitiveIndices.push_back(i);
 		bboxes.push_back(primitives[i]->getBBox());
 		centroids.push_back(primitives[i]->getBBox().getCentroid());
 		//cout << primitives[i]->getBBox().toString() << endl;
@@ -152,8 +152,8 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 	// evaluate N different splitting planes
 	BBox binBounds[N]; 
 	BBox leftBounds, rightBounds;
-	int numLeft[N-1];
-	Real SAleft[N-1];
+	int numLeft[N];
+	Real SAleft[N];
 
     for (int i = 0; i < N; ++i) {
       binBounds[i] = BBox();
@@ -163,6 +163,7 @@ SP BVH::findSplitPlane(const BVHNode& node) {
 	for (unsigned int i = 0; i < node.numPrimitives; i++) {
       int v0ei = primitiveIndices[node.ptr+i];
       int v0eiBin = (int) (k1 * (centroids[v0ei][axis] - k0 ));
+
       numIn[v0eiBin]++;
       binBounds[v0eiBin].enclose(bboxes[v0ei]);
 	}

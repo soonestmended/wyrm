@@ -9,10 +9,10 @@ Film "image" "integer xresolution" [ 1280 ] "integer yresolution" [ 720 ] "strin
 Camera "perspective" "float fov" [ 45 ]
 WorldBegin
 	MakeNamedMaterial "SphereMat1" "string type" [ "metal" ] "float roughness" [.001] "rgb eta" [0.7 1.18 1.25] "rgb k" [2.704 2.608 2.305]
-    MakeNamedMaterial "SphereMat2" "string type" [ "metal" ] "float roughness" [.01] "rgb eta" [0.7 1.18 1.25] "rgb k" [2.704 2.608 2.305]
-    MakeNamedMaterial "SphereMat3" "string type" [ "metal" ] "float roughness" [.1] "rgb eta" [0.7 1.18 1.25] "rgb k" [2.704 2.608 2.305]
-    MakeNamedMaterial "SphereMat4" "string type" [ "metal" ] "float roughness" [.4] "rgb eta" [0.7 1.18 1.25] "rgb k" [2.704 2.608 2.305]
-    MakeNamedMaterial "SphereMat5" "string type" [ "metal" ] "float roughness" [1.0] "rgb eta" [0.7 1.18 1.25] "rgb k" [2.704 2.608 2.305]
+    MakeNamedMaterial "SphereMat2" "string type" [ "metal" ] "float roughness" [.007] "rgb eta" [0.7 1.18 1.25] "rgb k" [2.704 2.608 2.305]
+    MakeNamedMaterial "SphereMat3" "string type" [ "metal" ] "float roughness" [.01] "rgb eta" [0.7 1.18 1.25] "rgb k" [2.704 2.608 2.305]
+    MakeNamedMaterial "SphereMat4" "string type" [ "metal" ] "float roughness" [.07] "rgb eta" [0.7 1.18 1.25] "rgb k" [2.704 2.608 2.305]
+    MakeNamedMaterial "SphereMat5" "string type" [ "metal" ] "float roughness" [.2] "rgb eta" [0.7 1.18 1.25] "rgb k" [2.704 2.608 2.305]
 
     AttributeBegin
         NamedMaterial "SphereMat1"
@@ -45,8 +45,8 @@ WorldBegin
     AttributeEnd
 
     AttributeBegin
-	    #Material "matte" "rgb Kd" [.6 .6 .6]
-        NamedMaterial "SphereMat2"
+	    Material "matte" "rgb Kd" [.6 .6 .6]
+        #NamedMaterial "SphereMat2"
 	    Shape "trianglemesh" "integer indices" [0 1 2 1 3 2] "point P" [-2000 -5 -2000 -2000 -5 2000 2000 -5 -2000 2000 -5 2000]
     AttributeEnd
     AttributeBegin

@@ -3,12 +3,16 @@
 #include "common.hpp"
 #include <ctime>
 #include <random>
+#include <thread>
 #include <vector>
 #include <glm/vec2.hpp>
 
 class SampleGenerator {
 public:
-  SampleGenerator(const Vec2& _min, const Vec2& _max, int _N) : rangeMin (_min), rangeMax (_max), rangeSize (_max - _min), N (_N), sp (0), mt_rand (std::mt19937(time(0))), distribution (std::uniform_real_distribution<double> (0.0, 1.0)) {}
+    SampleGenerator(const Vec2& _min, const Vec2& _max, int _N) : rangeMin(_min), rangeMax(_max), rangeSize(_max - _min), N(_N), sp(0) {
+        mt_rand.seed(std::hash<std::thread::id>()(std::this_thread::get_id()));
+        distribution = std::uniform_real_distribution<double>(0.0, 1.0);
+    }
 
   virtual void generate() {
     samples.reserve(N);
