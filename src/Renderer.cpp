@@ -194,6 +194,7 @@ void MultiThreadRenderer::threadFunc() {
     job = nextJob.fetch_add(1);
     if (job < panes.size()) {
       renderPane(panes[job]);
+      panes[job].updated = true;
       cv.notify_all();
     }
     else {

@@ -8,7 +8,7 @@
       "projectTarget": "wyrm.exe",
       "name": "wyrm.exe",
       "args": [
-        "scenes/sky_test.pbrt -o spheres-wyrm.png"
+        "scenes/sky_test.pbrt -o spheres-wyrm.png -rt"
       ],
       "currentDir": "${workspaceRoot}/bin"
     }

@@ -131,6 +131,12 @@ int main (int argc, char ** argv) {
     o.nt = std::thread::hardware_concurrency();
   } 
 
+  it = clo.find("-rt");
+  if (it != clo.end()) {
+      // interactive (Real Time) mode
+      o.interactiveMode = true;
+  }
+
 
   //RenderPackage::go(o, *s);
 /*

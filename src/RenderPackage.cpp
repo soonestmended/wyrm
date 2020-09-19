@@ -2,12 +2,15 @@
 #include "Renderer.hpp"
 #include "RenderPackage.hpp"
 
+#ifdef INTERACTIVE_MODE
+#include "interactive/InteractiveSession.hpp"
+#endif 
 #include <chrono>
 
 using namespace std;
 
 
-void RenderPackage::go(const Options& o, const Scene& s) {
+void RenderPackage::go(Options& o, Scene& s) {
 
   // Accelerator
   //  shared_ptr <const Accelerator> accel = make_shared <BVH> (s);
@@ -53,10 +56,18 @@ void RenderPackage::go(const Options& o, const Scene& s) {
   c.camera2world = o.camera2world;
   cout << "Starting render. " << StratifiedSampleGenerator::calculateN(o.spp) << " samples per pixel, " << o.nt << " threads." << endl;
   
-#ifdef DEBUG
-  DebugRenderer dbr(c, s, pt);
-  dbr.render();
+#ifdef INTERACTIVE_MODE
+  if (o.interactiveMode) {
+      // do interactive stuff
+      InteractiveSession is(c, s, pt, foo, o);
+      is.go();
+      return;
+  }
 #else
+  if (o.interactiveMode) {
+      cout << "Error: interactive mode not available." << endl;
+      exit(1);
+  }
   MultiThreadRenderer mtr(c, s, pt, foo, o.spp, o.nt);
   std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();  
   mtr.render();

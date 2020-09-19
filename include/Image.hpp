@@ -21,6 +21,8 @@ class Image {
         void gaussianBlur(Real sigma);
         void boxBlur(int w, int n);
 
+        Real* dataPointer() { return &data[0].x; }
+
     private:
         int width_, height_;
         std::vector <Color> data;

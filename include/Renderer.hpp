@@ -53,15 +53,20 @@ protected:
 };
 
 class MultiThreadRenderer : public MultisampleRenderer {
+    
 public:
-    MultiThreadRenderer(const Camera& c, const Scene& s, const Tracer& t, Image &_target, int _spp, int _threads) :
-      MultisampleRenderer(c, s, t, _target, _spp), numThreads(_threads), threadsRemaining(_threads) {}
+    MultiThreadRenderer(const Camera& c, const Scene& s, const Tracer& t, Image& _target, int _spp, int _threads) :
+        MultisampleRenderer(c, s, t, _target, _spp), numThreads(_threads), threadsRemaining(_threads), panes(0) {}
     void render();
 
+    struct ImagePane {
+        int x0, y0, w, h;
+        bool updated = false;
+    };
+
+    std::vector <ImagePane>& getPanes() { return panes; }
+
 protected:
-  struct ImagePane {
-    int x0, y0, w, h;
-  };
 
   std::vector <std::thread> threads;
   void threadFunc();

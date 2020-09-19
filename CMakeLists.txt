@@ -30,6 +30,22 @@ include_directories(include)
 
 file(GLOB SOURCES "src/*.cpp")
 
+message("INTERACTIVE_MODE = ${INTERACTIVE_MODE}")
+
+if (INTERACTIVE_MODE)
+	message("Compiling with interactive mode...")
+	add_compile_definitions(INTERACTIVE_MODE)
+	include_directories("glad/include" "glfw/include" "imgui/")
+	file(GLOB INTERACTIVE_SOURCES "src/interactive/*.cpp" "imgui/*.cpp")
+	list(APPEND SOURCES ${INTERACTIVE_SOURCES})
+	list(APPEND SOURCES "glad/src/glad.c")
+endif()
 
 add_executable(wyrm ${SOURCES})
-target_link_libraries(wyrm PRIVATE Threads::Threads)
+
+if (INTERACTIVE_MODE)
+	target_link_libraries(wyrm PRIVATE Threads::Threads "${CMAKE_SOURCE_DIR}/glfw/lib-vc2019/glfw3.lib")
+#	C:\Users\David Fussell\Source\Repos\wyrm\glfw\lib-vc2010-64\glfw3.lib
+else()
+	target_link_libraries(wyrm PRIVATE Threads::Threads)
+endif()

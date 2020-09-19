@@ -5,7 +5,7 @@
 class RenderPackage {
 public:
   RenderPackage();
-  static void go(const Options& o, const Scene& s);
+  static void go(Options& o, Scene& s);
   /*
   static std::shared_ptr <Accelerator> accel;
   static std::shared_ptr <Image> image;

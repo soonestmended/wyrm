@@ -41,6 +41,7 @@ typedef std::variant<
   std::vector <Color>> ParamVec;
 
 struct Options  {
+    // General options
   int imageWidth, imageHeight;
   std::string imageFilename;
   int spp; // samples per pixel
@@ -54,15 +55,18 @@ struct Options  {
   Mat4 world2camera, camera2world;
   Real frameAspectRatio = -1., screenWindow = 1., fov;
 
+  // Filter
   std::string filterType;
   Real filterXWidth, filterYWidth;
   Real filterAlpha = 2.;
   Real filterB = 1. / 3., filterC = 1. / 3., filterTau = 3;
 
+  // Sampler
   std::string samplerType;
   bool samplerJitter = true;
   int samplerXSamples = 2, samplerYSamples = 2;
 
+  bool interactiveMode = false;
 };
 
 enum State {EXPECT_IDENTIFIER, EXPECT_TYPE, EXPECT_PARAM};
